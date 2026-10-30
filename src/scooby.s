@@ -78,6 +78,7 @@
 	.equ ram_room_depth_rows, 0xff0692
 	.equ ram_room_spawns, 0xff0696
 	.equ ram_room_idle_spots, 0xff069a
+	.equ ram_room_entry_ofs, 0xff069e
 	.equ ram_room_idle_count, 0xff06a0
 	.equ ram_cur_music, 0xff06a6
 	.equ ram_mystery_idx, 0xff06aa
@@ -730,7 +731,7 @@ game_start:
 	bclr.b #0x7,(ram_vblank_flags).l
 	btst.b #0x2,(ram_09ed).l
 	beq.s loc_000D30
-	move.w #0x0,(0xff069e).l
+	move.w #0x0,(ram_room_entry_ofs).l
 	move.w (0xff0a90).l,(ram_room_index).l
 	bsr.w room_load
 loc_000D30:
@@ -1720,7 +1721,7 @@ loc_001CC4:
 	move.w (ram_font_base).l,d2
 	andi.w #0x9fff,d2
 	move.w d2,(ram_font_base).l
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	movem.l (sp)+,d0-d7/a0-a6
 loc_001D0A:
 	btst.b #0x6,(ram_pad1).l
@@ -1842,7 +1843,7 @@ loc_001E72:
 	move.w (ram_font_base).l,d2
 	andi.w #0x9fff,d2
 	move.w d2,(ram_font_base).l
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	movem.l (sp),d2-d7/a0-a6
 	moveq #0x0,d0
 	moveq #0x0,d1
@@ -1883,7 +1884,7 @@ loc_001E72:
 	or.w d1,d2
 	move.w d2,(ram_font_base).l
 	moveq #0x1,d1
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	lea.l (ram_objects).l,a0
 	move.w (ram_target_obj).l,d0
 	subq.w #0x3,d0
@@ -1961,7 +1962,7 @@ loc_00209C:
 	moveq #0x1,d1
 	move.w (ram_font_base).l,d2
 	andi.w #0x9fff,d2
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	bclr.b #0x2,(ram_verb_state).l
 	bsr.w wait_vblank
 	bsr.w inventory_refresh
@@ -2015,7 +2016,7 @@ loc_00217E:
 	bsr.w wait_vblank
 	tst.b (0xff0ab6).l
 	bne.w loc_00217E
-	bsr.w sub_00221A
+	bsr.w run_load_script
 	movem.l (sp)+,d0-d7/a0-a6
 	rts
 room_reload:
@@ -2036,10 +2037,10 @@ room_fade_in:
 	move.w (ram_target_obj).l,(ram_hover_prev).l
 	move.w (ram_verb_cur).l,(ram_cur_verb_prev).l
 	move.w (ram_target2_obj).l,(ram_second_prev).l
-	bsr.w sub_002278
+	bsr.w run_arrival_script
 	movem.l (sp)+,d0-d7/a0-a6
 	rts
-sub_00221A:
+run_load_script:
 	move.l (ram_script_cb).l,-(sp)
 	move.b (ram_vblank_flags).l,-(sp)
 	move.l #script_run_frame,(ram_script_cb).l
@@ -2061,7 +2062,7 @@ sub_00221A:
 	or.b d0,(ram_vblank_flags).l
 	move.l (sp)+,(ram_script_cb).l
 	rts
-sub_002278:
+run_arrival_script:
 	move.l (ram_script_cb).l,-(sp)
 	move.b (ram_vblank_flags).l,-(sp)
 	move.l #script_run_frame,(ram_script_cb).l
@@ -4480,7 +4481,7 @@ loc_004716:
 	moveq #0x0,d0
 	move.w #0x2200,d1
 	bsr.w vdp_copy_to_vram
-	bsr.w sub_007950
+	bsr.w room_draw_view
 	move.w #0x2000,sr
 	movem.l (sp)+,d0-d7/a0-a6
 	bset.b #0x6,(ram_vblank_flags).l
@@ -4573,7 +4574,7 @@ loc_00488C:
 	moveq #0x1,d1
 	move.w (ram_font_base).l,d2
 	andi.w #0x9fff,d2
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	bclr.b #0x1,(ram_game_state).l
 	rts
 script_op_0D_sound:
@@ -4999,7 +5000,7 @@ loc_004E12:
 	move.w d2,(ram_font_base).l
 	andi.w #0xf,d0
 	moveq #0x1,d1
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	movea.l (ram_mystery_hdr).l,a0
 	movea.l (0x20,a0),a0
 	adda.l (0x4,a5),a0
@@ -5009,7 +5010,7 @@ loc_004E12:
 	move.w d2,(ram_font_base).l
 	move.w #0xf,d0
 	moveq #0x1,d1
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	move.w (0x2,a5),d0
 	btst.b #0xd,d0
 	beq.w loc_004EDC
@@ -5045,7 +5046,7 @@ script_op_18_goto_room_cut:
 	move.w (0x6,a5),(ram_shaggy_facing).l
 	move.w (0x4,a5),d0
 	lsl.w #0x2,d0
-	move.w d0,(0xff069e).l
+	move.w d0,(ram_room_entry_ofs).l
 	bsr.w room_load
 loc_004F08:
 	lea.l (0x8,a5),a5
@@ -5060,7 +5061,7 @@ script_op_11_goto_room:
 	move.b d5,(ram_vblank_flags).l
 	move.w (0x4,a5),d0
 	lsl.w #0x2,d0
-	move.w d0,(0xff069e).l
+	move.w d0,(ram_room_entry_ofs).l
 	bsr.w room_reload
 loc_004F4A:
 	lea.l (0x8,a5),a5
@@ -7687,7 +7688,7 @@ loc_00766C:
 	move.w d0,-(sp)
 	moveq #0xf,d0
 	moveq #0x1,d1
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	move.w d0,(0xfffffe).l
 	move.w (sp)+,d0
 	addi.w #0xbe0,d0
@@ -7829,7 +7830,7 @@ loc_007888:
 	bne.s loc_007888
 loc_00789A:
 	move.w d0,(ram_room_idle_count).l
-	move.w (0xff069e).l,d0
+	move.w (ram_room_entry_ofs).l,d0
 	lea.l (0x0,a0,d0.w),a0
 	move.w (a0),d0
 	lsl.w #0x3,d0
@@ -7881,10 +7882,10 @@ loc_007932:
 	lsl.w #0x3,d4
 	move.w d3,(ram_camera_x).l
 	move.w d4,(ram_camera_y).l
-	bsr.w sub_007950
-	bsr.w sub_007A8C
+	bsr.w room_draw_view
+	bsr.w room_setup_actors
 	rts
-sub_007950:
+room_draw_view:
 	move.w (ram_map_width).l,d5
 	lsl.w #0x1,d5
 	andi.l #0xffff,d5
@@ -7951,7 +7952,7 @@ loc_0079EE:
 	jsr (sub_00FE74).l
 	jsr (sub_00FF68).l
 	rts
-sub_007A2A:
+font_tiles_load:
 	move.w #0xc,d3
 	lsl.w d3,d0
 	lsl.w d3,d1
@@ -7991,7 +7992,7 @@ loc_007A74:
 	dbra d2,loc_007A4E
 	tst.l (sp)+
 	rts
-sub_007A8C:
+room_setup_actors:
 	andi.b #0x3,(0xff0abf).l
 	clr.b (ram_actors_path_once).l
 	clr.b (ram_actors_on_path).l
@@ -8106,7 +8107,7 @@ loc_007C32:
 	dc.w 0x302b,0x0000	| move.w $0(a3), d0
 	andi.w #0xbfff,d0
 	bpl.s loc_007C6C
-	bsr.w sub_007D54
+	bsr.w overlay_apply
 	dc.w 0x082b,0x0006,0x0000	| btst.b #$6, $0(a3)
 	beq.s loc_007C64
 	dc.w 0x426b,0x0000	| clr.w $0(a3)
@@ -8114,7 +8115,7 @@ loc_007C64:
 	dc.w 0x026b,0x7fff,0x0000	| andi.w #$7fff, $0(a3)
 	bra.s loc_007C70
 loc_007C6C:
-	bsr.w sub_007D54
+	bsr.w overlay_apply
 loc_007C70:
 	bclr.b #0x0,(0x18,a3)
 loc_007C76:
@@ -8193,7 +8194,7 @@ loc_007D3E:
 	dbra d2,loc_007D3E
 	movem.l (sp)+,d0-d3/a0-a1
 	rts
-sub_007D54:
+overlay_apply:
 	btst.b #0x0,(ram_09eb).l
 	bne.w loc_007C82
 	movem.l d0-d7/a0-a6,-(sp)
@@ -8347,7 +8348,7 @@ loc_007F0C:
 	lea.l (0x0,a0,d3.w),a0
 	dbra d1,loc_007F0A
 	bra.w loc_007DDE
-sub_007F22:
+game_state_init:
 	move.w (ram_mystery_idx).l,d0
 	lea.l (mystery_headers).l,a0
 	lsl.w #0x2,d0
@@ -8552,7 +8553,7 @@ title_screen:
 	move.w #0xf,d0
 	move.w #0x0,d1
 	move.w (ram_font_base).l,d2
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	move.w #0xfa00,d0
 	move.w #0x40,d1
 	move.w #0xaaaa,d2
@@ -9174,7 +9175,7 @@ sub_008C40:
 	move.w #0xf,d0
 	move.w #0x0,d1
 	move.w (ram_font_base).l,d2
-	bsr.w sub_007A2A
+	bsr.w font_tiles_load
 	lea.l (dat_018E08).l,a0
 	bsr.w sub_0096F4
 	bsr.w sub_008AB4
@@ -9223,7 +9224,7 @@ menu_start_game:
 	move.w (ram_room_index).l,d0
 	cmp.w (ram_sat_buf+2).l,d0
 	beq.s loc_008CFE
-	clr.w (0xff069e).l
+	clr.w (ram_room_entry_ofs).l
 loc_008CFE:
 	move.w (ram_sat_buf+2).l,(ram_room_index).l
 	move.w #0x2700,sr
@@ -9406,7 +9407,7 @@ sub_008FB8:
 sub_008FC2:
 	move.w #0x1,(ram_mystery_idx).l
 sub_008FCA:
-	bsr.w sub_007F22
+	bsr.w game_state_init
 	tst.w (ram_mystery_idx).l
 	bne.s loc_008FDE
 	lea.l (dat_018A56).l,a0
@@ -10791,7 +10792,7 @@ game_init:
 	move.b #0x0,(ram_09ed).l
 game_reset:
 	clr.w (ram_inv_page).l
-	clr.w (0xff069e).l
+	clr.w (ram_room_entry_ofs).l
 	clr.w (ram_hscroll_verb).l
 	clr.w (ram_room_index).l
 	move.w #0xffff,(ram_shaggy_wp_count).l

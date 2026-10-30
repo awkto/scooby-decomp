@@ -1,0 +1,85 @@
+#!/bin/sh
+# Difftest the room/scene loader functions (src/game/room.c, issue #18) on the captured entry
+# states PLUS synthetic variants: every room of both mysteries is loaded from each captured
+# state (the capture route only loads ~6 rooms), with different entry points and mode flags.
+#   port/tools/dt-room            run all the functions below
+#   port/tools/dt-room room_load  run one
+# Registers/flags of room_load, room_draw_view, room_setup_actors, game_state_init and objects_update
+# are dead for their callers (see the comments in room.c) and are ignored.
+rc=0
+root=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$root"
+[ -f build/port/CMakeCache.txt ] || cmake -S port -B build/port -DCMAKE_BUILD_TYPE=Release >/dev/null
+cmake --build build/port -j"$(nproc)" --target difftest scoobyport >/dev/null
+IGN="--ignore-regs d0,d1,d2,d3,d4,d5,d6,d7,a0,a1,a2,a3,a4,a5,a6 --ignore-flags"
+pokes=""
+i=0
+# mystery 0: header $0FCA0C, rooms 2..22; mystery 1: header $0FCA40, rooms 2..31
+for spec in "0 0x0FCA0C 22" "1 0x0FCA40 31"; do
+	m=${spec%% *}; rest=${spec#* }; hdr=${rest%% *}; last=${rest#* }
+	r=2
+	while [ $r -le $last ]; do
+		ofs=$(( (r % 8) * 4 ))
+		flags=0
+		[ $((r % 5)) -eq 0 ] && flags=8      # FF09DE bit 3: keep Shaggy's position
+		[ $((r % 7)) -eq 0 ] && flags=4      # FF09DE bit 2: also refresh the verb bar ($47AC)
+		pokes="$pokes --poke W:FF06AA=$m,L:FF068E=$hdr,W:FF06AC=$r,W:FF069E=$ofs,B:FF09DE=$flags"
+		r=$((r + 1))
+	done
+done
+# room_draw_view: camera positions (pixels, multiples of 8)
+cam=""
+for x in 0 8 64 160 248; do for y in 0 8 24 40; do cam="$cam --poke W:FF06CA=$x,W:FF06CE=$y"; done; done
+# room_setup_actors: which room the actors are looked up for, and the 09DE mode bits
+act=""
+r=2
+while [ $r -le 31 ]; do
+	act="$act --poke W:FF06AC=$r,B:FF09DE=$(( (r % 2) * 128 ))"
+	r=$((r + 1))
+done
+# overlay_apply / objects_update: overlay ids 1..40 in both DMA modes ($FF09EB bit 0)
+ovl=""
+for id in 1 2 3 4 5 6 7 8 9 10 11 12 20 30 40 32769 32771 32775 32776 32780 16385; do
+	for m in 0 1; do for cv in "0,W:FF06CE=0" "160,W:FF06CE=24"; do
+		ovl="$ovl --poke L:FF068E=0x0FCA0C,W:FF06AC=16,B:FF09EB=$m,W:FF06CA=$cv,D0=$id"
+	done; done
+done
+# object_table_init ($007F66) ends in the mystery intro ($0013BA), which waits for VBlank, so the
+# sandbox cannot run it to its rts.  Instead the object table built at boot is compared between a
+# pure-emulation run and a run with the C replacement (same route, same frame).
+objtest() {
+	d=runs/room-objects; mkdir -p $d/none $d/all
+	for mode in none all; do
+		SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/port/scoobyport --hle $mode \
+			--script port/scripts/boot_objects.txt --outdir $d/$mode --frames 1 >/dev/null 2>&1 || true
+	done
+	# object records ($FF1200..$FF2800) and the inventory list ($FF0A1E)
+	for mode in none all; do
+		dd if=$d/$mode/objs.ram bs=1 skip=$((0x1200)) count=$((0x1600)) of=$d/$mode.obj 2>/dev/null
+		dd if=$d/$mode/objs.ram bs=1 skip=$((0x0A1E)) count=64 of=$d/$mode.inv 2>/dev/null
+	done
+	if cmp -s $d/none.obj $d/all.obj && cmp -s $d/none.inv $d/all.inv; then
+		echo "object_table_init \$007F66: object table + inventory list identical after boot (C vs 68k)"
+	else
+		echo "object_table_init \$007F66: MISMATCH"; cmp -l $d/none.obj $d/all.obj | head -20; rc=1
+	fi
+}
+fns=${*:-room_load room_draw_view room_setup_actors game_state_init object_table_init font_tiles_load pad_direction zone_probe_cursor zone_probe_point overlay_apply objects_update}
+for f in $fns; do
+	v=""; mx=12; ign=""
+	case $f in
+	object_table_init) objtest; continue ;;
+	room_load)
+		# many variants in one process crash the GPGX core eventually, so run them 8 at a time
+		echo "$pokes" | xargs -n 16 build/port/difftest check room_load $IGN --max 6 || rc=1
+		continue ;;
+	room_draw_view) v=$cam; ign=$IGN ;;
+	room_setup_actors) v=$act; ign=$IGN ;;
+	game_state_init) ign=$IGN ;;
+	objects_update) ign=$IGN ;;
+	overlay_apply) ign="--ignore-flags"; v=$ovl ;;
+	esac
+	# shellcheck disable=SC2086
+	build/port/difftest check "$f" $ign $v --max $mx || rc=1
+done
+exit $rc

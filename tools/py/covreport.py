@@ -14,6 +14,7 @@ import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 CODE_REGIONS = [(0x200, 0x11000), (0x1F6D7A, 0x1F7082)]
+LABEL = re.compile(r"^\s*\d+\s+([A-Za-z_]\w*):\s*$")
 LINE = re.compile(r"^\s*\d+ ([0-9a-f]{4,8}) (?:[0-9A-F]{4} ?)* *\t+(.*)$")
 
 
@@ -36,10 +37,20 @@ def analyse():
             executed.add(int(line, 16))
     insns = {}
     entries = set()
+    names = {}              # label -> address (the address of the next listed line)
+    refs = []               # label names used as bsr/jsr/dc.l targets
+    pending = []
     for l in listing():
+        lm = LABEL.match(l)
+        if lm:
+            pending.append(lm.group(1))
+            continue
         m = LINE.match(l)
         if not m:
             continue
+        for nm in pending:
+            names[nm] = int(m.group(1), 16)
+        pending = []
         addr, t = int(m.group(1), 16), m.group(2).strip()
         if not t:
             continue
@@ -48,17 +59,20 @@ def analyse():
             continue
         if tok.startswith("dc."):
             if tok == "dc.l":
-                mm = re.match(r"dc\.l\s+(loc_([0-9A-F]{6}))\b", t)
+                mm = re.match(r"dc\.l\s+([A-Za-z_]\w*)\s*$", t)
                 if mm:
-                    entries.add(int(mm.group(2), 16))
+                    refs.append(mm.group(1))
             if not (tok == "dc.w" and "|" in t):
                 continue
         if not in_code(addr):
             continue
         insns[addr] = t
-        mm = re.match(r"(?:bsr|jsr)\S*\s+\(?(loc_([0-9A-F]{6}))", t)
+        mm = re.match(r"(?:bsr|jsr)\S*\s+\(?([A-Za-z_]\w*)", t)
         if mm:
-            entries.add(int(mm.group(2), 16))
+            refs.append(mm.group(1))
+    for nm in refs:
+        if nm in names and in_code(names[nm]) and names[nm] in insns:
+            entries.add(names[nm])
     return insns, entries, executed
 
 
@@ -93,8 +107,12 @@ def main():
     out("How the coverage was gathered (all on a VM, see `tools/py/campaign.py`): password warps into all 51 rooms with")
     out("several flag sets (initial / all-ones / random), random no-pause play from each (normal, walk-biased and")
     out("pointer-mode presets), the hidden DEBUG pause menu (ROOMS / OBJECTS) entered with the cheat code, and random play")
-    out("from the two real starts. Remaining gaps are mostly script sub-operations that need specific story events")
-    out("(`$2FAC-$4568` sub-op handlers, verb PULL `loc_001C0C`) and a few handlers of the debug editors.")
+    out("from the two real starts. Then (#29) scripted play through the verb UI: a crawler that tries every verb on every")
+    out("object of all 51 rooms, and the story routes in `tools/scripts/story/` (see `docs/walkthrough.md`; `tools/py/story.py`).")
+    out("Remaining gaps are mostly script sub-operations that need specific story events (`$2FAC-$4568` sub-op handlers:")
+    out("cutscene/chase/ending operations) and a few handlers of the debug editors. (`loc_001C0C`, formerly listed as the")
+    out("verb PULL handler, is the post-script handler of verb TALK (action_execute: `cmpi.w #8,d7`); the crawler's Talk")
+    out("attempts execute it.)")
     out("")
     out("## Never-executed functions")
     out("")

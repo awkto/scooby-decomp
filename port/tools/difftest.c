@@ -21,6 +21,8 @@
  * run options:
  *   --ignore-regs d1,a0   don't compare these registers (document why in the C source!)
  *   --ignore-flags        don't compare X N Z V C
+ *   --poke "W:FF06AC=5,L:FF068E=0xFCA0C,D0=7"   run each state once per --poke variant, after patching
+ *                         work RAM (B/W/L:HEXADDR=VALUE) and registers (D0..D7/A0..A7=VALUE), comma list
  *   --strict-stack        compare RAM below the entry SP as well
  *   --stack-window B      bytes below entry SP treated as scratch (default 256)
  *   --with-hle            keep other enabled HLE functions active on both sides
@@ -53,7 +55,31 @@ typedef struct {
 	uint32_t stack_window;
 	bool with_hle, passthrough, keep_going, verbose;
 	const char *out;
+	const char *pokes[1024];    /* --poke variants, each "W:ADDR=VAL,B:ADDR=VAL,..." */
+	int npokes;
 } opts;
+
+/* Apply one --poke variant to work RAM: comma list of [BWL:]ADDR=VALUE (default size W). */
+static void apply_poke(const char *spec)
+{
+	char buf[512];
+	snprintf(buf, sizeof buf, "%s", spec);
+	for (char *tok = strtok(buf, ","); tok; tok = strtok(NULL, ",")) {
+		char sz = 'W';
+		if (tok[1] == ':') { sz = tok[0] & ~0x20; tok += 2; }
+		char *eq = strchr(tok, '=');
+		if (!eq) continue;
+		if ((tok[0] == 'D' || tok[0] == 'A') && tok[1] >= '0' && tok[1] <= '7' && tok[2] == '=') {
+			/* register poke: D0=value / A3=value (long) */
+			gx_m68k_dar()[(tok[0] == 'A' ? 8 : 0) + (tok[1] - '0')] = (uint32_t)strtoul(eq + 1, NULL, 0);
+			continue;
+		}
+		uint32_t addr = (uint32_t)strtoul(tok, NULL, 16), v = (uint32_t)strtoul(eq + 1, NULL, 0);
+		if (sz == 'B') RAM8(addr) = (uint8_t)v;
+		else if (sz == 'L') RAM32_W(addr, v);
+		else RAM16(addr) = (uint16_t)v;
+	}
+}
 
 static void usage(void)
 {
@@ -232,7 +258,10 @@ static int do_run(const hle_def *target, const opts *o)
 	sb_snap *ref = calloc(1, sizeof *ref), *got = calloc(1, sizeof *got);
 	int pass_n = 0, fail_n = 0, err_n = 0;
 	unsigned long cyc_min = ~0ul, cyc_max = 0, cyc_sum = 0, ins_sum = 0;
-	for (int i = 0; i < n; i++) {
+	int nvar = o->npokes ? o->npokes : 1;
+	for (int k = 0; k < n * nvar; k++) {
+		int i = k / nvar;
+		const char *poke = o->npokes ? o->pokes[k % nvar] : NULL;
 		cap_state cs;
 		if (!cap_read(files[i], &cs)) {
 			printf("%s: unreadable capture\n", files[i]);
@@ -248,6 +277,7 @@ static int do_run(const hle_def *target, const opts *o)
 		/* reference: original 68k */
 		set_hle_for_side(target, false, o);
 		cap_apply(&cs);
+		if (poke) apply_poke(poke);
 		uint32_t sp0 = gx_m68k_dar()[15];
 		uint32_t entry[16];
 		memcpy(entry, gx_m68k_dar(), sizeof entry);
@@ -273,6 +303,7 @@ static int do_run(const hle_def *target, const opts *o)
 		/* C replacement */
 		set_hle_for_side(target, true, o);
 		cap_apply(&cs);
+		if (poke) apply_poke(poke);
 		sb_begin();
 		sb_record_begin();
 		uint32_t ret0 = bus_r32(gx_m68k_dar()[15]) & 0xFFFFFF;
@@ -307,6 +338,7 @@ static int do_run(const hle_def *target, const opts *o)
 			if (fail_n == 1 || o->keep_going) {
 				printf("FAIL %s (frame %u, call #%u): %d categor%s differ\n", files[i], cs.frame, cs.index,
 				       bad, bad == 1 ? "y" : "ies");
+				if (poke) printf("  poke: %s\n", poke);
 				printf("  entry:");
 				for (int r = 0; r < 16; r++)
 					printf("%s%c%d=%08X", r == 8 ? "\n        " : " ", r < 8 ? 'D' : 'A', r & 7, entry[r]);
@@ -369,6 +401,7 @@ int main(int argc, char **argv)
 		else if (!strcmp(a, "--strict-stack")) o.cmp.strict_stack = true;
 		else if (!strcmp(a, "--stack-window")) o.stack_window = (uint32_t)strtoul(ARG(), NULL, 0);
 		else if (!strcmp(a, "--with-hle")) o.with_hle = true;
+		else if (!strcmp(a, "--poke")) { if (o.npokes < 1024) o.pokes[o.npokes++] = ARG(); }
 		else if (!strcmp(a, "--passthrough")) o.passthrough = true;
 		else if (!strcmp(a, "--keep-going")) o.keep_going = true;
 		else if (!strcmp(a, "-v")) o.verbose = true;

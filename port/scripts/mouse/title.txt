@@ -1,0 +1,26 @@
+# From power-on to the Lobby with the mouse only (port/tools/mousetest.sh), like the
+# harness route that presses Start 7 times.  Outside a room (title menu, intro pages) a
+# left click is a Start press.  The 7th press lands in the intro cut scene (room 3, a
+# script runs): there a left click is B (advance text), and the middle button (Start)
+# skips the scene.
+run 1500
+click L 128 112
+run 150
+click L 128 112
+run 150
+click L 128 112
+run 150
+click L 128 112
+run 150
+click L 128 112
+run 150
+click L 128 112
+run 150
+click M 128 112
+run 150
+run 120
+peek room FF06AC
+# hover the verb bar: the host arrow cursor is drawn there (checked in the window shot)
+mouse 60 185
+run 10
+peek ptr FF09DC 1
