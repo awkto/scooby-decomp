@@ -589,12 +589,16 @@ HLE_FUNC(0x002626, script_op_pal_cycle, 150)
 		if (SET) bit_set(ctx, BYTE, BIT); else bit_clr(ctx, BYTE, BIT); \
 	}
 SUBOP_BIT(0x00453E, script_sys_end, RAM_SCRIPT_FLAGS, 0, 1)     /* $01: stop the script */
+#ifdef SCRIPT_UNTESTED   /* no difftest states on any route */
 SUBOP_BIT(0x004482, script_sys_09e8_1_on, RAM_09E8, 1, 1)       /* $0D camera locked */
+#endif
 SUBOP_BIT(0x00448C, script_sys_09e8_1_off, RAM_09E8, 1, 0)      /* $0E */
 SUBOP_BIT(0x004298, script_sys_pal_flash_off, RAM_09E8, 7, 0)   /* $1B */
 SUBOP_BIT(0x002FC2, script_sys_09eb_5_on, RAM_09EB, 5, 1)       /* $3A */
 SUBOP_BIT(0x002FCC, script_sys_09eb_5_off, RAM_09EB, 5, 0)      /* $3B */
+#ifdef SCRIPT_UNTESTED   /* no difftest states on any route */
 SUBOP_BIT(0x002FD6, script_sys_skippable_off, 0xFF0ACA, 1, 0)   /* $38 */
+#endif
 
 /* $004274 sub $1A pal_flash_on: palette flash effect parameters, $FF09E8 bit 7 */
 HLE_FUNC(0x004274, script_sys_pal_flash_on, 60)
