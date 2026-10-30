@@ -1,0 +1,15 @@
+# Ha Ha Carnival from the title WITHOUT skipping the intro cutscene (#19).
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press D 4
+run 20
+press S 4
+run 150
+press S 4
+run 15000
+peek room FF06AC 2

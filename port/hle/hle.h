@@ -45,11 +45,31 @@ typedef struct hle_def {
 	hle_fn fn;
 	int cycles;         /* 68k cycles charged per call (approximate original cost) */
 	const char *file;
-	/* HLE_RANGE only: 0-terminated list of addresses where the replaced code range can
-	 * exit (the C function must hle_jump() to one of them, at the entry SP). NULL for an
-	 * ordinary function (exit = rts). */
+	/* HLE_RANGE only: 0-terminated list of exits where the replaced code range can leave
+	 * (the C function must hle_jump() to one of them). Each entry is an address, optionally
+	 * with a stack delta (HLE_EXIT_SP): the SP at that exit must be the entry SP + delta.
+	 * NULL for an ordinary function (exit = rts). */
 	const uint32_t *exits;
 } hle_def;
+
+/* Range exit with a declared stack delta (docs/porting.md, "Ranges that push or pop"):
+ * the range leaves at ADDR with SP = entry SP + DELTA. DELTA is even, -256..+254: negative
+ * when the range pushed (move.w d7,-(sp) before a blocking call), positive when it popped
+ * what an earlier range pushed (move.w (sp)+,d7 / rts). A plain address = delta 0.
+ * The delta lives in the top byte of the 32-bit entry (68k addresses are 24-bit). */
+#define HLE_EXIT_SP(ADDR, DELTA) \
+	((uint32_t)(ADDR) | ((uint32_t)(uint8_t)(int8_t)((DELTA) / 2) << 24))
+static inline uint32_t hle_exit_addr(uint32_t x) { return x & 0xFFFFFF; }
+static inline int hle_exit_sp_delta(uint32_t x) { return (int8_t)(x >> 24) * 2; }
+/* does (pc, sp) match one of the 0-terminated exits of a range entered with SP = sp0? */
+static inline bool hle_exit_match(const uint32_t *exits, uint32_t pc, uint32_t sp, uint32_t sp0)
+{
+	for (; *exits; exits++)
+		if (hle_exit_addr(*exits) == (pc & 0xFFFFFF) &&
+		    sp == sp0 + (uint32_t)(int32_t)hle_exit_sp_delta(*exits))
+			return true;
+	return false;
+}
 
 /* ------------------------------------------------------------------ registration */
 void hle_register_def(const hle_def *def);
@@ -67,9 +87,10 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
 /* HLE_RANGE(addr, name, cycles, exit1, exit2, ...): replace a code RANGE that is not a
  * subroutine - a piece of straight-line code inside Reset, one pass of a main loop, the
  * part of a function between two blocking calls. The C function runs when the CPU reaches
- * addr and must end with hle_jump(ctx, exitN) with the stack pointer as it was on entry.
+ * addr and must end with hle_jump(ctx, exitN) with the stack pointer as it was on entry
+ * (or entry + delta for an exit declared as HLE_EXIT_SP(addr, delta)).
  * difftest runs the original from addr until it first reaches one of the exits with the
- * entry SP (after at least one instruction), so a loop head may be its own exit.
+ * matching SP (after at least one instruction), so a loop head may be its own exit.
  * Typical use: stop right BEFORE a jsr/bsr to a function that waits for VBlank, let the
  * original 68k instruction make that call, and register the code after it as the next
  * range (see docs/porting.md, "Waiting for VBlank"). */

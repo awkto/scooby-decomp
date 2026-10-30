@@ -2,6 +2,8 @@
  *
  *   difftest list
  *   difftest capture ADDR N [--out DIR] [--script FILE]... [--every K] [--skip K] [--hle SPEC]
+ *   difftest capture-multi N TAG ADDR... [--script FILE]...   every call (up to N) of each
+ *       ADDR in ONE pass over the route, into runs/states/<ADDR>_<TAG>/ (or --out DIR/<ADDR>_<TAG>)
  *   difftest run FUNC... [--states DIR] [--max N] [options]
  *   difftest check FUNC...|all [--n N] [capture/run options]   capture if needed, then run
  *
@@ -11,7 +13,7 @@
  * calls made on that route.
  *
  * For every captured entry state: load it, run the original 68k code until it returns
- * (an HLE_RANGE: until it reaches one of its declared exits at the entry SP; other HLE
+ * (an HLE_RANGE: until it reaches one of its declared exits at the exit's SP; other HLE
  * functions disabled unless --with-hle), snapshot; reload, run the C function,
  * snapshot; compare registers, SR, work RAM (minus dead stack), VRAM/CRAM/VSRAM, VDP
  * registers + port latches, Z80 RAM / bus state, I/O registers and the ordered list of
@@ -86,6 +88,7 @@ static void usage(void)
 	fprintf(stderr,
 	        "usage: difftest list\n"
 	        "       difftest capture ADDR N [--out DIR] [--script FILE]... [--every K] [--skip K] [--hle SPEC]\n"
+	        "       difftest capture-multi N TAG ADDR... [--out BASE] [--script FILE]...\n"
 	        "       difftest run FUNC... [--states DIR] [--max N] [--ignore-regs d1,a0] [--ignore-flags]\n"
 	        "                [--strict-stack] [--stack-window B] [--with-hle] [--passthrough] [--keep-going] [-v]\n"
 	        "       difftest check FUNC...|all [--n N] [capture and run options]\n");
@@ -403,6 +406,13 @@ static int do_run(const hle_def *target, const opts *o)
 		uint32_t lo = sp0 - o->stack_window;
 		if (min_sp < lo)
 			lo = min_sp;
+		/* a range that exits with a negative stack delta (HLE_EXIT_SP) leaves what it
+		 * pushed in [exit SP, entry SP): that is live data, compare it */
+		uint32_t hi = sp0;
+		if (target->exits && ref->a[7] < hi)
+			hi = ref->a[7];
+		if (lo > hi)
+			lo = hi;
 		sb_cmp_opts co = o->cmp;
 		for (size_t k = 0; k < sizeof dt_ignores / sizeof dt_ignores[0]; k++)
 			if (dt_ignores[k].addr == target->addr) {
@@ -410,7 +420,7 @@ static int do_run(const hle_def *target, const opts *o)
 				co.ignore_sr |= dt_ignores[k].sr;
 			}
 		co.quiet = true;
-		int bad = sb_compare(ref, got, lo, sp0, &co, stdout);
+		int bad = sb_compare(ref, got, lo, hi, &co, stdout);
 		if (bad) {
 			fail_n++;
 			if (fail_n == 1 || o->keep_going) {
@@ -422,12 +432,12 @@ static int do_run(const hle_def *target, const opts *o)
 					printf("%s%c%d=%08X", r == 8 ? "\n        " : " ", r < 8 ? 'D' : 'A', r & 7, entry[r]);
 				printf("\n");
 				co.quiet = false;
-				sb_compare(ref, got, lo, sp0, &co, stdout);
+				sb_compare(ref, got, lo, hi, &co, stdout);
 			}
 		} else {
 			pass_n++;
 			if (o->verbose)
-				printf("ok   %s (frame %u, %lu insns, %lu cycles, %d port writes, exit $%06X)\n", files[i], cs.frame, insns, cycles, ref->nev, ref->pc);
+				printf("ok   %s (frame %u, %lu insns, %lu cycles, %d port writes, exit $%06X SP%+d)\n", files[i], cs.frame, insns, cycles, ref->nev, ref->pc, (int)(ref->a[7] - sp0));
 		}
 		sb_snap_free(ref);
 		sb_snap_free(got);
@@ -515,6 +525,29 @@ int main(int argc, char **argv)
 		else
 			default_dir(dir, sizeof dir, addr);
 		return do_capture(addr, atoi(pos[1]), dir, &o);
+	}
+	if (!strcmp(mode, "capture-multi")) {
+		if (npos < 3)
+			usage();
+		hle_set_all(false);
+		if (o.hle_spec)
+			hle_configure(o.hle_spec);
+		int n = atoi(pos[0]);
+		emu_reset();
+		for (int i = 2; i < npos; i++) {
+			uint32_t addr = (uint32_t)strtoul(pos[i] + (pos[i][0] == '$'), NULL, 16);
+			char dir[600];
+			snprintf(dir, sizeof dir, "%s/%06X_%s", o.out ? o.out : "runs/states", addr, pos[1]);
+			if (i == 2)
+				capture_start(addr, n, dir, 1, 0);
+			else
+				capture_add(addr, n, dir, 1, 0);
+		}
+		int rc = play_scripts(&o, "runs");
+		capture_stop();
+		for (int i = 2; i < npos; i++)
+			printf("captured %d entry states of %s (%s)\n", capture_slot_count(i - 2), pos[i], pos[1]);
+		return rc;
 	}
 	if (strcmp(mode, "run") && strcmp(mode, "check"))
 		usage();

@@ -16,6 +16,10 @@ typedef struct {
 /* every: keep one call out of `every`; skip: ignore the first `skip` calls.
  * dir == NULL: only count the calls (capture_calls()). */
 bool capture_start(uint32_t addr, int max_states, const char *dir, int every, int skip);
+/* add another address to the running capture (capture_start resets the list): one
+ * pass over a route captures several functions; capture_done() = all of them full */
+bool capture_add(uint32_t addr, int max_states, const char *dir, int every, int skip);
+int capture_slot_count(int i);
 void capture_stop(void);
 int capture_count(void);
 unsigned long capture_calls(void);

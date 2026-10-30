@@ -35,13 +35,6 @@ void sb_end(void)
 	hle_post_access = NULL;
 }
 
-static bool at_exit(const uint32_t *exits, uint32_t pc)
-{
-	for (; *exits; exits++)
-		if (*exits == pc)
-			return true;
-	return false;
-}
 
 bool sb_run_68k(unsigned long max_insns, unsigned long *insns, unsigned long *cycles, uint32_t *min_sp)
 {
@@ -58,7 +51,7 @@ bool sb_run_68k_until(const uint32_t *exits, unsigned long max_insns, unsigned l
 	long used = 0;
 	uint32_t lo = sp0;
 	bool ok = true;
-	while (exits ? !(n && dar[15] == sp0 && at_exit(exits, gx_m68k_pc()))
+	while (exits ? !(n && hle_exit_match(exits, gx_m68k_pc(), dar[15], sp0))
 	             : !(gx_m68k_pc() == ret && dar[15] == sp0 + 4)) {
 		int before = gx_m68k_cycles();
 		if (n++ >= max_insns || m68k_step_one() < 0) {
@@ -89,7 +82,7 @@ bool sb_run_68k_to(uint32_t sp0, uint32_t ret, const uint32_t *exits, unsigned l
 	uint32_t *dar = gx_m68k_dar();
 	for (unsigned long n = 0;; n++) {
 		uint32_t pc = gx_m68k_pc();
-		if (exits ? dar[15] == sp0 && at_exit(exits, pc) : pc == ret && dar[15] == sp0 + 4)
+		if (exits ? hle_exit_match(exits, pc, dar[15], sp0) : pc == ret && dar[15] == sp0 + 4)
 			return true;
 		if (n >= max_insns || m68k_step_one() < 0)
 			return false;

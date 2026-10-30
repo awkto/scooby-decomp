@@ -234,6 +234,7 @@ static int run_def(const hle_def *def, entry *e)
 	if (top)
 		g_top = true;
 	ctx_load(&c);
+	uint32_t sp0 = c.a[7];
 	bool unmasked = ((c.sr >> 8) & 7) < 6;
 	c.def = def;
 	c.cycles = def->cycles;
@@ -243,12 +244,9 @@ static int run_def(const hle_def *def, entry *e)
 	def->fn(&c);
 	if (def->exits) {
 		/* HLE_RANGE: must leave through a declared exit */
-		bool ok = false;
-		for (const uint32_t *x = def->exits; c.jumped && *x; x++)
-			ok |= *x == c.pc;
-		if (!ok) {
-			fprintf(stderr, "hle: range %s ($%06X) left via $%06X%s, not a declared exit\n", def->name,
-			        def->addr, c.pc, c.jumped ? "" : " (no hle_jump)");
+		if (!c.jumped || !hle_exit_match(def->exits, c.pc, c.a[7], sp0)) {
+			fprintf(stderr, "hle: range %s ($%06X) left via $%06X with SP %+d%s, not a declared exit\n",
+			        def->name, def->addr, c.pc, (int)(c.a[7] - sp0), c.jumped ? "" : " (no hle_jump)");
 			abort();
 		}
 	} else if (!c.jumped) {
@@ -434,14 +432,8 @@ void hle_run68k_until(hle_ctx *c, const uint32_t *exits)
 	ctx_store(c);
 	m68k_hle_skip_pc = start;
 	for (unsigned long n = 0;; n++) {
-		if (n) {
-			uint32_t pc = gx_m68k_pc();
-			bool hit = false;
-			for (const uint32_t *x = exits; *x && !hit; x++)
-				hit = *x == pc;
-			if (hit && gx_m68k_dar()[15] == sp)
-				break;
-		}
+		if (n && hle_exit_match(exits, gx_m68k_pc(), gx_m68k_dar()[15], sp))
+			break;
 		int r = m68k_step_one();
 		nest_step_done();
 		if (r < 0) {

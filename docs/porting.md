@@ -304,8 +304,9 @@ look for a wait it missed.
      a blocking call are a range that ends at the call, plus a range after the call that
      either jumps back into the loop body (in C) or leaves the loop.
 3. A range may have several exits (one per path) and may exit to its own start (a loop
-   head). The stack pointer at the exit must equal the one at the entry. The layer aborts
-   when a range leaves through an address it did not declare.
+   head). The stack pointer at the exit must equal the one at the entry, unless the exit
+   declares a stack delta (`HLE_EXIT_SP`, see "Ranges that push or pop" below). The layer
+   aborts when a range leaves through an address it did not declare, or with another SP.
 4. `difftest`/`dt` treat ranges automatically. The original runs from the start until it
    first reaches one of the declared exits at the entry SP, after at least one
    instruction. `difftest capture ADDR` works for any instruction address, so captures
@@ -316,6 +317,66 @@ look for a wait it missed.
    the middle of a function leaves working values in registers, so reproduce them all.
    `port/src/game/cc68k.h` has helpers for the exact condition codes: `cc_sub`,
    `cc_add`, `cmpw`, `cc_btst`, `lslw`, `lsrw`.
+
+### Ranges that push or pop: HLE_EXIT_SP (#19)
+
+Many handlers save a register before a blocking call and restore it afterwards:
+
+    script_op_0E_walk_spawn:            ; $0049BA
+        beq.w   skip
+        move.w  d7,-(sp)                ; save D7
+        ...
+        bsr.w   shaggy_walk_to          ; $004A48, blocks until Shaggy arrived
+        bra.w   $4B0E
+    $4B0E:  move.w (sp)+,d7             ; restore D7
+        ...
+        rts
+
+With "SP at the exit = SP at the entry" the push and the pop had to stay 68k, which split
+handlers into odd pieces or left them in 68k altogether. An exit can now declare how far
+the stack moved:
+
+```c
+HLE_RANGE(0x0049BA, script_op_walk_spawn, 150, 0x004B1C,       /* rts, SP unchanged */
+          HLE_EXIT_SP(0x004A48, -2))                           /* bsr, D7 pushed */
+{ ... push16(ctx, ctx->d[7]); ... hle_jump(ctx, 0x004A48); }
+
+HLE_RANGE(0x004A4C, script_op_walk_spawn_done0, 40, HLE_EXIT_SP(0x004B1C, +2))
+{ set_w(&ctx->d[7], pop16(ctx)); ...; hle_jump(ctx, 0x004B1C); }  /* the rts */
+```
+
+- `HLE_EXIT_SP(addr, delta)`: the range leaves at `addr` with SP = entry SP + `delta`
+  (even, -256..+254). Negative = the range pushed (the 68k then makes the call with the
+  pushed data in place), positive = the range popped what an earlier range pushed (often
+  the exit is the function's `rts`, which then returns normally). A plain address means
+  delta 0. The delta is stored in the top byte of the exit entry (`hle_exit_addr()`,
+  `hle_exit_sp_delta()`, `hle_exit_match()` in hle.h).
+- Several exits may share an address with different deltas.
+- Push and pop with `push16/push32/pop16/pop32` on `ctx`, exactly as the 68k does
+  (`move.b x,-(sp)` moves SP by 2 and writes the high byte: `ctx->a[7] -= 2;
+  bus_w8(ctx->a[7], x)`).
+- **difftest** runs the original until it reaches an exit *at that exit's SP*, and the C
+  side must leave the same way. It compares the bytes between the exit SP and the entry SP
+  (`[exit SP, entry SP)` is live data, not scratch); only RAM below the exit SP is
+  scratch. So what the range pushed must be bit-identical, including bytes the code never
+  reads again: a `move.b` push leaves the low byte of the stack word as it was, and
+  that is often the low byte of the last `bsr` return address. If the range calls C
+  helpers that stand for `bsr`s at its own stack level before such a push, push the
+  original return address around the call (walkto.c `wcall()`), and mirror `movem`
+  pushes with real `push32`s.
+- `difftest -v` prints the exit and its SP delta for every state (`exit $004A48 SP-2`).
+- The layer, `hle_run68k_until` (passthrough) and the sandbox all use `hle_exit_match()`,
+  so `difftest --passthrough` still self-tests ranges with deltas.
+
+Typical shapes (script_walk.c, walkto.c):
+- "push, blocking call, pop, rts": range 1 = entry .. `bsr` with `HLE_EXIT_SP(bsr, -n)`;
+  range 2 = after the call .. `rts` with `HLE_EXIT_SP(rts, +n)`.
+- A wait loop between push and pop (`loop: bsr actor_animate / btst / beq loop`): the range
+  after the call exits to the `bsr` with delta 0 (relative to its own entry, which is
+  already below the push) or leaves with the pop.
+- Pushes that are popped again inside the same range (`movem.l d0-d2/d7,-(sp)` ...
+  `movem.l (sp)+,...`) need no delta; keep them as real pushes only when a later exit
+  with a negative delta exposes the bytes.
 
 ### What nested 68k calls hide from the rest of the machine (#30)
 
