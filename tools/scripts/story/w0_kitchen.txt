@@ -1,0 +1,593 @@
+# Blake's Hotel (warp to The Kitchen): beads, chili, pot
+# end state: myst=0 room=15 inv=[100, 99] story=0100300000000000203a004002c2ff010000000000000000000000000a
+# expected {'room': 15}: OK
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 60
+press D 3
+run 10
+press S 4
+run 200
+press R 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press A 5
+run 10
+run 400
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 200
+run 90
+press A 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 54
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B3
+run 14
+press B 6
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B4
+run 18
+press B 8
+run 4
+poke FF06DC 2 7C
+poke FF06DE 2 60
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 94
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 94
+poke FF06DE 2 B3
+run 14
+press B 6
+run 4
+poke FF06DC 2 94
+poke FF06DE 2 B4
+run 18
+press B 8
+run 4
+poke FF06DC 2 54
+poke FF06DE 2 3C
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
