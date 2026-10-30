@@ -1,0 +1,8 @@
+build/
+.venv/
+rom/
+ext/
+runs/
+tools/harness/harness
+*.zip
+__pycache__/
