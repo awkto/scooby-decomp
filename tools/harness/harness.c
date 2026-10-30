@@ -8,6 +8,18 @@
  *   shot NAME             write outdir/NAME.ppm of the current frame
  *   ram NAME              write outdir/NAME.ram (64 KiB 68k work RAM)
  *   save NAME / load NAME savestates
+ *   record NAME / stoprecord   log the pad state of every frame to outdir/NAME.inp
+ *                         (run-length text: "<hexmask> <frames>" lines, hexmask = retro joypad bits)
+ *   replay PATH           replay such a log (PATH relative to outdir unless absolute or starting
+ *                         with ./); deterministic: same state + same log => same result
+ *   peek LABEL ADDR [W]   append "frame LABEL value" to outdir/peek.log; ADDR hex 68k RAM address
+ *                         ($FF0000-$FFFFFF), W = 1/2/4 bytes (default 2)
+ *   roomsave PREFIX       watch $FF06AA/$FF06AC every frame: log room changes to peek.log, and 90
+ *                         frames after the first sighting of each (mystery,room) write
+ *                         outdir/PREFIX_<myst>_<room>.state   (roomsave off  to stop)
+ *   poke ADDR W VAL       write W (1/2/4) bytes, big-endian value VAL (hex), to 68k work RAM at ADDR (cheat; used to
+ *                         enable debug menus, e.g. `poke FF09ED 1 03`)
+ *   echo TEXT             append "frame TEXT" to outdir/peek.log
  *   vdp NAME              write outdir/NAME.{vram,cram,vsram,reg}: VRAM (64 KiB, big-endian
  *                         words as on hardware), CRAM (64 words, hardware 0000BBB0GGG0RRR0),
  *                         VSRAM (40 words), VDP registers (32 bytes)   [needs vdptrace core]
@@ -51,6 +63,74 @@ static unsigned int *p_hook_dma_src;
 static uint8_t *p_vram, *p_cram, *p_vsram, *p_reg;
 static FILE *tracef;
 static long frame;
+static FILE *recf;
+static uint16_t rec_pad;
+static long rec_n;
+static FILE *peekf;
+static void *(*p_retro_get_memory_data)(unsigned);
+static void (*p_retro_run)(void);
+
+static void rec_flush(void)
+{
+	if (recf && rec_n)
+		fprintf(recf, "%x %ld\n", rec_pad, rec_n);
+	rec_n = 0;
+}
+
+static char rs_prefix[256];
+static int rs_on;
+static unsigned rs_last = 0xFFFFFFFF;
+static long rs_due = -1;
+static unsigned rs_due_key;
+static uint8_t rs_seen[2][256];
+static size_t (*p_retro_serialize_size)(void);
+static bool (*p_retro_serialize)(void *, size_t);
+
+static unsigned rd_ram16(unsigned a)
+{
+	const uint8_t *wram = p_retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+	return (wram[(a & 0xFFFF) ^ 1] << 8) | wram[((a & 0xFFFF) + 1) ^ 1];
+}
+
+static void roomwatch(void)
+{
+	unsigned key = ((rd_ram16(0xFF06AA) & 1) << 8) | (rd_ram16(0xFF06AC) & 0xFF);
+	if (key != rs_last) {
+		rs_last = key;
+		if (!peekf) { char pp[1024]; snprintf(pp, sizeof pp, "%s/peek.log", outdir); peekf = fopen(pp, "a"); }
+		fprintf(peekf, "%ld roomchange m%u r%u\n", frame, key >> 8, key & 0xFF);
+		fflush(peekf);
+		if (!rs_seen[key >> 8][key & 0xFF]) {
+			rs_seen[key >> 8][key & 0xFF] = 1;
+			rs_due = frame + 90;
+			rs_due_key = key;
+		}
+	}
+	if (rs_due >= 0 && frame >= rs_due) {
+		char path[1024];
+		snprintf(path, sizeof path, "%s/%s_%u_%u.state", outdir, rs_prefix, rs_due_key >> 8, rs_due_key & 0xFF);
+		size_t sz = p_retro_serialize_size();
+		void *buf = malloc(sz);
+		p_retro_serialize(buf, sz);
+		FILE *f = fopen(path, "wb"); fwrite(buf, 1, sz, f); fclose(f);
+		free(buf);
+		rs_due = -1;
+	}
+}
+
+static void step(void)
+{
+	if (recf) {
+		if (rec_n && pad != rec_pad)
+			rec_flush();
+		rec_pad = pad;
+		rec_n++;
+	}
+	p_retro_run();
+	frame++;
+	if (rs_on)
+		roomwatch();
+}
 static unsigned cur_pc;
 static long last_rom = -1;
 
@@ -213,10 +293,6 @@ int main(int argc, char **argv)
 	void (*p_retro_set_input_state)(retro_input_state_t);
 	void (*p_retro_init)(void);
 	bool (*p_retro_load_game)(const struct retro_game_info *);
-	void (*p_retro_run)(void);
-	void *(*p_retro_get_memory_data)(unsigned);
-	size_t (*p_retro_serialize_size)(void);
-	bool (*p_retro_serialize)(void *, size_t);
 	bool (*p_retro_unserialize)(const void *, size_t);
 	void (*p_set_cpu_hook)(void (*)(int, int, unsigned, unsigned));
 	SYM(retro_set_environment); SYM(retro_set_video_refresh); SYM(retro_set_audio_sample);
@@ -253,13 +329,62 @@ int main(int argc, char **argv)
 		if (sscanf(line, "%31s", cmd) != 1 || cmd[0] == '#')
 			continue;
 		if (!strcmp(cmd, "run") && sscanf(line, "%*s %d", &n) == 1) {
-			while (n--) { p_retro_run(); frame++; }
+			while (n--) step();
 		} else if (!strcmp(cmd, "press") && sscanf(line, "%*s %255s %d", arg, &n) == 2) {
 			pad = 0;
 			for (char *c = arg; *c; c++)
 				if (btn_id(*c) >= 0) pad |= 1u << btn_id(*c);
-			while (n--) { p_retro_run(); frame++; }
+			while (n--) step();
 			pad = 0;
+		} else if (!strcmp(cmd, "record") && sscanf(line, "%*s %255s", arg) == 1) {
+			char path[1024];
+			snprintf(path, sizeof path, "%s/%s.inp", outdir, arg);
+			rec_flush();
+			if (recf) fclose(recf);
+			recf = fopen(path, "w");
+		} else if (!strcmp(cmd, "stoprecord")) {
+			rec_flush();
+			if (recf) fclose(recf);
+			recf = NULL;
+		} else if (!strcmp(cmd, "replay") && sscanf(line, "%*s %255s", arg) == 1) {
+			char path[1024];
+			if (arg[0] == '/' || !strncmp(arg, "./", 2)) snprintf(path, sizeof path, "%s", arg);
+			else snprintf(path, sizeof path, "%s/%s", outdir, arg);
+			FILE *rp = fopen(path, "r");
+			if (!rp) { perror(path); continue; }
+			unsigned m; long k;
+			while (fscanf(rp, "%x %ld", &m, &k) == 2) {
+				pad = m;
+				while (k-- > 0) step();
+			}
+			pad = 0;
+			fclose(rp);
+		} else if (!strcmp(cmd, "roomsave") && sscanf(line, "%*s %255s", arg) == 1) {
+			rs_on = strcmp(arg, "off") != 0;
+			if (rs_on) snprintf(rs_prefix, sizeof rs_prefix, "%s", arg);
+			rs_last = 0xFFFFFFFF;
+		} else if (!strcmp(cmd, "poke")) {
+			unsigned a, v; int w = 2;
+			if (sscanf(line, "%*s %x %d %x", &a, &w, &v) == 3) {
+				uint8_t *wram = p_retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+				for (int i = 0; i < w; i++)
+					wram[((a & 0xFFFF) + i) ^ 1] = v >> (8 * (w - 1 - i));
+			}
+		} else if (!strcmp(cmd, "peek")) {
+			char lab[64]; unsigned a; int w = 2;
+			if (sscanf(line, "%*s %63s %x %d", lab, &a, &w) >= 2) {
+				const uint8_t *wram = p_retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+				uint32_t v = 0;
+				for (int i = 0; i < w; i++)
+					v = (v << 8) | wram[((a & 0xFFFF) + i) ^ 1];
+				if (!peekf) { char pp[1024]; snprintf(pp, sizeof pp, "%s/peek.log", outdir); peekf = fopen(pp, "a"); }
+				fprintf(peekf, "%ld %s %0*x\n", frame, lab, w * 2, v);
+				fflush(peekf);
+			}
+		} else if (!strcmp(cmd, "echo")) {
+			if (!peekf) { char pp[1024]; snprintf(pp, sizeof pp, "%s/peek.log", outdir); peekf = fopen(pp, "a"); }
+			fprintf(peekf, "%ld %s", frame, line + 5);
+			fflush(peekf);
 		} else if (!strcmp(cmd, "shot") && sscanf(line, "%*s %255s", arg) == 1) {
 			write_shot(arg);
 		} else if (!strcmp(cmd, "ram") && sscanf(line, "%*s %255s", arg) == 1) {
@@ -328,6 +453,8 @@ int main(int argc, char **argv)
 			fprintf(stderr, "bad script line: %s", line);
 		}
 	}
+	rec_flush();
+	if (recf) fclose(recf);
 	char path[1024];
 	snprintf(path, sizeof path, "%s/cov.bin", outdir);
 	FILE *cf = fopen(path, "wb");
