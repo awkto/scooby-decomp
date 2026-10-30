@@ -523,3 +523,10 @@ a step that waited a fixed number of frames would have been fragile (the first f
 Two timing-sensitive spots that are *handled*, not hidden: the main loop sets the two-object flag a few frames after the item click (the
 driver polls up to 36 frames), and Scooby trails Shaggy by an unpredictable distance (the driver waits until he is on screen and standing still
 before using him as a click target).
+
+One real finding while running the long routes on the merged main (walk-to/camera/palette ports): `--hle all` failed once at the Lobby
+Outside Door in `hotel_8` while `--hle none` passed. It was **not an HLE divergence**: the planner drifted along the Lobby's diagonal
+stair fence (position inside its safety margin, field unknown there, axis-wise fallback oscillating) and in one of the two timings
+walked into the door's walk-on zone. Fix: the margin is chosen per position (largest margin whose field covers where Shaggy stands, re-chosen
+every step), after which both specs complete (`hlebisect.py` was not needed). Lesson for the driver: anything that wanders is
+timing-fragile; the zone-avoidance and per-position margin keep it deterministic enough for both specs.
