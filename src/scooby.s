@@ -59,6 +59,7 @@
 	.equ ram_actor_depth_y, 0xff05ac
 	.equ ram_shaggy_facing, 0xff05b8
 	.equ ram_scooby_facing, 0xff05ba
+	.equ ram_duel_clown_push, 0xff05bc
 	.equ ram_actor_shown_depth_x, 0xff05c4
 	.equ ram_actor_shown_depth_y, 0xff05d0
 	.equ ram_actor_target_x, 0xff05dc
@@ -172,8 +173,23 @@
 	.equ ram_09e9, 0xff09e9
 	.equ ram_09ea, 0xff09ea
 	.equ ram_09eb, 0xff09eb
+	.equ ram_duel_hit, 0xff09ec
 	.equ ram_09ed, 0xff09ed
 	.equ ram_inv_list, 0xff0a1e
+	.equ ram_duel_prev, 0xff0a84
+	.equ ram_duel_speed0, 0xff0a90
+	.equ ram_duel_speed1, 0xff0a92
+	.equ ram_duel_recoil0, 0xff0a94
+	.equ ram_duel_recoil1, 0xff0a96
+	.equ ram_duel_hp0, 0xff0a98
+	.equ ram_duel_hp1, 0xff0a9a
+	.equ ram_duel_aim, 0xff0a9c
+	.equ ram_duel_turn, 0xff0a9e
+	.equ ram_duel_tmr_gas0, 0xff0aa0
+	.equ ram_duel_tmr_gas1, 0xff0aa1
+	.equ ram_duel_tmr_rec0, 0xff0aa2
+	.equ ram_duel_tmr_rec1, 0xff0aa3
+	.equ ram_duel_tmr_steer, 0xff0aa4
 	.equ ram_actor_path_delay, 0xff0aa5
 	.equ ram_actor_path_reload, 0xff0aab
 	.equ ram_camera_scroll_req, 0xff0ab3
@@ -778,7 +794,7 @@ game_start:
 	btst.b #0x2,(ram_09ed).l
 	beq.s loc_000D30
 	move.w #0x0,(ram_room_entry_ofs).l
-	move.w (0xff0a90).l,(ram_room_index).l
+	move.w (ram_duel_speed0).l,(ram_room_index).l
 	bsr.w room_load
 loc_000D30:
 	bsr.w room_fade_in
@@ -3259,14 +3275,14 @@ loc_00324A:
 	bset.b #0x2,(ram_09e8).l
 	bset.b #0x6,(ram_verb_state).l
 	move.w #0x0,(ram_shaggy_facing).l
-	move.l #0x0,(0xff0a90).l
-	move.l #0x0,(0xff0a94).l
-	move.l #0x0,(0xff0aa0).l
-	move.w #0x3f,(0xff0a98).l
-	move.w #0x3f,(0xff0a9a).l
-	move.b #0x0,(0xff0aa4).l
-	move.w #0xffff,(0xff0a9c).l
-	bsr.w sub_00393A
+	move.l #0x0,(ram_duel_speed0).l
+	move.l #0x0,(ram_duel_recoil0).l
+	move.l #0x0,(ram_duel_tmr_gas0).l
+	move.w #0x3f,(ram_duel_hp0).l
+	move.w #0x3f,(ram_duel_hp1).l
+	move.b #0x0,(ram_duel_tmr_steer).l
+	move.w #0xffff,(ram_duel_aim).l
+	bsr.w duel_meters
 	lea.l (ram_text_buf).l,a0
 	move.w #0xa300,d0
 	move.w #0x80,d1
@@ -3302,9 +3318,9 @@ loc_00331A:
 sub_003372:
 	bsr.w wait_vblank
 	bsr.w actor_animate
-	tst.w (0xff0a98).l
+	tst.w (ram_duel_hp0).l
 	bmi.w loc_0038C2
-	tst.w (0xff0a9a).l
+	tst.w (ram_duel_hp1).l
 	bmi.w loc_0038A4
 	btst.b #0x7,(ram_pad1).l
 	bne.s loc_0033D8
@@ -3331,100 +3347,100 @@ loc_0033D8:
 	lea.l (ram_inv_nametable).l,a0
 	move.w #0xa400,d0
 	bsr.w vdp_copy_to_vram
-	tst.b (0xff0aa0).l
+	tst.b (ram_duel_tmr_gas0).l
 	beq.s loc_003406
-	subq.b #0x1,(0xff0aa0).l
+	subq.b #0x1,(ram_duel_tmr_gas0).l
 loc_003406:
-	tst.b (0xff0aa1).l
+	tst.b (ram_duel_tmr_gas1).l
 	beq.s loc_003414
-	subq.b #0x1,(0xff0aa1).l
+	subq.b #0x1,(ram_duel_tmr_gas1).l
 loc_003414:
-	tst.b (0xff0aa2).l
+	tst.b (ram_duel_tmr_rec0).l
 	beq.s loc_003422
-	subq.b #0x1,(0xff0aa2).l
+	subq.b #0x1,(ram_duel_tmr_rec0).l
 loc_003422:
-	tst.b (0xff0aa3).l
+	tst.b (ram_duel_tmr_rec1).l
 	beq.s loc_003430
-	subq.b #0x1,(0xff0aa3).l
+	subq.b #0x1,(ram_duel_tmr_rec1).l
 loc_003430:
-	tst.b (0xff0aa4).l
+	tst.b (ram_duel_tmr_steer).l
 	beq.s loc_00343E
-	subq.b #0x1,(0xff0aa4).l
+	subq.b #0x1,(ram_duel_tmr_steer).l
 loc_00343E:
-	tst.w (0xff0a96).l
+	tst.w (ram_duel_recoil1).l
 	beq.s loc_003466
-	tst.b (0xff0aa3).l
+	tst.b (ram_duel_tmr_rec1).l
 	bne.s loc_003476
 	move.w #0x7,d0
-	sub.w (0xff0a96).l,d0
-	move.b d0,(0xff0aa3).l
-	subq.w #0x1,(0xff0a96).l
+	sub.w (ram_duel_recoil1).l,d0
+	move.b d0,(ram_duel_tmr_rec1).l
+	subq.w #0x1,(ram_duel_recoil1).l
 	bra.s loc_003476
 loc_003466:
 	andi.b #0xe7,(ram_09ea).l
 	bclr.b #0x7,(ram_09ea).l
 loc_003476:
-	tst.w (0xff0a94).l
+	tst.w (ram_duel_recoil0).l
 	beq.s loc_00349E
-	tst.b (0xff0aa2).l
+	tst.b (ram_duel_tmr_rec0).l
 	bne.s loc_0034AE
 	move.w #0x7,d0
-	sub.w (0xff0a94).l,d0
-	move.b d0,(0xff0aa2).l
-	subq.w #0x1,(0xff0a94).l
+	sub.w (ram_duel_recoil0).l,d0
+	move.b d0,(ram_duel_tmr_rec0).l
+	subq.w #0x1,(ram_duel_recoil0).l
 	bra.s loc_0034AE
 loc_00349E:
 	andi.b #0xf9,(ram_09ea).l
 	bclr.b #0x6,(ram_09ea).l
 loc_0034AE:
-	tst.b (0xff0aa1).l
+	tst.b (ram_duel_tmr_gas1).l
 	bne.s sub_0034FE
-	cmpi.w #0x7,(0xff0a92).l
+	cmpi.w #0x7,(ram_duel_speed1).l
 	beq.s sub_0034FE
-	move.w (0xff0a92).l,d0
+	move.w (ram_duel_speed1).l,d0
 	addq.w #0x1,d0
-	move.w d0,(0xff0a92).l
+	move.w d0,(ram_duel_speed1).l
 	addq.w #0x8,d0
-	move.b d0,(0xff0aa1).l
+	move.b d0,(ram_duel_tmr_gas1).l
 	bra.s sub_0034FE
 sub_0034D8:
-	tst.w (0xff0a92).l
+	tst.w (ram_duel_speed1).l
 	beq.s sub_0034FE
-	tst.b (0xff0aa1).l
+	tst.b (ram_duel_tmr_gas1).l
 	bne.s sub_0034FE
 	move.w #0x7,d0
-	sub.w (0xff0a92).l,d0
-	move.b d0,(0xff0aa1).l
-	subq.w #0x1,(0xff0a92).l
+	sub.w (ram_duel_speed1).l,d0
+	move.b d0,(ram_duel_tmr_gas1).l
+	subq.w #0x1,(ram_duel_speed1).l
 sub_0034FE:
 	btst.b #0x6,(ram_pad1).l
 	beq.s loc_003512
 	btst.b #0x4,(ram_pad1).l
 	bne.s loc_00353C
 loc_003512:
-	tst.b (0xff0aa0).l
+	tst.b (ram_duel_tmr_gas0).l
 	bne.s loc_003562
-	cmpi.w #0x7,(0xff0a90).l
+	cmpi.w #0x7,(ram_duel_speed0).l
 	beq.s loc_003562
-	move.w (0xff0a90).l,d0
+	move.w (ram_duel_speed0).l,d0
 	addq.w #0x1,d0
-	move.w d0,(0xff0a90).l
+	move.w d0,(ram_duel_speed0).l
 	addq.w #0x8,d0
-	move.b d0,(0xff0aa0).l
+	move.b d0,(ram_duel_tmr_gas0).l
 	bra.s loc_003562
 loc_00353C:
-	tst.w (0xff0a90).l
+	tst.w (ram_duel_speed0).l
 	beq.s loc_003562
-	tst.b (0xff0aa0).l
+	tst.b (ram_duel_tmr_gas0).l
 	bne.s loc_003562
 	move.w #0x7,d0
-	sub.w (0xff0a90).l,d0
-	move.b d0,(0xff0aa0).l
-	subq.w #0x1,(0xff0a90).l
+	sub.w (ram_duel_speed0).l,d0
+	move.b d0,(ram_duel_tmr_gas0).l
+	subq.w #0x1,(ram_duel_speed0).l
 loc_003562:
-	tst.w (0xff0a96).l
+	tst.w (ram_duel_recoil1).l
 	beq.s loc_003574
-	tst.w (0xff0a92).l
+	tst.w (ram_duel_speed1).l
 	bne.w loc_00362E
 loc_003574:
 	btst.b #0x2,(ram_actors_anim_done).l
@@ -3440,16 +3456,16 @@ loc_003592:
 loc_00359E:
 	andi.w #0x7,d0
 	move.w d0,-(sp)
-	bsr.w sub_003A68
+	bsr.w duel_aim
 	move.w (sp)+,d0
 	cmp.w d0,d1
 	beq.s loc_003608
-	tst.b (0xff0aa4).l
+	tst.b (ram_duel_tmr_steer).l
 	bne.s loc_003608
-	move.b #0x14,(0xff0aa4).l
-	cmp.w (0xff0a9c).l,d1
+	move.b #0x14,(ram_duel_tmr_steer).l
+	cmp.w (ram_duel_aim).l,d1
 	beq.s loc_0035FE
-	move.w d1,(0xff0a9c).l
+	move.w d1,(ram_duel_aim).l
 	sub.w d0,d1
 	andi.w #0x7,d1
 	cmpi.w #0x4,d1
@@ -3457,28 +3473,28 @@ loc_00359E:
 	btst.b #0x3,(ram_09ea).l
 	bne.s loc_0035EC
 loc_0035E2:
-	move.w #0xffff,(0xff0a9e).l
+	move.w #0xffff,(ram_duel_turn).l
 	bra.s loc_0035FE
 loc_0035EC:
 	btst.b #0x4,(ram_09ea).l
 	bne.s loc_0035E2
-	move.w #0x1,(0xff0a9e).l
+	move.w #0x1,(ram_duel_turn).l
 loc_0035FE:
-	add.w (0xff0a9e).l,d0
+	add.w (ram_duel_turn).l,d0
 	andi.w #0x7,d0
 loc_003608:
 	cmp.w (ram_actor_anim+4).l,d0
 	beq.s loc_00362E
-	subq.w #0x1,(0xff0a92).l
+	subq.w #0x1,(ram_duel_speed1).l
 	bpl.s loc_003620
-	move.w #0x0,(0xff0a92).l
+	move.w #0x0,(ram_duel_speed1).l
 loc_003620:
 	move.w d0,(ram_actor_anim+4).l
 	bset.b #0x2,(ram_actors_anim_new).l
 loc_00362E:
-	tst.w (0xff0a94).l
+	tst.w (ram_duel_recoil0).l
 	bne.s loc_003640
-	tst.w (0xff0a90).l
+	tst.w (ram_duel_speed0).l
 	beq.w loc_0036AA
 loc_003640:
 	btst.b #0x0,(ram_actors_anim_done).l
@@ -3503,24 +3519,24 @@ loc_003680:
 	andi.w #0x7,d0
 	cmp.w (ram_actor_anim).l,d0
 	beq.s loc_0036AA
-	subq.w #0x1,(0xff0a90).l
+	subq.w #0x1,(ram_duel_speed0).l
 	bpl.s loc_00369C
-	move.w #0x0,(0xff0a90).l
+	move.w #0x0,(ram_duel_speed0).l
 loc_00369C:
 	move.w d0,(ram_actor_anim).l
 	bset.b #0x0,(ram_actors_anim_new).l
 loc_0036AA:
-	move.w (0xff0a92).l,d0
+	move.w (ram_duel_speed1).l,d0
 	move.w (ram_actor_anim+4).l,d1
 	add.w d0,d0
 	lsl.w #0x5,d1
 	add.w d1,d0
-	move.w (0xff0a96).l,d2
-	move.w (0xff05bc).l,d1
+	move.w (ram_duel_recoil1).l,d2
+	move.w (ram_duel_clown_push).l,d1
 	add.w d2,d2
 	lsl.w #0x5,d1
 	add.w d2,d1
-	andi.b #0xfc,(0xff09ec).l
+	andi.b #0xfc,(ram_duel_hit).l
 	move.w (ram_actor_x2).l,d2
 	move.w (ram_actor_y2).l,d3
 	lea.l (dat_003D96).l,a0
@@ -3535,16 +3551,16 @@ loc_0036AA:
 	move.l a0,-(sp)
 	bsr.w walk_blocked_line_probe
 	beq.s loc_003724
-	bsr.w sub_003CFE
-	bset.b #0x1,(0xff09ec).l
+	bsr.w duel_wall1
+	bset.b #0x1,(ram_duel_hit).l
 loc_003724:
 	movea.l (sp)+,a0
-	move.w (0xff0a90).l,d0
+	move.w (ram_duel_speed0).l,d0
 	move.w (ram_actor_anim).l,d1
 	add.w d0,d0
 	lsl.w #0x5,d1
 	add.w d1,d0
-	move.w (0xff0a94).l,d2
+	move.w (ram_duel_recoil0).l,d2
 	move.w (ram_shaggy_facing).l,d1
 	add.w d2,d2
 	lsl.w #0x5,d1
@@ -3561,46 +3577,46 @@ loc_003724:
 	move.w d3,(ram_line_probe_y).l
 	bsr.w walk_blocked_line_probe
 	beq.s loc_003790
-	bsr.w sub_003C70
-	bset.b #0x0,(0xff09ec).l
+	bsr.w duel_wall0
+	bset.b #0x0,(ram_duel_hit).l
 loc_003790:
-	bsr.w sub_0039D4
+	bsr.w duel_overlap
 	beq.s loc_0037F0
-	bsr.w sub_003AF0
-	move.w (0xff0a84).l,(ram_shaggy_x).l
-	move.w (0xff0a86).l,(ram_shaggy_y).l
-	move.w (0xff0a88).l,(ram_actor_x2).l
-	move.w (0xff0a8a).l,(ram_actor_y2).l
-	move.w (0xff0a8c).l,(ram_actor_anim).l
-	move.w (0xff0a8e).l,(ram_actor_anim+4).l
+	bsr.w duel_bump
+	move.w (ram_duel_prev).l,(ram_shaggy_x).l
+	move.w (ram_duel_prev+2).l,(ram_shaggy_y).l
+	move.w (ram_duel_prev+4).l,(ram_actor_x2).l
+	move.w (ram_duel_prev+6).l,(ram_actor_y2).l
+	move.w (ram_duel_prev+8).l,(ram_actor_anim).l
+	move.w (ram_duel_prev+10).l,(ram_actor_anim+4).l
 	ori.b #0x5,(ram_actors_anim_new).l
 	move.w #0xffff,(ram_actor_timer).l
 	move.w #0xffff,(ram_actor_timer2).l
 	bra.s loc_003860
 loc_0037F0:
-	btst.b #0x0,(0xff09ec).l
+	btst.b #0x0,(ram_duel_hit).l
 	beq.s loc_003828
-	move.w (0xff0a84).l,(ram_shaggy_x).l
-	move.w (0xff0a86).l,(ram_shaggy_y).l
-	move.w (0xff0a8c).l,(ram_actor_anim).l
+	move.w (ram_duel_prev).l,(ram_shaggy_x).l
+	move.w (ram_duel_prev+2).l,(ram_shaggy_y).l
+	move.w (ram_duel_prev+8).l,(ram_actor_anim).l
 	move.w #0xffff,(ram_actor_timer).l
 	bset.b #0x0,(ram_actors_anim_new).l
 loc_003828:
-	btst.b #0x1,(0xff09ec).l
+	btst.b #0x1,(ram_duel_hit).l
 	beq.s loc_003860
-	move.w (0xff0a88).l,(ram_actor_x2).l
-	move.w (0xff0a8a).l,(ram_actor_y2).l
-	move.w (0xff0a8e).l,(ram_actor_anim+4).l
+	move.w (ram_duel_prev+4).l,(ram_actor_x2).l
+	move.w (ram_duel_prev+6).l,(ram_actor_y2).l
+	move.w (ram_duel_prev+10).l,(ram_actor_anim+4).l
 	move.w #0xffff,(ram_actor_timer2).l
 	bset.b #0x2,(ram_actors_anim_new).l
 loc_003860:
-	move.w (ram_actor_anim+4).l,(0xff0a8e).l
-	move.w (ram_actor_anim).l,(0xff0a8c).l
-	move.w (ram_shaggy_x).l,(0xff0a84).l
-	move.w (ram_shaggy_y).l,(0xff0a86).l
-	move.w (ram_actor_x2).l,(0xff0a88).l
-	move.w (ram_actor_y2).l,(0xff0a8a).l
-	bsr.w sub_00393A
+	move.w (ram_actor_anim+4).l,(ram_duel_prev+10).l
+	move.w (ram_actor_anim).l,(ram_duel_prev+8).l
+	move.w (ram_shaggy_x).l,(ram_duel_prev).l
+	move.w (ram_shaggy_y).l,(ram_duel_prev+2).l
+	move.w (ram_actor_x2).l,(ram_duel_prev+4).l
+	move.w (ram_actor_y2).l,(ram_duel_prev+6).l
+	bsr.w duel_meters
 	bra.w sub_003372
 loc_0038A4:
 	move.w #0x8,(ram_actor_anim+4).l
@@ -3630,9 +3646,9 @@ loc_0038DC:
 	bclr.b #0x0,(ram_09ea).l
 	bclr.b #0x2,(ram_09e8).l
 	rts
-sub_00393A:
+duel_meters:
 	lea.l (ram_text_buf).l,a0
-	move.w (0xff0a98).l,d4
+	move.w (ram_duel_hp0).l,d4
 	move.w #0x7,d3
 loc_00394A:
 	moveq #0x0,d5
@@ -3656,7 +3672,7 @@ loc_00395E:
 	move.l #0x0,(a0)+
 	dbra d3,loc_00394A
 	lea.l (ram_inv_nametable).l,a0
-	move.w (0xff0a9a).l,d4
+	move.w (ram_duel_hp1).l,d4
 	move.w #0x7,d3
 loc_003996:
 	moveq #0x0,d5
@@ -3680,7 +3696,7 @@ loc_0039AA:
 	move.l #0x0,(a0)+
 	dbra d3,loc_003996
 	rts
-sub_0039D4:
+duel_overlap:
 	move.w (ram_actor_anim).l,d0
 	add.w d0,d0
 	lea.l (dat_0F88DC).l,a0
@@ -3732,13 +3748,13 @@ loc_003A60:
 loc_003A64:
 	moveq #0x0,d0
 	rts
-sub_003A68:
-	bsr.w sub_003A7A
+duel_aim:
+	bsr.w duel_bearing
 	add.w d0,d0
 	lea.l (dat_003D86).l,a0
 	move.w (0x0,a0,d0.w),d1
 	rts
-sub_003A7A:
+duel_bearing:
 	moveq #0x0,d4
 	move.w (ram_actor_x2).l,d0
 	sub.w (ram_shaggy_x).l,d0
@@ -3792,16 +3808,16 @@ loc_003AE4:
 	lsr.w #0x1,d4
 	move.w d4,d0
 	rts
-sub_003AF0:
+duel_bump:
 	ori.b #0xc0,(ram_09ea).l
 	dc.w 0x203c,0x0000,0x0072	| move.l #$72, d0
 	bsr.w sound_play
-	bsr.w sub_003A7A
+	bsr.w duel_bearing
 	move.w d0,d4
 	add.w d0,d0
 	lea.l (dat_003D86).l,a0
 	move.w (0x0,a0,d0.w),d5
-	move.w (0xff0a90).l,d0
+	move.w (ram_duel_speed0).l,d0
 	cmp.w (ram_actor_anim).l,d4
 	beq.s loc_003B24
 	lsr.w #0x1,d0
@@ -3815,9 +3831,9 @@ loc_003B30:
 	bne.s loc_003B3A
 	lsr.w #0x1,d0
 loc_003B3A:
-	sub.w d0,(0xff0a9a).l
+	sub.w d0,(ram_duel_hp1).l
 	move.w d0,d1
-	move.w (0xff0a92).l,d0
+	move.w (ram_duel_speed1).l,d0
 	cmp.w (ram_actor_anim+4).l,d5
 	beq.s loc_003B52
 	lsr.w #0x1,d0
@@ -3831,7 +3847,7 @@ loc_003B5E:
 	bne.s loc_003B68
 	lsr.w #0x1,d0
 loc_003B68:
-	sub.w d0,(0xff0a98).l
+	sub.w d0,(ram_duel_hp0).l
 	cmp.w d0,d1
 	beq.w loc_003B8A
 	blt.w loc_003B80
@@ -3842,14 +3858,14 @@ loc_003B80:
 loc_003B86:
 	bsr.w sound_play
 loc_003B8A:
-	move.w (0xff0a90).l,(0xff0a96).l
-	cmpi.w #0x4,(0xff0a96).l
+	move.w (ram_duel_speed0).l,(ram_duel_recoil1).l
+	cmpi.w #0x4,(ram_duel_recoil1).l
 	bge.s loc_003BA6
-	move.w #0x4,(0xff0a96).l
+	move.w #0x4,(ram_duel_recoil1).l
 loc_003BA6:
-	move.w #0x0,(0xff0a92).l
-	move.b #0x8,(0xff0aa1).l
-	move.b #0x8,(0xff0aa3).l
+	move.w #0x0,(ram_duel_speed1).l
+	move.b #0x8,(ram_duel_tmr_gas1).l
+	move.b #0x8,(ram_duel_tmr_rec1).l
 	move.l (ram_rng_state).l,d6
 	eori.l #-0x1,d6
 	rol.l #0x1,d6
@@ -3862,18 +3878,18 @@ loc_003BA6:
 loc_003BE2:
 	bset.b #0x3,(ram_09ea).l
 loc_003BEA:
-	move.w d4,(0xff05bc).l
+	move.w d4,(ram_duel_clown_push).l
 	add.w d4,d4
 	lea.l (dat_003D86).l,a0
 	move.w (0x0,a0,d4.w),d4
-	move.w (0xff0a92).l,(0xff0a94).l
-	cmpi.w #0x4,(0xff0a94).l
+	move.w (ram_duel_speed1).l,(ram_duel_recoil0).l
+	cmpi.w #0x4,(ram_duel_recoil0).l
 	bge.s loc_003C18
-	move.w #0x4,(0xff0a94).l
+	move.w #0x4,(ram_duel_recoil0).l
 loc_003C18:
-	move.w #0x0,(0xff0a90).l
-	move.b #0x8,(0xff0aa0).l
-	move.b #0x8,(0xff0aa2).l
+	move.w #0x0,(ram_duel_speed0).l
+	move.b #0x8,(ram_duel_tmr_gas0).l
+	move.b #0x8,(ram_duel_tmr_rec0).l
 	move.l (ram_rng_state).l,d6
 	eori.l #-0x1,d6
 	rol.l #0x1,d6
@@ -3891,19 +3907,19 @@ loc_003C5C:
 	add.w d4,d4
 	move.w (0x0,a0,d4.w),d0
 	rts
-sub_003C70:
+duel_wall0:
 	dc.w 0x203c,0x0000,0x0060	| move.l #$60, d0
 	bsr.w sound_play
 	btst.b #0x6,(ram_09ea).l
 	beq.s loc_003C98
-	move.w (0xff0a94).l,d0
-	sub.w d0,(0xff0a98).l
+	move.w (ram_duel_recoil0).l,d0
+	sub.w d0,(ram_duel_hp0).l
 	bclr.b #0x6,(ram_09ea).l
 loc_003C98:
-	move.w (0xff0a90).l,(0xff0a94).l
-	move.w #0x0,(0xff0a90).l
-	move.b #0x8,(0xff0aa0).l
-	move.b #0x8,(0xff0aa2).l
+	move.w (ram_duel_speed0).l,(ram_duel_recoil0).l
+	move.w #0x0,(ram_duel_speed0).l
+	move.b #0x8,(ram_duel_tmr_gas0).l
+	move.b #0x8,(ram_duel_tmr_rec0).l
 	move.l (ram_rng_state).l,d6
 	eori.l #-0x1,d6
 	rol.l #0x1,d6
@@ -3921,19 +3937,19 @@ loc_003CE6:
 	lea.l (dat_003D86).l,a0
 	move.w (0x0,a0,d6.w),(ram_shaggy_facing).l
 	rts
-sub_003CFE:
+duel_wall1:
 	dc.w 0x203c,0x0000,0x0060	| move.l #$60, d0
 	bsr.w sound_play
 	btst.b #0x7,(ram_09ea).l
 	beq.s loc_003D26
-	move.w (0xff0a96).l,d0
-	sub.w d0,(0xff0a9a).l
+	move.w (ram_duel_recoil1).l,d0
+	sub.w d0,(ram_duel_hp1).l
 	bclr.b #0x7,(ram_09ea).l
 loc_003D26:
-	move.w (0xff0a92).l,(0xff0a96).l
-	move.w #0x0,(0xff0a92).l
-	move.b #0x8,(0xff0aa1).l
-	move.b #0x8,(0xff0aa3).l
+	move.w (ram_duel_speed1).l,(ram_duel_recoil1).l
+	move.w #0x0,(ram_duel_speed1).l
+	move.b #0x8,(ram_duel_tmr_gas1).l
+	move.b #0x8,(ram_duel_tmr_rec1).l
 	move.l (ram_rng_state).l,d6
 	eori.l #-0x1,d6
 	rol.l #0x1,d6
@@ -3948,7 +3964,7 @@ loc_003D6C:
 loc_003D74:
 	move.w (ram_actor_anim+4).l,d6
 	add.w d6,d6
-	move.w (dat_003D86,pc,d6.w),(0xff05bc).l
+	move.w (dat_003D86,pc,d6.w),(ram_duel_clown_push).l
 	rts
 | data 0x003D86-0x003E96
 dat_003D86:
@@ -8474,7 +8490,7 @@ actors_init:
 	clr.w (ram_actor_anim+10).l
 	clr.w (ram_shaggy_facing).l
 	clr.w (ram_scooby_facing).l
-	clr.w (0xff05bc).l
+	clr.w (ram_duel_clown_push).l
 	clr.w (0xff05be).l
 	clr.w (0xff05c0).l
 	clr.w (0xff05c2).l
@@ -9704,7 +9720,7 @@ loc_009368:
 	dbra d0,loc_009368
 	move.b (ram_pw_raw).l,d0
 	andi.w #0xff,d0
-	move.w d0,(0xff0a90).l
+	move.w d0,(ram_duel_speed0).l
 	bra.w menu_start_game
 password_read_byte:
 	moveq #0x0,d2
