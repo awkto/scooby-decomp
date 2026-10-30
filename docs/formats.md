@@ -277,10 +277,164 @@ sprite tiles `$F000-$FEFF`. Sprite tiles are streamed from the RAM buffers `$FF3
 `$FF3800` every few frames. `$FF4800` is also DMA'd every few frames to `$A300-$AA7F`, which
 is rows 6-20 of the `$A000` plane. Its purpose is unknown: those rows are not on screen in
 the bottom band.
-Sprite graphics are a separate subsystem and are not decoded here.
+Sprite graphics: see "Actor sprites" below.
 
 Lobby specifics: mystery 0, room 16, 64×19 cells (512×152 px). After the start route, the camera
 is at x = 160 (`$FF07F8` = `$FF60`).
+
+## Actor sprites
+
+Code: `port/src/game/sprite.c` (functions in `docs/subsystems/sprite.md`). Decoder and renderer:
+`tools/py/gfx.py sprite` (writes PNG sheets; see the end of this section).
+
+### Slots
+
+Six actor slots: 0 Shaggy, 1 Scooby, 2-5 the actors of the room (assigned by `room_setup_actors`).
+Each slot owns a RAM staging buffer and a VRAM tile area:
+
+| slot | RAM buffer (`$0FC9F4`) | VRAM (`$0FC860`) | tile index |
+|---|---|---|---|
+| 0 | `$FF3000` | `$F000` | `$780` |
+| 1 | `$FF3800` | `$F780` | `$7BC` |
+| 2 | `$FF4000` | `$9B00` | `$4D8` |
+| 3 | `$FF4800` | `$A300` | `$518` |
+| 4 | `$FF5000` | `$9380` | `$49C` |
+| 5 | `$FF5800` | `$8C00` | `$460` |
+
+(The `$FF3000`/`$FF4000` buffers are also the LZSS ring and room decompression buffers during a room load.)
+
+### Animation sets
+
+`$032670` holds 36 longs: the animation set of each sprite type (object `+$02` for actors). Set 0
+(`$032700`) is Shaggy and set 1 (`$0642D0`) Scooby; `actors_init` `$00801A` puts them in slots 0/1.
+All offsets inside a set are relative to the set's address.
+
+```
++0  u16 kind          1 = Shaggy, 2 = Scooby, 3.. = the index+1 in $032670 (mostly)
++2  u16 anim_table    -> u16[n_anims] offsets of the animation scripts
++4  u16 frame_table   -> u16[n_frames] offsets of the frame headers (not used by the code
+                         found so far; the scripts point at frames directly). It ends where the
+                         first script starts, and the anim table ends at frame_table.
++6  u16 ?             (just before the first frame's RLE data; meaning unknown)
+```
+
+Shaggy: 116 animations, 359 frames. Scooby: 86 animations, 260 frames. Animation numbers used by the
+walking code: 0-3 walk right/left/up/down, 4-7 stand, `$20`-`$23` bored (docs/subsystems/walking.md).
+
+### Animation scripts
+
+A script is a list of `{u16 op, u16 arg}` pairs, run by `actor_animate` `$00B0B8` whenever the slot's
+timer `$FF0618+2i` is ≤ 0 (`actor_dma` decrements the timers in VBlank):
+
+| op | name | effect |
+|---|---|---|
+| 2 | frame | show the frame whose header is at `arg`; timer = delay; **yield** |
+| 3 | goto | continue at `arg` (loops). With the slot's `$FF0AC3` bit ("path once") set: clear it and act like op `$0D` |
+| 4 | delay | frames per animation frame (`$FF050C+2i`) |
+| 5 | wait | timer = `arg`; **yield** |
+| 6 | move | actor x += (s8)low byte, y += (s8)high byte (pixels) |
+| 9 | end | set `ANIM_DONE` (`$FF0ABC` bit i); the script stops (the last frame stays) |
+| `$0D` | anim | animation number `$FF0488+2i` = `arg`, clear `ANIM_LOOPED`; the script continues |
+| `$11` | sound | `sound_play(arg)`, or `sound_stop(arg & $7FFF)` when bit 15 is set |
+| other | | ignored |
+
+A new animation is requested by writing `$FF0488+2i` and setting bit i of `$FF0AB5`; the script restarts
+at `anim_table[n]` once the previous frame has left the decode pipeline. Example, Shaggy animation 0 (walk
+right): `delay 6`, 8 × `frame`, `goto` back to the first frame.
+
+The animation of an off-screen actor (hot spot more than 80 px outside the view) does not advance,
+except Scooby's.
+
+### Frame header (14 bytes)
+
+```
++0  s16 hot spot x   (pixels from the frame's left edge: the actor's feet)
++2  s16 hot spot y
++4  u8  width   ($20, $30, $40, $50, $70)
++5  u8  height  ($30, $40, $50)
++6  u32 offset of the frame's RLE stream (+ set address)
++A  u16 sprite attribute bits ORed into every piece: palette (bits 13-14), bit 11 = h-flip
++C  u16 ? (0 or 1)
+```
+
+In follow mode (`$FF09E8` bit 3, script sub-op `$15`) the words at `+$0E/+$10` (the next header's hot spot)
+of Shaggy's current frame give the attachment point of the partner actor.
+
+### Frame data
+
+One RLE stream (format 2 above). Its unpacked size tells the kind:
+
+* `w*h/2` bytes: **4bpp tiles in piece order**, decoded straight into the slot buffer (most room actors);
+* `w*h` bytes: **chunky pixels**, one byte (0-15) per pixel, row-major. Shaggy, Scooby and the sets
+  6, 9, 14, 16 use this. These actors are "depth-scaled" (`$FF0AB8` bit i): the stream is decoded to
+  `$FF6000` and the scaler writes the tiles.
+
+### Depth scaling
+
+The scale is the slot's depth `$FF05A0+2i` (x) / `$FF05AC+2i` (y), 0 = full size, set from the room's per-row
+depth table by `actors_update` (docs/subsystems/walking.md). `$00C3F0 + depth*16` holds 8 words of keep
+bits (MSB first): bit set = keep that column (x mask, 3 words for 48 px / 5 for 80 px) or row (y mask).
+Depth 0 keeps all. The scaler (`$00D468` for 48×80, `$00DA6A` for 80×48) keeps the marked rows and
+columns, packs them to the top left, and fills the rest with colour 0. Each 8-pixel group of an output row
+is one long, stored at `buffer + table[row*groups + group]` (tables `$00BC70` for 48×80 and `$00C030` for
+80×48: they map the raster onto the column-major tiles of the pieces). `$00D3F0`/`$00D42C` do the same
+without scaling; they are used instead when `$FF09E9` bit 3 is set and the scaled hot spot y is below 2.
+
+Because the picture shrinks towards its top left, the hot spot is scaled too:
+`hot_x' = (hot_x * (256 - depth_x) & $FFFF) >> 8` (h-flipped frames: `w - ((w - hot_x) * (256 - depth_x) & $FFFF) >> 8`),
+`hot_y'` likewise. They are stored at `$FF04AC+2i` / `$FF04B8+2i`.
+
+### Pieces
+
+A frame is drawn as several hardware sprites. The layout depends only on the size (tables `$0FC86C`-`$0FC9EC`:
+x deltas, x deltas when flipped, y deltas, tile offsets, SAT size words):
+
+| size | tiles | DMA words | pieces (x, y, cols×rows, first tile) |
+|---|---|---|---|
+| 112×64 (`$70`) | 112 | `$700` | (0,0) 4×4 @0, (32,0) 4×4 @16, (64,0) 4×4 @32, (96,0) 2×4 @48, then the same at y 32 @56.. |
+| 64×64 (`$40`) | 64 | `$400` | 2×2 pieces of 4×4: @0, @16, @32, @48 |
+| 48×80 (`$30`) | 60 | `$3C0` | (0,0) 4×4 @0, (32,0) 2×4 @16, (0,32) 4×4 @24, (32,32) 2×4 @40, (0,64) 4×2 @48, (32,64) 2×2 @56 |
+| 80×48 (other) | 60 | `$3C0` | (0,0) 4×4 @0, (32,0) 4×4 @16, (64,0) 2×4 @32, (0,32) 4×2 @40, (32,32) 4×2 @48, (64,32) 2×2 @56 |
+| 32×80 (`$20`, h `$50`) | 40 | `$280` | (0,0) 2×4 @0, (16,0) 2×4 @8, (0,32) 2×4 @16, (16,32) 2×4 @24, (0,64) 2×2 @32, (16,64) 2×2 @36 |
+| 32×other | 32 | `$200` | six 4×4 pieces stacked at y 0..160 (tiles 0,0,0,0,0,16), y −76: looks unused |
+
+Tiles inside a piece are column-major (hardware sprite order). When the frame's attribute bit 11 is set
+the pieces are mirrored with the "flipped" x deltas and the VDP flips each piece.
+
+### From script to screen
+
+```
+actor_animate (main loop)                     actor_dma (VBlank)                 sprite_build (VBlank)
+ op frame: tiles frame -> RLE into buffer,     one slot per frame, only while     latch the new frame for display when
+           TILES_READY ($FF0AB6)                the raster is in lines $E0-$F0:    its DMA is done (DMA_DONE $FF0AC1 clear):
+           chunky frame -> NEED_SCALE ($FF0AB9) DMA buffer -> slot VRAM,           $FF0570 -> $FF0558, depth, scaled hot spot;
+ 2nd loop: RLE to $FF6000, scale into          clear TILES_READY + DMA_DONE,      draw the pieces at actor - camera - hot spot
+           the buffer, TILES_READY              set ANIM_LOOPED ($FF0ABD)          (+128, +144), nearest actor first
+```
+
+`$FF0540+4i` holds the RLE stream (chunky) and then the DMA source; `$FF0570+4i` the header of the frame
+in the pipeline, `$FF0558+4i` the header on screen (byte 0 negative = none). The frame being decoded is
+`$FF04A0+2i` (offset in the set). Sprite priority is set while the actor stands on a zone cell with bit 15
+(`$FF0ABB`), so it is drawn over the high-priority foreground tiles.
+
+SAT order (`sprite_build` `$00A984`, buffer `$FF0008`, DMA'd to `$D800` every VBlank): pointer (crosshair
+2×2 at `$FF06E4`, or the verb-bar cell cursor), the effect sprite (`$FF09E8` bit 4), the inventory highlight
+(8 sprites), 4 fixed sprites (`$FF09EA` bit 0), **4 masking sprites** (8×32 at y `$128`/`$148`, x = 1 then
+x = 0: the VDP stops drawing further sprites on those lines, so actors never cover the verb bar), then the actors.
+
+### Palettes
+
+The frame attribute selects the palette. Shaggy and Scooby use palettes 0/1 (`$032480`, shared, see
+"Palettes" above); room actors use 1 or the room's palettes 2-3.
+
+### Tool
+
+    gfx.py sprite shaggy OUT.png [--anim N] [--depth D] [--scale S]   # sheet of frames (red dot = hot spot)
+    gfx.py sprite 0x0642D0 OUT.png --list                             # header, animations, frame sizes
+    gfx.py spritecheck DUMP.ram DUMP.vram                             # rebuild slots 0/1 tiles from RAM, compare with VRAM
+
+Verified against the emulator (see `docs/subsystems/sprite.md`): Shaggy's and Scooby's VRAM tiles in the
+Lobby, rebuilt from ROM with the RAM frame/depth values, are byte-identical.
 
 ## Boot / title screens
 
