@@ -1,0 +1,7 @@
+g.boot(0)
+g.run(60); g.settle()
+g.leave_pointer()
+print("room", g.state()["room"], "pos", g.pos(), "cam", g.w(0xFF06CA), g.w(0xFF06CE), "rect47", g.hot_rect(47))
+print("probe", g.probe_rect(47, g.hot_rect(47)))
+g.act("Open", 47)
+print("room", g.state()["room"], "pos", g.pos())

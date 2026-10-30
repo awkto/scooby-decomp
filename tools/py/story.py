@@ -226,14 +226,20 @@ class Game:
                         return True
             return False
 
+        def at_pos(dd, x, y):
+            return 0 <= x < pl.W and 0 <= y < pl.H and dd[y * pl.W + x] >= 0
+
         d = None
         used = (avoid, 0)
-        for av in (avoid, []):                       # no way round the other exits: allow them
-            for margin in (2, 1, 0):                 # keep off the collision fence when there is room
-                dd = pl.field(goals, av, margin)
-                if known(dd):
-                    d = dd
-                    used = (av, margin)
+        for test in (lambda dd: at_pos(dd, px, py), known):      # first: the largest margin that has a route from where we stand
+            for av in (avoid, []):                   # no way round the other exits: allow them
+                for margin in (2, 1, 0):             # keep off the collision fence when there is room
+                    dd = pl.field(goals, av, margin)
+                    if test(dd):
+                        d = dd
+                        used = (av, margin)
+                        break
+                if d is not None:
                     break
             if d is not None:
                 break
@@ -254,6 +260,13 @@ class Game:
                 return True
             if stop_dist and 0 <= x < pl.W and 0 <= y < pl.H and 0 <= d[y * pl.W + x] <= stop_dist:
                 return True                          # close enough (approach only: do not step on an exit)
+            if not at_pos(d, x, y) and used[1] > 0:
+                # drifted into the safety margin along the fence: continue with a field that has a smaller margin
+                for m2 in range(used[1] - 1, -1, -1):
+                    d2 = pl.field(goals, list(used[0]) + blocked, m2)
+                    if at_pos(d2, x, y) or m2 == 0:
+                        d, used = d2, (used[0], m2)
+                        break
             path = pl.path(d, (x, y), 16)
             if not path:
                 return False

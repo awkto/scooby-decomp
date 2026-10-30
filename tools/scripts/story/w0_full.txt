@@ -407,46 +407,525 @@ press U 4
 press UR 4
 press UL 4
 run 10
-press U 4
+press U 12
+press U 12
+press L 20
+press U 12
+press D 20
+press U 12
+press R 12
+press U 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press UL 20
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press DL 20
+press U 12
+press R 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press D 20
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 20
+press U 12
+press DL 20
+press U 12
+press DL 20
+press U 12
+press U 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press UL 20
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press U 20
+press U 12
+press U 20
+press U 12
+press U 20
+press U 12
+press U 20
+press U 12
+press DL 20
+press U 12
+press R 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press DL 20
+press U 12
+press U 20
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press R 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press R 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press R 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press UL 20
+press U 12
+press U 20
+press U 12
+press DL 20
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press U 12
+press L 20
+press U 12
+press U 12
+press UL 20
+press U 12
+press D 20
+press U 12
+press UR 20
+press U 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press UL 20
+press U 12
+press UL 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press DL 20
+press U 12
+press L 20
+press U 12
+press U 12
+press UR 20
+press U 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press D 20
+press U 12
+press U 12
+press L 20
+press U 12
+press DL 20
+press U 12
+press UR 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 20
+press U 12
+press UL 20
+press U 12
+press DL 20
+press U 12
+press L 20
+press U 12
+press L 20
+press U 12
+press U 12
+press U 12
+press R 20
+press U 12
+press U 12
+press U 12
+press U 20
+press U 12
+press R 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press DR 20
+press U 12
+press L 12
+press U 12
+press UL 20
+press U 12
+press U 20
+press U 12
+press DL 20
+press U 12
+press L 20
+press U 12
+press R 20
+press U 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press U 12
+press R 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press DL 20
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press U 20
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 20
+press U 12
+press R 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 20
+press U 12
+press L 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press D 20
+press U 12
 run 10
 run 60
 run 120
 press A 4
 run 4
-poke FF06DC 2 CC
+poke FF06DC 2 67
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 CA
+poke FF06DC 2 65
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 CE
+poke FF06DC 2 69
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 CC
+poke FF06DC 2 67
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 C8
+poke FF06DC 2 63
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 D0
+poke FF06DC 2 6B
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 CC
+poke FF06DC 2 67
 poke FF06DE 2 50
 run 3
-poke FF06DC 2 CA
+poke FF06DC 2 65
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 CE
+poke FF06DC 2 69
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 CA
+poke FF06DC 2 65
 poke FF06DE 2 50
 run 3
-poke FF06DC 2 CE
+poke FF06DC 2 69
 poke FF06DE 2 50
 run 3
-poke FF06DC 2 C8
+poke FF06DC 2 63
 poke FF06DE 2 48
 run 3
 poke FF06DC 2 6C
@@ -454,18 +933,10 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 CA
+poke FF06DC 2 65
 poke FF06DE 2 4C
 run 8
 press B 4
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
 run 10
 run 10
 run 10
@@ -750,6 +1221,8 @@ run 10
 run 10
 run 10
 run 10
+run 10
+run 10
 run 30
 run 30
 press A 4
@@ -795,7 +1268,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 4E
+poke FF06DC 2 50
 poke FF06DE 2 40
 run 8
 press B 4
@@ -947,10 +1420,6 @@ run 10
 run 10
 run 10
 run 10
-run 10
-run 10
-run 10
-run 10
 run 30
 run 30
 press R 12
@@ -958,104 +1427,58 @@ press R 12
 press R 12
 press R 12
 press R 12
-press U 4
-press U 6
-press U 4
-press UR 12
-press U 6
-press U 6
-press U 4
-press R 4
-press R 4
-press UR 12
-press U 6
-press U 6
-press R 4
 press R 4
 press UR 12
 press U 4
 press UR 12
 press U 4
-press U 4
-press U 4
 press UR 4
 press U 4
-press UR 4
-press U 6
-press U 4
-press U 4
-press UR 4
-press U 4
-press UR 4
-press U 4
-press UR 4
-press U 4
-press U 4
-press UR 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press U 4
-press UR 4
-press U 4
-press U 6
-press UR 6
-press U 8
-press UR 8
-press U 10
-press U 8
-press U 4
-press R 4
-press R 4
 press UR 12
+press U 6
 press U 4
 press U 4
-press UR 8
-press UR 6
+press UR 12
+press R 4
 press U 4
-press U 4
-press UR 4
-press UR 4
-press U 4
-press U 4
+press UR 12
+press UR 12
 press A 4
 run 4
-poke FF06DC 2 B9
+poke FF06DC 2 C0
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 B7
+poke FF06DC 2 BE
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 BB
+poke FF06DC 2 C2
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 B9
+poke FF06DC 2 C0
 poke FF06DE 2 3C
 run 3
-poke FF06DC 2 B5
+poke FF06DC 2 BC
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 BD
+poke FF06DC 2 C4
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 B9
+poke FF06DC 2 C0
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 B7
+poke FF06DC 2 BE
 poke FF06DE 2 3C
 run 3
-poke FF06DC 2 BB
+poke FF06DC 2 C2
 poke FF06DE 2 3C
 run 3
-poke FF06DC 2 B7
+poke FF06DC 2 BE
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 BB
+poke FF06DC 2 C2
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 B5
+poke FF06DC 2 BC
 poke FF06DE 2 3C
 run 3
 poke FF06DC 2 6C
@@ -1063,25 +1486,15 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 B7
+poke FF06DC 2 6C
+poke FF06DE 2 B3
+run 14
+press B 6
+run 4
+poke FF06DC 2 C2
 poke FF06DE 2 40
 run 8
 press B 4
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
 run 10
 run 10
 run 10
@@ -1242,10 +1655,11 @@ poke FF06DE 2 B3
 run 14
 press B 6
 run 4
-poke FF06DC 2 B2
+poke FF06DC 2 B0
 poke FF06DE 2 48
 run 8
 press B 4
+run 10
 run 10
 run 10
 run 10
@@ -1451,18 +1865,10 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 6C
-poke FF06DE 2 B3
-run 14
-press B 6
-run 4
 poke FF06DC 2 96
 poke FF06DE 2 40
 run 8
 press B 4
-run 10
-run 10
-run 10
 run 10
 run 10
 run 10
@@ -1687,7 +2093,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 36
+poke FF06DC 2 38
 poke FF06DE 2 54
 run 8
 press B 4
@@ -1782,10 +2188,12 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 A8
+poke FF06DC 2 AA
 poke FF06DE 2 6C
 run 8
 press B 4
+run 10
+run 10
 run 10
 run 10
 run 10
@@ -1839,7 +2247,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 AA
+poke FF06DC 2 AC
 poke FF06DE 2 68
 run 8
 press B 4
@@ -1852,81 +2260,46 @@ press R 12
 press R 12
 press R 12
 press R 4
+press U 4
 press UR 12
+press UR 4
 run 10
 run 60
 run 60
 press D 8
+press D 6
+press DL 12
 press D 4
-press D 4
-press L 4
-press L 4
-press DL 12
-press DL 12
-press DL 12
-press DL 12
-press DL 12
-press DL 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 4
-press L 4
-press L 4
-press L 4
-press D 4
-press L 4
-press L 4
 press DR 4
-press UL 4
-run 10
-run 10
-press A 4
-run 4
-poke FF06DC 2 24
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 24
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 20
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 28
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 24
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 20
-poke FF06DE 2 7C
-run 3
-press A 4
-run 4
+press D 4
+press D 4
+press DR 4
+press DL 12
 press L 4
+press D 4
+press D 4
+press DR 4
 press L 4
+press DL 12
+press DL 12
+press D 4
+press DL 12
+press DL 12
+press L 4
+press D 4
+press DL 12
+press L 4
+press D 4
+press DL 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press DL 12
+press L 12
 run 10
 run 60
 run 60
@@ -1949,13 +2322,9 @@ press D 12
 press D 12
 press DR 12
 press D 4
-press DR 4
-press DL 4
 press D 4
-press D 4
-press DR 4
 press DR 12
-press DR 8
+press DR 12
 run 10
 run 60
 run 60
@@ -2105,11 +2474,6 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 1C
-poke FF06DE 2 B3
-run 14
-press B 6
-run 4
 poke FF06DC 2 32
 poke FF06DE 2 44
 run 8
@@ -2136,35 +2500,21 @@ run 10
 run 10
 run 10
 run 30
-press R 4
-press R 4
-press R 4
-press UR 12
-press U 4
-press UR 12
-press L 4
-press U 4
-press U 4
-press UR 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 12
-press R 12
-press R 12
-press R 12
 press R 8
+press R 6
+press R 4
+press U 4
+press UR 12
+press UR 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 10
 run 10
 run 60
 run 60
@@ -2181,23 +2531,20 @@ press U 12
 press U 12
 press U 12
 press U 12
-press U 10
+press U 12
 press U 4
 press UL 12
 press U 4
 press UR 4
 press UL 4
+press U 4
 press UL 12
 press U 4
+press UR 4
+press U 4
+press UR 4
+press UL 12
 press UL 8
-press U 4
-press UR 4
-press UL 4
-press L 4
-press L 4
-press L 4
-press U 8
-press U 6
 press U 4
 press U 4
 run 10
@@ -2407,6 +2754,16 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
+poke FF06DC 2 BC
+poke FF06DE 2 C3
+run 14
+press B 6
+run 4
+poke FF06DC 2 BC
+poke FF06DE 2 C4
+run 18
+press B 8
+run 4
 press C 3
 run 24
 poke FF06DC 2 DC
@@ -2429,17 +2786,17 @@ press B 4
 run 6
 press C 3
 run 24
-poke FF06DC 2 76
+poke FF06DC 2 7A
 poke FF06DE 2 58
 run 8
 press B 4
 run 10
-poke FF06DC 2 76
+poke FF06DC 2 7A
 poke FF06DE 2 58
 run 8
 press B 4
 run 10
-poke FF06DC 2 76
+poke FF06DC 2 7A
 poke FF06DE 2 58
 run 8
 press B 4
@@ -2517,12 +2874,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 1C
-poke FF06DE 2 B3
-run 14
-press B 6
-run 4
-poke FF06DC 2 16
+poke FF06DC 2 12
 poke FF06DE 2 28
 run 8
 press B 4
@@ -2588,17 +2940,17 @@ press B 4
 run 6
 press C 3
 run 24
-poke FF06DC 2 C6
+poke FF06DC 2 C8
 poke FF06DE 2 50
 run 8
 press B 4
 run 10
-poke FF06DC 2 C6
+poke FF06DC 2 C8
 poke FF06DE 2 50
 run 8
 press B 4
 run 10
-poke FF06DC 2 C6
+poke FF06DC 2 C8
 poke FF06DE 2 50
 run 8
 press B 4
@@ -2668,11 +3020,6 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 94
-poke FF06DE 2 B3
-run 14
-press B 6
-run 4
 poke FF06DC 2 66
 poke FF06DE 2 40
 run 8
@@ -3031,7 +3378,6 @@ run 10
 run 10
 run 10
 run 10
-run 10
 run 30
 run 10
 run 10
@@ -3084,6 +3430,11 @@ poke FF06DC 2 94
 poke FF06DE 2 B2
 run 10
 press B 4
+run 4
+poke FF06DC 2 94
+poke FF06DE 2 B3
+run 14
+press B 6
 run 4
 poke FF06DC 2 56
 poke FF06DE 2 4C
@@ -3150,17 +3501,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 1C
-poke FF06DE 2 B3
-run 14
-press B 6
-run 4
-poke FF06DC 2 1C
-poke FF06DE 2 B4
-run 18
-press B 8
-run 4
-poke FF06DC 2 42
+poke FF06DC 2 3E
 poke FF06DE 2 74
 run 8
 press B 4
@@ -3214,7 +3555,7 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 14
+poke FF06DC 2 12
 poke FF06DE 2 58
 run 8
 press B 4
@@ -3309,87 +3650,9 @@ press L 12
 press L 12
 press L 12
 press L 12
-press L 10
-press L 4
-press L 4
-press D 4
-press L 4
-press L 4
-press D 4
-press L 4
-press D 4
-press L 4
-press L 4
-press D 4
-press L 4
-press D 4
-press L 4
-press DR 4
-press L 4
-press DR 4
-press L 4
-press DR 4
-press UL 4
-press L 4
-press DR 4
-press UL 4
-press L 4
-press DR 4
-press L 4
-press DR 4
-press UL 4
-press D 4
-press L 4
-press L 4
-press D 4
-press L 4
-press DR 4
-press UL 4
-press L 4
-run 10
-run 10
-press A 4
-run 4
-poke FF06DC 2 24
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 24
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 20
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 28
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 24
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 20
-poke FF06DE 2 7C
-run 3
-press A 4
-run 4
-press L 4
-press L 4
+press L 12
+press DL 12
+press L 12
 run 10
 run 60
 run 60
@@ -3448,6 +3711,42 @@ press C 3
 run 24
 poke FF06DC 2 1E
 poke FF06DE 2 3E
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 1A
+poke FF06DE 2 3E
+run 3
+poke FF06DC 2 22
+poke FF06DE 2 3E
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 42
+run 3
+poke FF06DC 2 1A
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 22
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 1A
+poke FF06DE 2 42
+run 3
+poke FF06DC 2 22
+poke FF06DE 2 42
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 36
+run 3
+poke FF06DC 2 16
+poke FF06DE 2 3E
+run 3
+poke FF06DC 2 26
+poke FF06DE 2 3E
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 3E
 run 8
 press B 4
 run 10
@@ -3528,7 +3827,6 @@ run 10
 run 10
 run 10
 run 10
-run 10
 run 30
 press A 4
 run 4
@@ -3573,7 +3871,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 D6
+poke FF06DC 2 DA
 poke FF06DE 2 34
 run 8
 press B 4
@@ -3799,200 +4097,497 @@ press U 10
 press U 4
 press R 4
 press R 4
+press UR 12
+press UR 12
+press U 4
 press R 4
-press UR 12
-press UR 12
 press UR 6
 press U 4
+press U 4
+press UR 4
+press U 4
+press U 4
+press UR 4
+press UL 4
+run 10
+press U 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press D 20
+press L 12
+press U 12
+press UL 20
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press U 12
+press D 20
+press L 12
+press L 12
+press L 12
+press U 12
+press DR 20
+press L 12
+press L 12
+press L 12
+press U 12
+press DR 20
+press L 12
+press L 12
+press U 12
+press DR 20
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
 run 10
 run 60
 run 90
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 6
-press L 4
-press DL 12
-press DL 12
-press D 4
-press DL 12
-press D 4
-press DL 12
-press D 4
-press DR 4
-press D 4
-press DR 4
-press D 4
-press DL 12
-press DL 12
-press L 6
-press L 4
-press DL 12
-press D 4
-press DL 12
-press DL 12
-press D 4
-press DL 12
-press D 4
-press DR 4
-press DL 4
-press L 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
 press A 4
 run 4
-poke FF06DC 2 25
+poke FF06DC 2 13
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 23
+poke FF06DC 2 11
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 27
+poke FF06DC 2 15
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 25
+poke FF06DC 2 13
 poke FF06DE 2 58
 run 3
-poke FF06DC 2 21
+poke FF06DC 2 F
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 29
+poke FF06DC 2 17
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 25
+poke FF06DC 2 13
 poke FF06DE 2 60
 run 3
-poke FF06DC 2 23
+poke FF06DC 2 11
 poke FF06DE 2 58
 run 3
-poke FF06DC 2 27
+poke FF06DC 2 15
 poke FF06DE 2 58
 run 3
-poke FF06DC 2 23
+poke FF06DC 2 11
 poke FF06DE 2 60
 run 3
-poke FF06DC 2 27
+poke FF06DC 2 15
 poke FF06DE 2 60
 run 3
-poke FF06DC 2 21
+poke FF06DC 2 F
 poke FF06DE 2 58
 run 3
 poke FF06DC 2 6C
@@ -4000,7 +4595,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 25
+poke FF06DC 2 15
 poke FF06DE 2 5C
 run 8
 press B 4
@@ -4012,9 +4607,13 @@ run 10
 run 10
 run 10
 run 10
+run 10
+run 10
+run 10
 run 30
-press L 10
-press L 8
+press L 12
+press L 4
+press L 4
 run 10
 run 60
 run 90
@@ -4024,11 +4623,12 @@ run 10
 press D 12
 press D 12
 press D 12
-press D 12
+press D 10
 press DR 12
 press D 12
 press D 12
-press D 10
+press D 12
+press D 4
 press L 12
 press L 12
 press L 4
@@ -4047,7 +4647,7 @@ press L 12
 press L 12
 press L 12
 press L 12
-press L 6
+press L 4
 run 10
 run 60
 run 90
@@ -4111,22 +4711,8 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
-press C 3
-run 24
-run 30
-poke FF06DC 2 BC
-poke FF06DE 2 C2
-run 10
-press B 4
-run 4
-press C 3
-run 24
-run 12
-poke FF06DC 2 B4
-poke FF06DE 2 B0
-run 8
-press B 4
-run 6
+run 3
+run 3
 press C 3
 run 24
 poke FF06DC 2 36
@@ -4143,7 +4729,6 @@ poke FF06DC 2 36
 poke FF06DE 2 5C
 run 8
 press B 4
-run 10
 run 10
 run 10
 run 10
@@ -4216,10 +4801,16 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 32
+poke FF06DC 2 6C
+poke FF06DE 2 B3
+run 14
+press B 6
+run 4
+poke FF06DC 2 34
 poke FF06DE 2 4C
 run 8
 press B 4
+run 10
 run 10
 run 10
 run 10
@@ -4269,7 +4860,12 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 22
+poke FF06DC 2 1C
+poke FF06DE 2 B3
+run 14
+press B 6
+run 4
+poke FF06DC 2 20
 poke FF06DE 2 48
 run 8
 press B 4
@@ -4321,7 +4917,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 36
+poke FF06DC 2 34
 poke FF06DE 2 5C
 run 8
 press B 4
@@ -4372,11 +4968,6 @@ poke FF06DC 2 1C
 poke FF06DE 2 B2
 run 10
 press B 4
-run 4
-poke FF06DC 2 1C
-poke FF06DE 2 B3
-run 14
-press B 6
 run 4
 poke FF06DC 2 34
 poke FF06DE 2 40
@@ -4430,16 +5021,10 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 1C
-poke FF06DE 2 B3
-run 14
-press B 6
-run 4
-poke FF06DC 2 A6
+poke FF06DC 2 A2
 poke FF06DE 2 5C
 run 8
 press B 4
-run 10
 run 10
 run 10
 run 10
@@ -4457,7 +5042,7 @@ press R 12
 press R 12
 press R 12
 press R 12
-press R 4
+press R 10
 run 10
 run 60
 run 90
@@ -4504,13 +5089,20 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C3
-run 14
-press B 6
-run 4
 press C 3
 run 24
+poke FF06DC 2 DC
+poke FF06DE 2 C8
+run 8
+press B 4
+run 8
+run 8
+poke FF06DC 2 DC
+poke FF06DE 2 C8
+run 8
+press B 4
+run 8
+run 8
 poke FF06DC 2 DC
 poke FF06DE 2 C8
 run 8
@@ -4523,6 +5115,7 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
+run 3
 press C 3
 run 24
 poke FF06DC 2 9C
@@ -4607,8 +5200,19 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
+poke FF06DC 2 BC
+poke FF06DE 2 C3
+run 14
+press B 6
+run 4
 press C 3
 run 24
+poke FF06DC 2 DC
+poke FF06DE 2 B0
+run 8
+press B 4
+run 8
+run 8
 poke FF06DC 2 DC
 poke FF06DE 2 B0
 run 8
@@ -4621,54 +5225,1094 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
+run 3
 press C 3
 run 24
-run 30
-poke FF06DC 2 BC
-poke FF06DE 2 C2
-run 10
+poke FF06DC 2 9E
+poke FF06DE 2 68
+run 8
 press B 4
+run 10
+poke FF06DC 2 9E
+poke FF06DE 2 68
+run 8
+run 3
+run 3
+run 3
+run 3
+run 3
+run 3
+run 3
+run 3
+press A 4
 run 4
-press C 3
-run 24
-run 12
+poke FF06DC 2 9C
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 9A
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 9E
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 98
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 A0
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 9A
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 9E
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 9A
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 9E
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 98
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 A0
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 98
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 A0
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 94
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 A4
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 9A
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 9E
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 9A
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 9E
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 98
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 A0
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 94
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 A4
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 94
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 A4
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 98
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 A0
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 92
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 A6
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 92
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 A6
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 92
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 A6
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 94
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 A4
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 94
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 A4
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 9A
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 9E
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 9A
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 9E
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 98
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 A0
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 98
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 A0
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 92
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 A6
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 92
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 A6
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 8E
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 AA
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 94
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 A4
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 94
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 A4
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 8E
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 AA
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 8E
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 AA
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 92
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 A6
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 92
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 A6
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 58
+run 3
 poke FF06DC 2 8C
-poke FF06DE 2 B0
-run 8
-press B 4
-run 6
-press C 3
-run 24
-poke FF06DC 2 9A
 poke FF06DE 2 68
-run 8
+run 3
+poke FF06DC 2 AC
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 9A
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 9E
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 8E
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 AA
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 8E
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 AA
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 98
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 A0
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 8C
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 AC
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 8C
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 AC
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 94
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 A4
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 8C
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 AC
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 8C
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 AC
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 8E
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 AA
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 8E
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 AA
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 92
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 A6
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 8C
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 AC
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 88
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 B0
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 8C
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 AC
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 88
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 B0
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 88
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 B0
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 8E
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 AA
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 88
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 B0
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 88
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 B0
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 86
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 B2
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 86
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 B2
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 86
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 B2
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 8C
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 AC
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 88
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 B0
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 88
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 B0
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 86
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 B2
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 86
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 B2
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 86
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 B2
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 86
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 B2
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 88
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 B0
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 82
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 B6
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 82
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 B6
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 82
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 B6
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 86
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 B2
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 82
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 B6
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 82
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 B6
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 80
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 B8
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 80
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 B8
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 80
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 B8
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 82
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 B6
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 82
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 B6
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 80
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 B8
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 80
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 B8
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 80
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 B8
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 80
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 B8
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 82
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 B6
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 7C
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 BC
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 80
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 B8
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 7C
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 BC
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 7C
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 BC
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 7C
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 BC
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 7C
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 BC
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 7A
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 BE
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 7C
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 BC
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 7C
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 BC
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 7A
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 BE
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 7A
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 BE
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 7A
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 BE
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 7A
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 BE
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 7C
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 BC
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 7A
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 BE
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 7A
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 BE
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 7A
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 BE
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 76
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 C2
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 76
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 C2
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 76
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 C2
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 76
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 C2
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 76
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 C2
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 76
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 C2
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 76
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 C2
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 74
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 C4
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 74
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 C4
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 74
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 C4
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 74
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 C4
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 74
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 C4
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 76
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 C2
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 74
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 C4
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 74
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 C4
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 74
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 C4
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 70
+poke FF06DE 2 68
+run 3
+poke FF06DC 2 70
+poke FF06DE 2 64
+run 3
+poke FF06DC 2 70
+poke FF06DE 2 6C
+run 3
+poke FF06DC 2 70
+poke FF06DE 2 60
+run 3
+poke FF06DC 2 70
+poke FF06DE 2 70
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 58
+run 3
+poke FF06DC 2 70
+poke FF06DE 2 5C
+run 3
+poke FF06DC 2 70
+poke FF06DE 2 74
+run 3
+poke FF06DC 2 70
+poke FF06DE 2 58
+run 3
 press B 4
 run 10
-poke FF06DC 2 9A
-poke FF06DE 2 68
-run 8
-press B 4
 run 10
-poke FF06DC 2 9A
-poke FF06DE 2 68
-run 8
-run 3
-run 3
-run 3
-run 3
-run 3
-run 3
-run 3
-run 3
-press B 4
+run 10
+run 10
 run 10
 run 10
 run 10
 run 10
 run 30
 run 60
-press A 4
-run 4
 press A 4
 run 4
 poke FF06DC 2 9C
@@ -4712,10 +6356,20 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 9C
+poke FF06DC 2 9A
 poke FF06DE 2 68
 run 8
 press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
 run 10
 run 10
 run 10
@@ -4737,21 +6391,20 @@ press L 12
 press L 12
 press L 12
 press L 12
-press DL 12
-press DL 12
-press D 4
-press DR 4
-press DL 12
-press D 4
-press DL 12
-press DL 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
 press L 4
 press D 4
+press D 4
+press D 4
+press DL 12
+press L 4
+press D 4
+press DL 12
+press DL 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 8
 press D 4
 press DL 12
 press DL 12
@@ -4799,11 +6452,10 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 16
+poke FF06DC 2 1A
 poke FF06DE 2 94
 run 8
 press B 4
-run 10
 run 10
 run 10
 run 10
@@ -4854,11 +6506,10 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 6E
+poke FF06DC 2 6C
 poke FF06DE 2 3C
 run 8
 press B 4
-run 10
 run 10
 run 10
 run 10
@@ -4924,7 +6575,7 @@ poke FF06DE 2 B3
 run 14
 press B 6
 run 4
-poke FF06DC 2 6A
+poke FF06DC 2 66
 poke FF06DE 2 3C
 run 8
 press B 4
@@ -4984,12 +6635,20 @@ run 8
 press B 4
 run 8
 run 8
+poke FF06DC 2 DC
+poke FF06DE 2 B0
+run 8
+press B 4
+run 8
+run 8
 run 12
 poke FF06DC 2 B4
 poke FF06DE 2 B0
 run 8
 press B 4
 run 6
+run 3
+run 3
 press C 3
 run 24
 poke FF06DC 2 B6
@@ -5024,7 +6683,6 @@ run 30
 press U 12
 press U 12
 press U 8
-press U 4
 run 10
 run 60
 run 90
@@ -5073,6 +6731,11 @@ poke FF06DC 2 1C
 poke FF06DE 2 B2
 run 10
 press B 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B3
+run 14
+press B 6
 run 4
 poke FF06DC 2 C
 poke FF06DE 2 58
@@ -5144,11 +6807,15 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 9E
+poke FF06DC 2 1C
+poke FF06DE 2 B3
+run 14
+press B 6
+run 4
+poke FF06DC 2 A0
 poke FF06DE 2 3C
 run 8
 press B 4
-run 10
 run 10
 run 10
 run 10
@@ -5188,51 +6855,52 @@ press DR 12
 press U 12
 press D 12
 press R 6
+press R 10
 press R 6
 press R 4
-press R 4
 press DR 12
+press U 12
+press D 12
 press R 12
 press R 12
 press R 12
-press R 8
-press R 4
+press R 12
 press A 4
 run 4
-poke FF06DC 2 AC
+poke FF06DC 2 B7
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 AA
+poke FF06DC 2 B5
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 AE
+poke FF06DC 2 B9
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 AC
+poke FF06DC 2 B7
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 A8
+poke FF06DC 2 B3
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 B0
+poke FF06DC 2 BB
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 AC
+poke FF06DC 2 B7
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 AA
+poke FF06DC 2 B5
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 AE
+poke FF06DC 2 B9
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 AA
+poke FF06DC 2 B5
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 AE
+poke FF06DC 2 B9
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 A8
+poke FF06DC 2 B3
 poke FF06DE 2 44
 run 3
 poke FF06DC 2 1C
@@ -5240,7 +6908,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 AC
+poke FF06DC 2 B5
 poke FF06DE 2 48
 run 8
 press B 4
@@ -5252,40 +6920,40 @@ run 10
 run 30
 press A 4
 run 4
-poke FF06DC 2 D7
+poke FF06DC 2 DD
 poke FF06DE 2 50
 run 3
-poke FF06DC 2 D7
+poke FF06DC 2 DD
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 D3
+poke FF06DC 2 D9
 poke FF06DE 2 50
 run 3
-poke FF06DC 2 DB
+poke FF06DC 2 E1
 poke FF06DE 2 50
 run 3
-poke FF06DC 2 D7
+poke FF06DC 2 DD
 poke FF06DE 2 54
 run 3
-poke FF06DC 2 D3
+poke FF06DC 2 D9
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 DB
+poke FF06DC 2 E1
 poke FF06DE 2 4C
 run 3
-poke FF06DC 2 D3
+poke FF06DC 2 D9
 poke FF06DE 2 54
 run 3
-poke FF06DC 2 DB
+poke FF06DC 2 E1
 poke FF06DE 2 54
 run 3
-poke FF06DC 2 D7
+poke FF06DC 2 DD
 poke FF06DE 2 48
 run 3
-poke FF06DC 2 CF
+poke FF06DC 2 D5
 poke FF06DE 2 50
 run 3
-poke FF06DC 2 DF
+poke FF06DC 2 E5
 poke FF06DE 2 50
 run 3
 poke FF06DC 2 BC
@@ -5303,20 +6971,57 @@ press B 4
 run 6
 press C 3
 run 24
-poke FF06DC 2 D7
+poke FF06DC 2 DD
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 DD
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 D9
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 E1
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 DD
+poke FF06DE 2 54
+run 3
+poke FF06DC 2 D9
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 E1
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 D9
+poke FF06DE 2 54
+run 3
+poke FF06DC 2 E1
+poke FF06DE 2 54
+run 3
+poke FF06DC 2 DD
+poke FF06DE 2 48
+run 3
+poke FF06DC 2 D5
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 E5
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 DD
 poke FF06DE 2 50
 run 8
 press B 4
 run 10
-poke FF06DC 2 D7
+poke FF06DC 2 DD
 poke FF06DE 2 50
 run 8
 press B 4
 run 10
-poke FF06DC 2 D7
+poke FF06DC 2 DD
 poke FF06DE 2 50
 run 8
 press B 4
+run 10
 run 10
 run 10
 run 10
@@ -5370,7 +7075,7 @@ run 10
 press B 4
 run 4
 poke FF06DC 2 C4
-poke FF06DE 2 50
+poke FF06DE 2 4C
 run 8
 press B 4
 run 10
@@ -5566,18 +7271,18 @@ press B 4
 run 6
 press C 3
 run 24
-poke FF06DC 2 6A
-poke FF06DE 2 5C
+poke FF06DC 2 6C
+poke FF06DE 2 58
 run 8
 press B 4
 run 10
-poke FF06DC 2 6A
-poke FF06DE 2 5C
+poke FF06DC 2 6C
+poke FF06DE 2 58
 run 8
 press B 4
 run 10
-poke FF06DC 2 6A
-poke FF06DE 2 5C
+poke FF06DC 2 6C
+poke FF06DE 2 58
 run 8
 press B 4
 run 10
@@ -5676,20 +7381,21 @@ run 3
 poke FF06DC 2 BC
 poke FF06DE 2 3C
 run 3
-poke FF06DC 2 C0
+poke FF06DC 2 C2
 poke FF06DE 2 40
 run 8
 press B 4
 run 10
-poke FF06DC 2 C0
+poke FF06DC 2 C2
 poke FF06DE 2 40
 run 8
 press B 4
 run 10
-poke FF06DC 2 C0
+poke FF06DC 2 C2
 poke FF06DE 2 40
 run 8
 press B 4
+run 10
 run 10
 run 10
 run 10
@@ -5704,211 +7410,8 @@ press R 12
 press R 12
 press R 4
 press DR 12
-press R 4
-press D 4
-press R 4
-press D 4
-press D 4
-press R 4
-press L 4
-press DR 4
-press L 4
-press R 4
-press R 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-press D 4
-press R 4
-press D 4
-press L 4
-run 10
 press DR 12
-press R 4
-run 10
-press A 4
-run 4
-poke FF06DC 2 F4
-poke FF06DE 2 88
-run 3
-poke FF06DC 2 F2
-poke FF06DE 2 88
-run 3
-poke FF06DC 2 F6
-poke FF06DE 2 88
-run 3
-poke FF06DC 2 F4
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 F0
-poke FF06DE 2 88
-run 3
-poke FF06DC 2 F4
-poke FF06DE 2 8C
-run 3
-poke FF06DC 2 F2
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 F6
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 F2
-poke FF06DE 2 8C
-run 3
-poke FF06DC 2 F6
-poke FF06DE 2 8C
-run 3
-poke FF06DC 2 F0
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 F0
-poke FF06DE 2 8C
-run 3
-press A 4
-run 4
-run 10
-run 10
-run 10
-press D 40
-run 30
-press D 40
-run 30
-press U 40
-run 30
-press L 40
-run 30
-press R 40
-run 30
-press R 8
-press R 6
+press DR 6
 run 10
 run 60
 run 90
@@ -5924,24 +7427,6 @@ press B 4
 run 4
 press C 3
 run 24
-poke FF06DC 2 DC
-poke FF06DE 2 B0
-run 8
-press B 4
-run 8
-run 8
-poke FF06DC 2 DC
-poke FF06DE 2 B0
-run 8
-press B 4
-run 8
-run 8
-poke FF06DC 2 DC
-poke FF06DE 2 B0
-run 8
-press B 4
-run 8
-run 8
 poke FF06DC 2 DC
 poke FF06DE 2 B0
 run 8
@@ -5985,6 +7470,7 @@ run 10
 run 10
 run 10
 run 10
+run 10
 run 30
 press C 3
 run 24
@@ -5992,7 +7478,6 @@ run 100
 run 10
 run 10
 run 10
-press L 4
 press L 12
 press L 12
 press L 12
@@ -6001,7 +7486,7 @@ press L 12
 press L 12
 press L 12
 press L 12
-press L 8
+press L 12
 run 10
 run 60
 run 90
@@ -6052,7 +7537,6 @@ poke FF06DC 2 E0
 poke FF06DE 2 68
 run 8
 press B 4
-run 10
 run 10
 run 10
 run 10
@@ -6167,78 +7651,73 @@ run 10
 run 10
 run 10
 run 10
+run 10
 run 30
 run 150
 run 10
 run 10
 run 10
-press R 4
-press R 4
-press D 12
-press D 12
 press D 8
 press D 6
+press D 4
 press DL 12
 press DL 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 6
-press UL 12
+press DL 12
+press U 12
+press D 4
+press D 4
+press DR 4
+press DL 12
+press DL 12
+press U 12
+press D 4
+press D 4
+press DR 4
+press D 4
+press DR 4
 press L 4
-press U 4
-press U 4
+press DL 4
+press DL 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 4
 press UL 12
 press UL 12
-press UL 12
-press UL 12
-press UL 12
-press UL 12
-press U 4
 press U 4
 press UR 4
+press UL 12
+press U 4
+press UR 4
+press U 4
+press UR 4
+press UL 12
+press UL 12
+press UL 12
+press UL 12
+press UL 8
+press U 8
+press U 4
+press U 4
 run 10
 run 60
 run 90
 press R 12
 press R 12
 press R 8
+press DR 12
+press DR 12
 press R 4
-press R 4
-press D 4
-press L 4
-press DR 4
-press R 4
-press L 4
-press DR 4
-press R 4
-press L 4
-press DR 4
-press L 4
-press R 4
-press DR 4
-press L 4
-press DR 4
-press UL 4
-press R 4
-press DR 4
-press R 4
-press D 4
-press DR 4
-press R 4
-press D 4
-press R 4
-press R 4
-run 10
-press R 4
+press U 4
+press U 4
 press UR 6
 press U 4
-press U 6
 press U 4
 run 10
 run 60
@@ -6326,31 +7805,37 @@ run 8
 press B 4
 run 8
 run 8
+poke FF06DC 2 DC
+poke FF06DE 2 C8
+run 8
+press B 4
+run 8
+run 8
 run 12
 poke FF06DC 2 8C
 poke FF06DE 2 B0
 run 8
-run 3
 press B 4
 run 6
+run 3
+run 3
+run 3
 press C 3
 run 24
-poke FF06DC 2 C0
-poke FF06DE 2 54
+poke FF06DC 2 BE
+poke FF06DE 2 58
 run 8
 press B 4
 run 10
-poke FF06DC 2 C0
-poke FF06DE 2 54
+poke FF06DC 2 BE
+poke FF06DE 2 58
 run 8
 press B 4
 run 10
-poke FF06DC 2 C0
-poke FF06DE 2 54
+poke FF06DC 2 BE
+poke FF06DE 2 58
 run 8
 press B 4
-run 10
-run 10
 run 10
 run 10
 run 10
@@ -6409,25 +7894,8 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C3
-run 14
-press B 6
-run 4
 press C 3
 run 24
-poke FF06DC 2 DC
-poke FF06DE 2 B0
-run 8
-press B 4
-run 8
-run 8
-poke FF06DC 2 DC
-poke FF06DE 2 B0
-run 8
-press B 4
-run 8
-run 8
 poke FF06DC 2 DC
 poke FF06DE 2 B0
 run 8
@@ -6452,19 +7920,21 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
+run 3
+run 3
 press C 3
 run 24
-poke FF06DC 2 BE
+poke FF06DC 2 BA
 poke FF06DE 2 60
 run 8
 press B 4
 run 10
-poke FF06DC 2 BE
+poke FF06DC 2 BA
 poke FF06DE 2 60
 run 8
 press B 4
 run 10
-poke FF06DC 2 BE
+poke FF06DC 2 BA
 poke FF06DE 2 60
 run 8
 press B 4
@@ -6495,155 +7965,273 @@ run 100
 run 10
 run 10
 run 10
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press DR 4
-press UL 4
-press L 4
-press L 4
-press L 4
-press L 4
 press L 12
 press L 12
 press L 12
 press L 12
 press L 12
+press L 12
+press L 12
+press L 12
+press L 6
 press U 4
-press U 4
-press U 4
-press L 4
-press DL 4
-press U 6
-press U 6
 press U 4
 press UL 12
+press L 4
+press U 4
+press U 4
+press UL 12
+press UL 12
+press UL 12
+press UL 12
+press L 4
+press U 4
 press U 6
 press U 4
 press UL 12
 press U 8
 press UR 8
 press U 4
-press U 4
-press UR 4
-press UL 12
+press UL 10
 press U 8
 press UR 8
 press U 4
-press L 4
-press L 4
-press UL 12
-press U 4
-press U 4
-press UL 12
-press U 6
-press U 6
-press UL 12
+press UL 8
 press U 6
 press UR 6
 press U 4
 press UR 4
-press U 4
-press UR 4
-press UL 12
+press UL 8
 press U 4
 press U 6
 press U 4
-press UL 12
-press U 4
 press UR 4
-press U 4
-press UR 4
-press U 4
-press UR 4
-press UL 12
-press U 6
-press U 6
-press UR 6
-press L 4
-press L 4
-press L 4
-press UL 12
-press U 6
-press U 4
-press U 4
-press L 4
-press UL 6
-press U 4
+press UL 4
 press U 4
 press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press U 4
 run 10
-press U 4
-press UR 4
-press UL 4
+press U 12
+press U 12
+press L 12
+press L 20
+press U 12
+press L 12
+press D 20
+press R 12
+press U 12
+press R 12
+press U 12
+press UL 20
+press R 12
+press U 12
+press D 20
+press U 12
+press L 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press DR 20
+press U 12
+press DR 20
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press R 12
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press R 12
+press U 12
 run 10
 run 60
 run 90
+press R 12
+press R 12
+press R 12
+press R 8
+press R 4
+press R 4
+press U 4
+press UR 12
+press UR 12
+press U 12
+press U 10
+press U 4
+press U 4
+run 10
+run 60
+run 90
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press U 4
+press U 4
+press UR 12
+press UR 12
+press U 4
+press UR 12
+press U 6
+press U 8
+press U 6
+press U 4
+press UR 12
+press U 4
+press U 4
+press U 4
+press UR 12
+press U 8
+press U 10
+press U 4
+press UR 12
+press U 8
+press U 8
+press U 4
+press UR 12
+press U 4
+press UR 4
+press UL 4
+press U 4
+press UR 4
+press U 4
+press U 4
+press UR 10
+press U 4
+press UR 8
+press U 4
 press R 4
 press DR 4
-press R 12
-press R 12
-press R 12
-press R 10
-press UR 12
-press U 4
-press UR 12
-press U 6
-press U 4
-press U 4
-press UR 12
-press U 4
-press U 4
-press U 4
-press UR 12
-press U 4
-press U 4
-press U 4
-press UR 12
-press U 4
-press U 4
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press U 12
-press U 12
-press U 6
-press U 4
-run 10
-run 60
-run 90
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press U 4
-press U 4
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press U 10
-press U 6
-press UR 12
-press U 10
-press U 6
-press U 4
-press R 4
-press UR 6
+press UR 4
 press U 4
 press UR 4
 press U 4
@@ -6651,7 +8239,6 @@ press UR 4
 press U 4
 press U 4
 press UR 4
-press U 4
 run 10
 run 60
 run 90
@@ -6718,22 +8305,12 @@ run 8
 press B 4
 run 8
 run 8
-run 12
-poke FF06DC 2 64
-poke FF06DE 2 B0
+poke FF06DC 2 DC
+poke FF06DE 2 C8
 run 8
 press B 4
-run 6
-press C 3
-run 24
-run 30
-poke FF06DC 2 BC
-poke FF06DE 2 C2
-run 10
-press B 4
-run 4
-press C 3
-run 24
+run 8
+run 8
 run 12
 poke FF06DC 2 64
 poke FF06DE 2 B0
@@ -6756,6 +8333,8 @@ poke FF06DC 2 1A
 poke FF06DE 2 6C
 run 8
 press B 4
+run 10
+run 10
 run 10
 run 10
 run 10
@@ -6787,13 +8366,7 @@ press R 8
 press U 4
 press U 4
 press UR 12
-press R 4
-press U 4
-press U 4
-press UR 8
-press R 4
-press U 4
-press U 4
+press UR 12
 run 10
 run 60
 run 90
@@ -6803,10 +8376,15 @@ press D 4
 press L 4
 press L 4
 press DL 12
+press L 4
+press D 4
+press D 4
+press D 4
 press DL 12
 press DL 12
 press DL 12
 press DL 12
+press L 4
 press DL 12
 press L 12
 press L 12
@@ -6814,254 +8392,134 @@ press L 12
 press L 12
 press L 12
 press L 12
+press L 12
+press L 4
+press DL 12
+press DL 12
+press U 12
+press D 12
 press L 12
 press L 8
 press L 4
-press L 4
-run 10
-run 10
-press A 4
-run 4
-poke FF06DC 2 24
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 24
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 20
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 28
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 24
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 20
-poke FF06DE 2 7C
-run 3
-press A 4
-run 4
-press L 4
-press DR 4
-press L 4
-press DR 4
-press UL 4
-press L 4
-press DR 4
-press L 4
-press DR 4
-run 10
-press L 6
-press DL 6
-press L 12
+press DL 4
 run 10
 run 60
 run 90
+press D 12
 press D 8
 press D 4
-press D 4
 press DL 12
 press D 4
 press DL 12
 press D 4
 press DR 4
-press DL 12
-press DL 12
-press U 12
 press D 4
 press DR 4
 press D 4
 press DR 4
-press D 4
 press DL 12
-press DL 12
-press U 12
-press D 4
-press D 4
-press DR 4
-press DL 12
-press DL 12
-press U 12
-press D 4
-press DR 4
-press DL 4
-press R 4
-press UR 4
-press R 4
-press R 4
-press DR 4
-press D 6
-press D 4
-press D 4
-press L 12
-press L 12
 press L 12
 press L 12
 press L 12
 press L 12
 press L 10
 press L 4
-press L 4
+press DL 12
+press D 4
+press DL 12
 press D 4
 press DR 4
+press DL 4
 press DL 12
 press DL 12
+press D 4
 press DL 12
-press DL 12
-press DL 12
-press DL 12
+press D 4
+press DR 4
+press DL 4
+press L 4
+press L 4
+press L 4
+press DR 4
+press UL 4
+press L 4
+press UR 4
+press UL 4
+press R 4
+press UR 4
+press R 4
+press R 4
+press D 8
+press D 6
+press D 4
+press DR 4
+press D 4
+press DR 4
+press D 4
+press D 4
+press DR 4
+press L 4
+press L 8
 press L 6
 press L 4
 press DL 12
+press L 10
+press L 4
 press D 4
+press L 6
+press D 4
+press L 4
+press L 4
+press D 6
+press DR 6
+press D 4
+press DR 4
+press L 6
+press D 4
+press L 4
+press D 4
+press L 4
+press L 4
+press D 6
+press L 4
 press DL 12
-press D 4
 press DL 12
-press D 4
-press DL 12
-press DL 12
-press D 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
-press DR 4
-press DL 6
-press D 4
 press A 4
 run 4
-poke FF06DC 2 2D
+poke FF06DC 2 28
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 2B
+poke FF06DC 2 26
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 2F
+poke FF06DC 2 2A
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 2D
+poke FF06DC 2 28
 poke FF06DE 2 58
 run 3
-poke FF06DC 2 29
+poke FF06DC 2 24
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 31
+poke FF06DC 2 2C
 poke FF06DE 2 5C
 run 3
-poke FF06DC 2 2D
+poke FF06DC 2 28
 poke FF06DE 2 60
 run 3
-poke FF06DC 2 2B
+poke FF06DC 2 26
 poke FF06DE 2 58
 run 3
-poke FF06DC 2 2F
+poke FF06DC 2 2A
 poke FF06DE 2 58
 run 3
-poke FF06DC 2 2B
+poke FF06DC 2 26
 poke FF06DE 2 60
 run 3
-poke FF06DC 2 2F
+poke FF06DC 2 2A
 poke FF06DE 2 60
 run 3
-poke FF06DC 2 29
+poke FF06DC 2 24
 poke FF06DE 2 58
 run 3
 poke FF06DC 2 6C
@@ -7069,7 +8527,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 2B
+poke FF06DC 2 26
 poke FF06DE 2 5C
 run 8
 press B 4
@@ -7088,25 +8546,22 @@ run 10
 run 10
 run 10
 run 10
-run 10
-run 10
 run 30
-press R 4
+press DL 12
+press D 4
+press DR 4
+press DL 10
+press D 4
+press DR 4
+press DL 10
+press D 4
+press DR 4
+press DL 10
 press D 4
 press DR 4
 press L 4
-press DR 4
-press UL 4
-press R 4
-press DR 4
-press R 4
-press D 12
-press D 6
-press DL 6
-press DL 6
-press L 4
-press L 4
-press UL 4
+press DL 10
+press DL 4
 run 10
 run 60
 run 90
@@ -7244,8 +8699,1792 @@ run 100
 run 10
 run 10
 run 10
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 6
+press U 4
+press U 4
+press UR 12
+press R 4
+press UR 4
+press U 4
+run 20
 press A 4
 run 4
+poke FF06DC 2 CB
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 46
+run 3
 poke FF06DC 2 BC
 poke FF06DE 2 C2
 run 10
@@ -7264,47 +10503,1794 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
+run 3
+run 3
 press C 3
 run 24
-run 30
-poke FF06DC 2 BC
-poke FF06DE 2 C2
-run 10
-press B 4
-run 4
-press C 3
-run 24
-run 12
-poke FF06DC 2 64
-poke FF06DE 2 B0
-run 8
-press B 4
-run 6
-press C 3
-run 24
+poke FF06DC 2 CB
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 41
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 3D
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 45
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 39
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 49
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 35
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 4D
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 31
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 51
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 BF
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 D7
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 2D
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 55
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 BB
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 DB
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 29
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 59
+run 3
+poke FF06DC 2 B7
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 DF
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 B3
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 E3
+poke FF06DE 2 25
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 10
+run 3
 poke FF06DC 2 E4
-poke FF06DE 2 50
-run 8
-press B 4
-run 10
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 10
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 16
+run 3
 poke FF06DC 2 E4
-poke FF06DE 2 50
-run 8
-press B 4
-run 10
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 16
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 1C
+run 3
 poke FF06DC 2 E4
-poke FF06DE 2 50
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 1C
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 22
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 28
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 2E
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 34
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 3A
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 B4
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 BA
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 C0
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 C6
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 CC
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 D2
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 D8
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 DE
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 E4
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 EA
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 F0
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 F6
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 0
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 6
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 C
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 12
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 18
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 1E
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 24
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 2A
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 30
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 36
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 3C
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 42
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 4E
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 54
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 5A
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 66
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 72
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 78
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 7E
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 84
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 8A
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 96
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 9C
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 A2
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 A8
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 AE
+poke FF06DE 2 46
+run 3
+poke FF06DC 2 90
+poke FF06DE 2 46
 run 8
 press B 4
 run 10
+poke FF06DC 2 90
+poke FF06DE 2 46
+run 8
+press B 4
 run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
+poke FF06DC 2 90
+poke FF06DE 2 46
+run 8
+press B 4
 run 10
 run 10
 run 10
@@ -7393,17 +12379,13 @@ run 300
 run 10
 run 10
 run 10
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
+press R 12
+press R 12
+press R 8
 run 10
 run 60
 run 90
+run 10
 run 10
 run 10
 run 10
@@ -7464,18 +12446,14 @@ run 8
 press B 4
 run 8
 run 8
-poke FF06DC 2 DC
-poke FF06DE 2 B0
-run 8
-press B 4
-run 8
-run 8
 run 12
 poke FF06DC 2 B4
 poke FF06DE 2 B0
 run 8
 press B 4
 run 6
+run 3
+run 3
 press C 3
 run 24
 poke FF06DC 2 9E
@@ -7545,12 +12523,7 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 1C
-poke FF06DE 2 B3
-run 14
-press B 6
-run 4
-poke FF06DC 2 9C
+poke FF06DC 2 9A
 poke FF06DE 2 5C
 run 8
 press B 4
@@ -7561,103 +12534,51 @@ run 10
 run 30
 press D 10
 press D 6
+press D 4
 press DL 12
-press D 10
-press D 6
-press D 4
-press L 4
+press D 8
 press D 12
 press D 12
-press D 4
 run 10
 press DL 40
 run 30
 run 60
 run 90
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
+press L 12
+press L 12
+press L 12
 press L 12
 press L 12
 press L 12
 press L 12
 press L 12
 press U 4
-press UL 12
-press UL 12
-press UL 12
-press UL 12
 press U 4
+press UL 12
+press L 4
+press U 4
+press U 4
+press UL 12
+press UL 12
+press UL 12
+press UL 12
 press UL 12
 press U 6
 press U 6
-press UL 12
-press U 8
-press U 10
-press U 4
-press UL 12
-press U 6
-press U 4
-press U 4
-press UL 6
-press UL 4
-press U 4
-press U 4
-press U 4
 run 10
 run 60
 run 90
-press R 4
-press DR 4
 press R 12
 press R 12
 press R 12
-press R 10
-press UR 12
-press U 4
-press UR 12
-press U 4
-press U 4
-press UR 12
-press U 6
-press UR 6
-press U 6
-press UR 6
-press U 8
-press U 8
-press U 4
-press UR 12
-press U 4
-press U 6
-press U 4
-press UR 12
-press U 4
-press UR 4
-press U 4
-press U 6
-press UR 6
-press U 4
-press U 6
-press U 4
-press U 4
+press R 12
 press R 4
-press R 4
-press R 4
-press R 4
-press U 4
-press U 4
 press UR 12
 press UR 12
-press U 4
-press R 4
-press R 4
+press UR 12
+press UR 12
+press UR 12
+press UR 12
 press UR 12
 press UR 12
 press UR 12
@@ -7665,7 +12586,6 @@ press UR 12
 press UR 12
 press U 12
 press U 8
-press U 4
 press U 4
 run 10
 run 60
@@ -7717,10 +12637,6 @@ poke FF06DC 2 94
 poke FF06DE 2 48
 run 8
 press B 4
-run 10
-run 10
-run 10
-run 10
 run 10
 run 10
 run 10
@@ -7849,20 +12765,6 @@ press R 12
 press R 12
 press R 12
 press R 12
-press R 12
-press U 4
-press U 6
-press U 4
-press UR 12
-press U 6
-press U 8
-press UR 4
-press UR 4
-press U 4
-press UR 4
-press U 4
-press UR 4
-press L 4
 press A 4
 run 4
 poke FF06DC 2 DC
@@ -7923,19 +12825,21 @@ run 6
 press C 3
 run 24
 poke FF06DC 2 DC
-poke FF06DE 2 70
+poke FF06DE 2 74
 run 8
 press B 4
 run 10
 poke FF06DC 2 DC
-poke FF06DE 2 70
+poke FF06DE 2 74
 run 8
 press B 4
 run 10
 poke FF06DC 2 DC
-poke FF06DE 2 70
+poke FF06DE 2 74
 run 8
 press B 4
+run 10
+run 10
 run 10
 run 10
 run 10
@@ -8043,46 +12947,24 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
+run 3
+run 3
 press C 3
 run 24
-poke FF06DC 2 E2
+poke FF06DC 2 DE
 poke FF06DE 2 58
 run 8
 press B 4
 run 10
-poke FF06DC 2 E2
+poke FF06DC 2 DE
 poke FF06DE 2 58
 run 8
 press B 4
 run 10
-poke FF06DC 2 E2
+poke FF06DC 2 DE
 poke FF06DE 2 58
 run 8
 press B 4
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
 run 10
 run 10
 run 10
@@ -8094,6 +12976,16 @@ poke FF06DC 2 BC
 poke FF06DE 2 C2
 run 10
 press B 4
+run 4
+poke FF06DC 2 BC
+poke FF06DE 2 C3
+run 14
+press B 6
+run 4
+poke FF06DC 2 BC
+poke FF06DE 2 C4
+run 18
+press B 8
 run 4
 press C 3
 run 24
@@ -8145,13 +13037,6 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
-run 8
-poke FF06DC 2 DC
-poke FF06DE 2 C8
-run 8
-press B 4
-run 8
-run 8
 poke FF06DC 2 DC
 poke FF06DE 2 C8
 run 8
@@ -8225,16 +13110,6 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C3
-run 14
-press B 6
-run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C4
-run 18
-press B 8
-run 4
 press C 3
 run 24
 poke FF06DC 2 DC
@@ -8249,13 +13124,6 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
-run 8
-poke FF06DC 2 DC
-poke FF06DE 2 B0
-run 8
-press B 4
-run 8
-run 8
 poke FF06DC 2 DC
 poke FF06DE 2 B0
 run 8
@@ -8320,7 +13188,6 @@ run 10
 run 10
 run 10
 run 10
-run 10
 run 30
 press C 3
 run 24
@@ -8340,13 +13207,10 @@ press L 12
 press L 12
 press L 12
 press L 12
-press L 10
+press L 12
 press DL 12
 press L 12
-press L 10
-press U 4
-press U 4
-press UL 4
+press L 12
 press A 4
 run 4
 poke FF06DC 2 14
@@ -8390,23 +13254,10 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C3
-run 14
-press B 6
-run 4
 poke FF06DC 2 12
 poke FF06DE 2 58
 run 8
 press B 4
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
 run 10
 run 10
 run 10
@@ -8500,65 +13351,8 @@ press L 12
 press L 12
 press L 12
 press L 12
-press L 4
-press L 4
-press L 4
-press D 4
-press D 4
-press L 4
-press DR 4
-press UL 4
-press L 4
-press L 4
-press L 4
-press D 4
-press L 4
-press L 4
-press DR 4
-press UL 4
-run 10
-run 10
-press A 4
-run 4
-poke FF06DC 2 24
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 24
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 20
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 28
-poke FF06DE 2 80
-run 3
-poke FF06DC 2 24
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 7C
-run 3
-poke FF06DC 2 22
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 26
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 20
-poke FF06DE 2 7C
-run 3
-press A 4
-run 4
-press L 4
+press DL 12
+press L 12
 press L 4
 run 10
 run 60
@@ -8583,107 +13377,29 @@ press D 4
 press DL 12
 press D 4
 press D 4
-press DR 4
+press DL 12
+press D 4
 press L 4
-press DL 12
-press DL 12
-press D 4
-press DL 12
-press D 4
-press DR 4
 press DL 4
-press D 4
-press D 4
 press DL 12
 press D 4
 press D 4
 press DL 12
-press D 4
-press DR 4
 press DL 12
-press L 4
-press L 4
-press L 4
-press L 4
-press R 4
-press DR 4
-press L 4
 press D 4
-press R 4
+press DL 12
 press D 4
-press DR 4
-press L 4
-press D 4
-press L 4
-press DR 4
-press UL 4
-press R 4
-press DR 4
-press L 4
-press DR 4
-press UL 4
-press R 4
-press DR 4
-press R 4
-press D 10
-press D 8
-press D 4
-press L 12
-press L 8
+press DL 12
 press L 6
+press L 4
+press DL 12
+press D 4
+press DL 12
+press D 4
 press DL 12
 press DL 12
-press DL 10
-press L 4
+press DL 6
 run 10
-run 10
-press A 4
-run 4
-poke FF06DC 2 37
-poke FF06DE 2 5C
-run 3
-poke FF06DC 2 35
-poke FF06DE 2 5C
-run 3
-poke FF06DC 2 39
-poke FF06DE 2 5C
-run 3
-poke FF06DC 2 37
-poke FF06DE 2 58
-run 3
-poke FF06DC 2 33
-poke FF06DE 2 5C
-run 3
-poke FF06DC 2 3B
-poke FF06DE 2 5C
-run 3
-poke FF06DC 2 37
-poke FF06DE 2 60
-run 3
-poke FF06DC 2 35
-poke FF06DE 2 58
-run 3
-poke FF06DC 2 39
-poke FF06DE 2 58
-run 3
-poke FF06DC 2 35
-poke FF06DE 2 60
-run 3
-poke FF06DC 2 39
-poke FF06DE 2 60
-run 3
-poke FF06DC 2 33
-poke FF06DE 2 58
-run 3
-press A 4
-run 4
-press L 4
-press DL 4
-run 10
-run 10
-run 10
-press U 40
-run 30
 run 60
 run 90
 run 10
@@ -8698,12 +13414,8 @@ press D 12
 press D 12
 press D 12
 press DL 12
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
-press L 4
+press L 12
+press L 12
 run 10
 run 60
 run 90
@@ -8711,19 +13423,26 @@ run 10
 run 10
 run 10
 press UL 12
-press UL 12
+press U 4
+press L 4
 press UL 12
 press U 4
 press L 4
 press UL 12
 press U 4
-press UL 10
+press UL 12
+press UL 12
+press U 4
+press L 4
+press UL 6
 press U 4
 press UR 4
-press UL 8
-press L 4
-press U 4
-press U 4
+press UL 4
+run 10
+press L 12
+press L 12
+press U 12
+run 10
 press U 4
 run 10
 run 60
@@ -8736,43 +13455,69 @@ press R 12
 press R 6
 press R 4
 press DR 12
-press R 6
-press R 4
-press DR 12
 press R 8
 press R 4
 press DR 12
 press R 8
-press R 6
 press R 4
 press DR 12
 press R 6
 press R 4
 press DR 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
+press R 6
+press R 6
 press R 4
-press R 4
-press U 4
-press UR 12
-press UR 8
-press UR 4
+press DR 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 6
+run 20
 press A 4
 run 4
+poke FF06DC 2 CB
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 54
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 C7
+poke FF06DE 2 54
+run 3
+poke FF06DC 2 CF
+poke FF06DE 2 54
+run 3
+poke FF06DC 2 CB
+poke FF06DE 2 48
+run 3
+poke FF06DC 2 C3
+poke FF06DE 2 50
+run 3
+poke FF06DC 2 D3
+poke FF06DE 2 50
+run 3
 poke FF06DC 2 BC
 poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C3
-run 14
-press B 6
-run 4
-poke FF06DC 2 B4
+poke FF06DC 2 CB
 poke FF06DE 2 50
 run 8
 press B 4
@@ -8826,40 +13571,6 @@ run 10
 run 10
 run 10
 run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
-run 10
 run 30
 run 120
 run 10
@@ -8872,368 +13583,9 @@ press R 12
 press R 12
 press R 12
 press R 8
-press R 4
-press D 4
-press R 4
-press D 4
-press DR 4
-press L 4
-press R 4
-press DR 4
-press D 4
-press R 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-press D 4
-press L 4
-press R 4
-run 10
-press D 4
-press DR 4
-press R 4
-press R 4
-press L 4
-press R 4
-press DR 4
-press R 4
-press L 4
-press R 4
-press DR 4
-press L 4
-press R 4
-press DR 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-press D 4
-press R 4
-press L 4
-run 10
-press A 4
-run 4
-poke FF06DC 2 F4
-poke FF06DE 2 88
-run 3
-poke FF06DC 2 F2
-poke FF06DE 2 88
-run 3
-poke FF06DC 2 F6
-poke FF06DE 2 88
-run 3
-poke FF06DC 2 F4
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 F0
-poke FF06DE 2 88
-run 3
-poke FF06DC 2 F4
-poke FF06DE 2 8C
-run 3
-poke FF06DC 2 F2
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 F6
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 F2
-poke FF06DE 2 8C
-run 3
-poke FF06DC 2 F6
-poke FF06DE 2 8C
-run 3
-poke FF06DC 2 F0
-poke FF06DE 2 84
-run 3
-poke FF06DC 2 F0
-poke FF06DE 2 8C
-run 3
-press A 4
-run 4
-press R 4
-press DR 4
-press R 4
-press D 4
-press DR 4
-press R 4
-press L 4
-press R 4
-press R 4
-press R 4
-press D 4
-press R 4
-press D 4
-press L 4
-press L 4
-press D 4
-press DR 4
-press R 4
-press R 4
-press D 4
-press L 4
-press L 4
-press D 4
-press DR 4
-press DL 4
-press DR 10
-press DR 4
+press DR 12
+press DR 12
+press DR 6
 run 10
 run 60
 run 90
@@ -9246,175 +13598,47 @@ press R 12
 press R 12
 press R 12
 press R 12
+press R 8
+press R 4
+press D 4
+press D 4
+press DR 12
+press DR 12
+press R 4
+press D 4
+press D 4
+press DR 12
 press R 12
-press DR 12
-press D 4
-press R 4
-press DR 12
-press D 4
-press D 4
-press DR 12
-press D 4
-press D 4
-press DR 4
-press D 4
-press D 4
-press DR 4
-press D 4
-press DR 4
-press D 6
-press D 4
-press D 4
-press DR 12
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-press D 4
-press DR 4
-press L 4
-run 10
-press D 4
-press DR 12
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
-press R 4
+press R 12
 press UR 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
 press U 10
 press U 4
+press UR 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 8
+press U 4
+press R 4
+press UR 12
+press U 4
+press U 4
+press UR 12
+press UR 12
+press U 4
+press UR 4
+press U 4
+press U 4
+press UR 4
+press UL 4
 press R 4
 press DR 4
-press UR 12
-press UR 12
-press UR 8
+press R 4
+press R 4
+press U 10
+press U 6
 press U 4
 press U 4
 run 10
@@ -9495,55 +13719,49 @@ press U 12
 press U 12
 press U 12
 press U 12
-press U 4
+press U 6
 press U 4
 press R 4
+press R 4
+press UR 12
+press UR 12
+press UR 12
+press UR 12
+press UR 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 10
+press U 4
 press UR 12
 press U 4
 press U 4
 press UR 4
 press UR 12
-press U 4
-press U 4
-press U 4
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 8
-press U 4
-press UR 12
-press U 4
-press U 4
-press UR 12
-press UR 12
 press R 12
 press R 12
 press R 12
 press R 12
 press R 12
 press R 12
-press R 10
+press R 12
+press R 12
 press R 4
 press DR 12
 press D 12
@@ -9557,54 +13775,60 @@ press D 10
 press D 4
 press DR 12
 press D 4
-press D 4
 press DR 4
-press DR 12
-press D 4
-press D 4
-press DR 12
-press R 4
-press DR 4
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 12
-press R 4
-press R 4
-press U 4
-press UR 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 10
-press U 4
-press U 4
-press L 4
 press DL 4
+press D 4
+press DR 4
+press DL 4
+press DR 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 4
+press R 4
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 6
+press U 4
 press UL 12
-press L 12
 press L 6
 press L 4
+press L 4
+press U 4
 press UL 12
 press UL 12
 press UL 12
 press UL 12
 press UL 12
+press UL 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
 press U 12
 run 10
 press U 12
@@ -9614,30 +13838,672 @@ press U 12
 press U 12
 press U 12
 press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
 press U 12
 press U 12
 press U 12
-press U 4
-press U 4
-press UR 12
-press U 4
-press UR 4
-press UL 4
-press UR 12
-press U 4
-press UR 4
-press UL 4
-press R 4
-press DR 4
-press R 4
-press R 4
-press U 8
-press U 6
-press U 4
-press UR 12
-press U 4
-press UR 12
-press U 4
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press R 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press L 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press DR 20
+press U 12
+press R 12
+press D 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 20
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UR 20
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
+run 10
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 8
+press L 4
+press UL 12
+press UL 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
+press U 12
 press U 12
 press U 12
 press U 12
@@ -9648,73 +14514,8 @@ press U 12
 press U 12
 press U 10
 press U 4
-press UL 12
-press L 4
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 8
-press L 4
-press UL 12
-press U 4
-press UL 12
-press U 4
-press UL 12
-press U 4
-press U 4
-press UL 12
-press U 4
-press UR 4
-press UL 4
-press L 4
-press L 4
-press L 4
-press U 6
-press U 4
-press UR 4
-press U 4
-press UR 4
-press L 4
-press UR 4
-press UL 4
-press L 4
-press L 4
-press L 4
-press L 4
-press U 8
-press U 8
-press U 6
-press U 4
-press L 4
-press L 4
-press UL 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 12
-press U 8
-press U 4
 press UR 12
+press U 12
 press R 12
 press R 12
 press R 12
@@ -9734,7 +14535,8 @@ press R 12
 press R 12
 press R 12
 press R 12
-press R 6
+press R 10
+press R 4
 press R 4
 run 10
 run 60
@@ -9748,163 +14550,56 @@ press R 12
 press R 12
 press R 12
 press R 12
-press R 8
 press R 4
 press D 4
-press D 4
-press D 4
-press DR 12
-press D 4
 press DR 4
-press D 6
-press DR 6
-press D 8
-press D 4
-press DR 12
-press D 4
-press DR 12
-press D 4
-press D 6
-press D 4
-press R 4
-press R 4
-press DR 12
-press D 4
-press DR 12
-press U 12
-press D 6
-press DR 6
-press DL 6
-press D 4
-press D 4
-press DR 4
-press D 6
-press DR 6
-press D 6
-press D 4
 press DR 12
 press DR 12
-press U 12
-press D 6
-press D 4
-press DR 4
-press DL 4
-press D 4
-press DR 4
-press D 4
-press DR 4
-press DL 4
-press D 4
-press DR 4
-press D 4
-press DR 4
-press DL 4
-press D 4
-press DR 4
-press D 4
-press DR 4
-press DL 4
-press D 4
-press DR 4
-press D 4
-press DR 4
-press DL 4
-press D 4
-press DR 4
-press DL 4
-press D 4
 press DR 12
 press R 12
 press R 12
 press R 12
 press R 12
-press R 4
-press UR 12
-press UR 12
-press UR 12
-press UR 12
-press U 12
-press D 12
-press L 4
-press UR 4
-press UL 4
-press D 4
-press DR 4
-press DL 4
-press R 4
-press DR 4
-press UR 4
-press L 4
-press DL 4
-press UL 4
-press L 4
-press DR 4
-press UL 4
-press R 4
-press UR 4
-press UR 4
-press R 4
-press UR 4
-press UR 4
-press R 4
-press DR 4
-press UR 4
-press R 4
-press DR 4
-press UR 4
-press L 4
-press UR 4
-press UL 4
-press D 4
-press DR 4
-press DL 4
-press L 4
-press UR 4
-press UL 4
-press UR 4
-press UL 4
-press UR 4
-press UL 4
+press R 12
+press R 12
 press A 4
 run 4
-poke FF06DC 2 CB
+poke FF06DC 2 D8
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 C9
+poke FF06DC 2 D6
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 CD
+poke FF06DC 2 DA
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 CB
+poke FF06DC 2 D8
 poke FF06DE 2 3C
 run 3
-poke FF06DC 2 C7
+poke FF06DC 2 D4
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 CF
+poke FF06DC 2 DC
 poke FF06DE 2 40
 run 3
-poke FF06DC 2 CB
+poke FF06DC 2 D8
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 C9
+poke FF06DC 2 D6
 poke FF06DE 2 3C
 run 3
-poke FF06DC 2 CD
+poke FF06DC 2 DA
 poke FF06DE 2 3C
 run 3
-poke FF06DC 2 C9
+poke FF06DC 2 D6
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 CD
+poke FF06DC 2 DA
 poke FF06DE 2 44
 run 3
-poke FF06DC 2 C7
+poke FF06DC 2 D4
 poke FF06DE 2 3C
 run 3
-press A 4
-run 4
 poke FF06DC 2 BC
 poke FF06DE 2 C2
 run 10
@@ -9912,12 +14607,6 @@ press B 4
 run 4
 press C 3
 run 24
-poke FF06DC 2 DC
-poke FF06DE 2 B0
-run 8
-press B 4
-run 8
-run 8
 poke FF06DC 2 DC
 poke FF06DE 2 B0
 run 8
@@ -9956,36 +14645,21 @@ press B 4
 run 6
 press C 3
 run 24
-run 30
-poke FF06DC 2 BC
-poke FF06DE 2 C2
-run 10
-press B 4
-run 4
-press C 3
-run 24
-run 12
-poke FF06DC 2 B4
-poke FF06DE 2 B0
-run 8
-press B 4
-run 6
-press C 3
-run 24
-poke FF06DC 2 CB
+poke FF06DC 2 D6
 poke FF06DE 2 40
 run 8
 press B 4
 run 10
-poke FF06DC 2 CB
+poke FF06DC 2 D6
 poke FF06DE 2 40
 run 8
 press B 4
 run 10
-poke FF06DC 2 CB
+poke FF06DC 2 D6
 poke FF06DE 2 40
 run 8
 press B 4
+run 10
 run 10
 run 10
 run 10
@@ -10009,6 +14683,7 @@ run 10
 run 30
 press U 12
 press U 12
+press U 4
 run 10
 run 60
 run 90
@@ -10089,35 +14764,20 @@ poke FF06DE 2 B0
 run 8
 press B 4
 run 6
+run 3
 press C 3
 run 24
-run 30
-poke FF06DC 2 BC
-poke FF06DE 2 C2
-run 10
-press B 4
-run 4
-press C 3
-run 24
-run 12
-poke FF06DC 2 64
-poke FF06DE 2 B0
-run 8
-press B 4
-run 6
-press C 3
-run 24
-poke FF06DC 2 32
+poke FF06DC 2 34
 poke FF06DE 2 5C
 run 8
 press B 4
 run 10
-poke FF06DC 2 32
+poke FF06DC 2 34
 poke FF06DE 2 5C
 run 8
 press B 4
 run 10
-poke FF06DC 2 32
+poke FF06DC 2 34
 poke FF06DE 2 5C
 run 8
 press B 4
@@ -10169,12 +14829,7 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C3
-run 14
-press B 6
-run 4
-poke FF06DC 2 4C
+poke FF06DC 2 4E
 poke FF06DE 2 78
 run 8
 press B 4
@@ -10287,20 +14942,54 @@ press C 3
 run 24
 poke FF06DC 2 64
 poke FF06DE 2 80
+run 3
+poke FF06DC 2 64
+poke FF06DE 2 7C
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 80
+run 3
+poke FF06DC 2 68
+poke FF06DE 2 80
+run 3
+poke FF06DC 2 64
+poke FF06DE 2 84
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 7C
+run 3
+poke FF06DC 2 68
+poke FF06DE 2 7C
+run 3
+poke FF06DC 2 60
+poke FF06DE 2 84
+run 3
+poke FF06DC 2 68
+poke FF06DE 2 84
+run 3
+poke FF06DC 2 64
+poke FF06DE 2 78
+run 3
+poke FF06DC 2 5C
+poke FF06DE 2 80
+run 3
+poke FF06DC 2 6C
+poke FF06DE 2 80
+run 3
+poke FF06DC 2 64
+poke FF06DE 2 7C
 run 8
 press B 4
 run 10
 poke FF06DC 2 64
-poke FF06DE 2 80
+poke FF06DE 2 7C
 run 8
 press B 4
 run 10
 poke FF06DC 2 64
-poke FF06DE 2 80
+poke FF06DE 2 7C
 run 8
 press B 4
-run 10
-run 10
 run 10
 run 10
 run 10
@@ -10509,78 +15198,11 @@ press L 8
 press L 4
 press L 4
 press DL 6
+press DL 4
 press L 4
-press L 4
-press L 4
-press L 4
-press U 4
 press U 4
 press UL 12
-press U 8
-press U 4
-press U 4
-press UR 4
-press L 4
-press L 4
-press U 4
-press UR 4
-press UL 6
-press U 4
-press U 6
-press UR 6
-press L 4
-press UL 4
-press U 4
-press UR 4
-run 10
-run 10
-press A 4
-run 4
-poke FF06DC 2 14
-poke FF06DE 2 6C
-run 3
-poke FF06DC 2 12
-poke FF06DE 2 6C
-run 3
-poke FF06DC 2 16
-poke FF06DE 2 6C
-run 3
-poke FF06DC 2 14
-poke FF06DE 2 68
-run 3
-poke FF06DC 2 10
-poke FF06DE 2 6C
-run 3
-poke FF06DC 2 18
-poke FF06DE 2 6C
-run 3
-poke FF06DC 2 12
-poke FF06DE 2 68
-run 3
-poke FF06DC 2 16
-poke FF06DE 2 68
-run 3
-poke FF06DC 2 10
-poke FF06DE 2 68
-run 3
-poke FF06DC 2 18
-poke FF06DE 2 68
-run 3
-poke FF06DC 2 E
-poke FF06DE 2 6C
-run 3
-poke FF06DC 2 1A
-poke FF06DE 2 6C
-run 3
-press A 4
-run 4
-press L 4
-press L 4
-press L 4
-press L 6
-press L 4
-press UL 4
-press UL 4
+press UL 8
 run 10
 run 60
 run 150
@@ -10664,17 +15286,53 @@ run 6
 press C 3
 run 24
 poke FF06DC 2 48
+poke FF06DE 2 48
+run 3
+poke FF06DC 2 48
 poke FF06DE 2 44
+run 3
+poke FF06DC 2 44
+poke FF06DE 2 48
+run 3
+poke FF06DC 2 4C
+poke FF06DE 2 48
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 44
+poke FF06DE 2 44
+run 3
+poke FF06DC 2 4C
+poke FF06DE 2 44
+run 3
+poke FF06DC 2 44
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 4C
+poke FF06DE 2 4C
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 40
+run 3
+poke FF06DC 2 40
+poke FF06DE 2 48
+run 3
+poke FF06DC 2 50
+poke FF06DE 2 48
+run 3
+poke FF06DC 2 48
+poke FF06DE 2 48
 run 8
 press B 4
 run 10
 poke FF06DC 2 48
-poke FF06DE 2 44
+poke FF06DE 2 48
 run 8
 press B 4
 run 10
 poke FF06DC 2 48
-poke FF06DE 2 44
+poke FF06DE 2 48
 run 8
 press B 4
 run 10
@@ -10888,7 +15546,7 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 C0
+poke FF06DC 2 BE
 poke FF06DE 2 58
 run 8
 press B 4
@@ -10921,7 +15579,6 @@ press D 6
 run 12
 press B 6
 run 12
-run 10
 run 10
 run 10
 run 10
@@ -11058,11 +15715,6 @@ poke FF06DE 2 B2
 run 10
 press B 4
 run 4
-poke FF06DC 2 1C
-poke FF06DE 2 B3
-run 14
-press B 6
-run 4
 poke FF06DC 2 4B
 poke FF06DE 2 48
 run 8
@@ -11081,16 +15733,16 @@ run 10
 run 10
 run 10
 run 30
-press L 4
 press L 12
 press L 12
 press L 12
 press L 12
 press L 12
-press L 6
-press UL 12
+press L 10
 press U 4
-press UL 12
+press U 4
+press L 4
+press DL 4
 press U 6
 press U 4
 press U 4
@@ -11098,142 +15750,20 @@ press UL 12
 press U 4
 press U 4
 press UL 12
+press U 4
 press UL 12
 press U 4
-press UL 6
+press U 4
+press UL 12
+press U 4
+press UL 12
 press U 4
 press UR 4
 press U 4
 press UR 4
-press UL 6
-press U 4
-press U 4
-press UR 4
-press L 4
+press UL 12
+press UL 10
 press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-press U 4
-press UR 4
-press UL 4
-run 10
-press U 4
-press U 4
 run 10
 run 60
 run 90
@@ -11276,20 +15806,28 @@ press DL 12
 press D 4
 press DR 4
 press DL 12
-press DL 12
-press DL 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 12
-press L 6
-press UL 12
-press L 10
+press D 4
 press L 4
-press UL 4
+press DL 12
+press D 4
+press D 4
+press DL 12
+press D 4
+press DR 4
+press D 4
+press DR 4
+press DL 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press L 12
+press UL 12
+press L 8
 run 10
 run 60
 run 90
@@ -11402,7 +15940,7 @@ run 10
 press B 4
 run 4
 poke FF06DC 2 4A
-poke FF06DE 2 70
+poke FF06DE 2 6C
 run 8
 press B 4
 run 10
@@ -11440,15 +15978,68 @@ run 150
 run 10
 run 10
 run 10
-press R 4
-press R 4
-press D 12
-press D 12
 press D 8
+press D 6
+press D 4
+press DL 12
+press DL 12
+press U 12
+press D 4
+press DR 4
+press D 4
+press DR 4
 press D 4
 press DL 12
 press D 4
 press DL 12
+press U 12
+press D 4
+press DR 4
+press D 4
+press DR 4
+press DL 4
+press D 4
+press DR 4
+press DL 12
+press D 4
+press DL 12
+press U 12
+press D 4
+press DR 4
+press D 4
+press DR 4
+press D 4
+press DR 4
+press D 4
+press DL 12
+press D 4
+press D 4
+press DR 4
+press DL 12
+press DL 12
+press U 12
+press D 4
+press DR 4
+press D 4
+press DR 4
+press DL 4
+press D 4
+press DR 4
+press DL 12
+press D 4
+press DL 12
+press U 12
+press D 4
+press DR 4
+press DL 4
+press R 4
+press UR 4
+press R 4
+press R 4
+press D 8
+press D 6
+press D 4
+press DL 12
 press L 12
 press L 12
 press L 12
@@ -11458,18 +16049,24 @@ press L 12
 press L 12
 press L 12
 press L 12
-press L 4
+press L 8
 press L 4
 press U 4
+press UL 12
+press UL 12
+press UL 12
 press U 4
 press UL 12
+press U 4
+press UR 4
+press UL 12
+press U 4
+press U 4
+press UR 4
 press UL 12
 press UL 12
 press UL 12
-press UL 12
-press UL 12
-press U 8
-press U 6
+press U 4
 press U 4
 run 10
 run 60
@@ -11525,50 +16122,29 @@ poke FF06DE 2 C3
 run 14
 press B 6
 run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C4
-run 18
-press B 8
-run 4
 press C 3
 run 24
 run 12
 poke FF06DC 2 8C
 poke FF06DE 2 B0
 run 8
+press B 4
+run 6
 run 3
-press B 4
-run 6
-press C 3
-run 24
-run 30
-poke FF06DC 2 BC
-poke FF06DE 2 C2
-run 10
-press B 4
-run 4
-press C 3
-run 24
-run 12
-poke FF06DC 2 8C
-poke FF06DE 2 B0
-run 8
-press B 4
-run 6
 press C 3
 run 24
 poke FF06DC 2 60
-poke FF06DE 2 30
+poke FF06DE 2 34
 run 8
 press B 4
 run 10
 poke FF06DC 2 60
-poke FF06DE 2 30
+poke FF06DE 2 34
 run 8
 press B 4
 run 10
 poke FF06DC 2 60
-poke FF06DE 2 30
+poke FF06DE 2 34
 run 8
 press B 4
 run 10
