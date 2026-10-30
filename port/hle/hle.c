@@ -26,6 +26,8 @@ extern int m68k_step_one(void);
 
 #define MAX_DEFS 4096
 #define SENTINEL_RET 0x0000F0u   /* return address used for hle_call68k (never executed) */
+#define STALL_PC     0x0000F4u   /* "burn the rest of a long C function's cost" trap (#31) */
+#define STALL_SLICE  1000        /* 68k cycles burnt per visit: interrupts get in between */
 
 typedef struct {
 	hle_def def;
@@ -198,10 +200,20 @@ static void ctx_store(const hle_ctx *c)
 		m68k_hle_set_sr(c->sr);
 }
 
+static int g_nested_cycles;    /* nested 68k cycles of the current C function (rewound) */
+static long g_stall_debt;      /* cycles still to burn at STALL_PC */
+static int g_nest;
+static int g_nest_c0;
+
+int hle_nested_cycles(void) { return g_nested_cycles; }
+
 static int run_def(const hle_def *def, entry *e)
 {
 	hle_ctx c;
+	int saved_nested = g_nested_cycles;
+	g_nested_cycles = 0;
 	ctx_load(&c);
+	bool unmasked = ((c.sr >> 8) & 7) < 6;
 	c.def = def;
 	c.cycles = def->cycles;
 	if (e)
@@ -222,14 +234,45 @@ static int run_def(const hle_def *def, entry *e)
 		c.pc = bus_r32(c.a[7]);   /* rts */
 		c.a[7] += 4;
 	}
+	long total = (c.cycles > 0 ? c.cycles : 0) + (long)g_nested_cycles;
+	g_nested_cycles = saved_nested;
+	if (unmasked && total > STALL_SLICE && !hle_post_access && g_nest == 0 && !g_stall_debt) {
+		/* Long function entered with VBlank unmasked: the original would have been
+		 * interrupted along the way. Spend the cost in slices at STALL_PC, a trap that
+		 * "returns" to the real continuation (pushed like a jsr, so a savestate taken
+		 * meanwhile just resumes there) - interrupts are taken between the slices. */
+		c.a[7] -= 4;
+		bus_w32(c.a[7], c.pc);
+		c.pc = STALL_PC;
+		g_stall_debt = total - STALL_SLICE;
+		total = STALL_SLICE;
+	}
 	ctx_store(&c);
-	return c.cycles > 0 ? c.cycles : 0;
+	return (int)total;
+}
+
+void hle_state_reset(void) { g_stall_debt = 0; }
+
+/* STALL_PC: burn the next slice of g_stall_debt; then rts to the continuation */
+static int stall(void)
+{
+	long n = g_stall_debt < STALL_SLICE ? g_stall_debt : STALL_SLICE;
+	g_stall_debt -= n;
+	if (g_stall_debt <= 0) {
+		g_stall_debt = 0;
+		uint32_t *dar = gx_m68k_dar();
+		gx_m68k_set_pc(bus_r32(dar[15]) & 0xFFFFFF);
+		dar[15] += 4;
+	}
+	return (int)(n > 0 ? n : 4);
 }
 
 static int g_trace = -1;   /* SCOOBY_HLE_TRACE=1: log every dispatched call to stderr */
 
 static int dispatch(unsigned int pc)
 {
+	if (pc == STALL_PC)
+		return stall();
 	entry *e = find_addr(pc);
 	if (!e || !e->enabled)
 		return -1;
@@ -255,6 +298,7 @@ void hle_install(void)
 	hle_rom = gx_rom();
 	m68k_hle_handler = dispatch;
 	m68k_hle_bitmap = g_bitmap;
+	bitmap_set(STALL_PC, true);
 	g_installed = true;
 }
 
@@ -272,14 +316,23 @@ void hle_install(void)
  *    past GPGX's fifo_timing[] when that exceeds ~2 lines, which stalls the CPU by
  *    millions of cycles: the next ~15 VBlanks were lost (vblank_main skipped, input lag).
  *    So the line base follows the CPU during nested execution (as in the sandbox) and is
- *    restored afterwards for the frame loop's own bookkeeping. */
-static int g_nest;
+ *    restored afterwards for the frame loop's own bookkeeping.
+ *  - DMA (#31): a VDP DMA started by nested code is advanced by the frame loop, line by
+ *    line, which can't run until C returns: the nested code's DMA-busy poll spun or the
+ *    transfer stalled the CPU clock for seconds, and room_load's plane uploads never
+ *    reached VRAM (Lobby drawn without its background). Nested DMA completes at once, as
+ *    in the sandbox; the CPU is halted during a 68k->VDP DMA anyway.
+ *  - The CPU clock (#31): it is rewound to where the nested call started and the nested
+ *    time is added to the C function's charge (run_def), so it is subject to the same cap
+ *    and a later Z80 bus request doesn't catch the Z80/YM2612 up by many frames at once. */
 static unsigned g_line_base;
 
 static void nest_begin(void)
 {
-	if (g_nest++ == 0)
+	if (g_nest++ == 0) {
 		g_line_base = gx_vdp_line_base();
+		g_nest_c0 = gx_m68k_cycles();
+	}
 	gx_m68k_clear_irq();
 	gx_vdp_follow_cpu();
 }
@@ -288,11 +341,17 @@ static void nest_step_done(void)
 {
 	gx_m68k_clear_irq();
 	gx_vdp_follow_cpu();
+	if (gx_dma_length())
+		gx_flush_dma();
 }
 
 static void nest_end(void)
 {
-	if (--g_nest == 0 && !hle_post_access) {  /* the sandbox (difftest) manages both itself */
+	if (--g_nest == 0 && !hle_post_access) {  /* the sandbox (difftest) manages all this itself */
+		/* the nested time becomes part of the C function's charge (run_def, #31) */
+		g_nested_cycles += (gx_m68k_cycles() - g_nest_c0) / 7;
+		gx_m68k_set_cycles(g_nest_c0);
+		gx_vdp_fifo_clamp();
 		gx_vdp_set_line_base(g_line_base);
 		gx_m68k_resync_irq();
 	}

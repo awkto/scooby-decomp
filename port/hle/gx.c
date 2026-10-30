@@ -21,6 +21,14 @@ uint32_t gx_m68k_other_sp(void) { return m68k.sp[m68k.s_flag ? 0 : 4]; }
 void gx_m68k_set_usp(uint32_t v) { if (m68k.s_flag) m68k.sp[0] = v; else m68k.dar[15] = v; }
 int gx_m68k_cycles(void) { return m68k.cycles; }
 void gx_m68k_set_cycles(int c) { m68k.cycles = c; }
+/* after rewinding the CPU clock: FIFO entries stamped in the (now) future would stall the
+ * next VDP data write until then */
+void gx_vdp_fifo_clamp(void)
+{
+	for (int i = 0; i < 4; i++)
+		if ((int)fifo_cycles[i] > m68k.cycles)
+			fifo_cycles[i] = m68k.cycles;
+}
 void gx_m68k_clear_irq(void) { m68k.int_level = 0; }
 /* the interrupt level the VDP is asserting right now (VINT has priority) */
 void gx_m68k_resync_irq(void)

@@ -82,6 +82,18 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
 	{ hle_register_def(&hle_def_##NAME); }                                              \
 	void NAME(hle_ctx *ctx)
 
+/* Cycle accounting (docs/porting.md, "Long-running functions", #31): the 68k time a C
+ * function costs = ctx->cycles (its own share) + the cycles its nested 68k calls ran
+ * (the layer rewinds the clock after nested calls and adds them to the charge). Charge
+ * the ORIGINAL's cost. If the function was entered with the VBlank interrupt unmasked
+ * and costs more than ~1000 cycles, the layer spends it in slices at a trap address with
+ * interrupts taken in between (as the original would have been interrupted); with
+ * interrupts masked it is charged at once (the original loses those VBlanks too). */
+/* 68k cycles run by nested calls so far in the current C function (outermost level) */
+int hle_nested_cycles(void);
+/* forget layer state that is not in the savestate (pending cycle debt): emu reset/load */
+void hle_state_reset(void);
+
 /* ------------------------------------------------------------------ control */
 void hle_install(void);                 /* hook the CPU (called by emu_init) */
 /* spec: "all" | "none" | comma list of [+-]name-or-$hexaddr, applied left to right.

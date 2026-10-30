@@ -53,12 +53,20 @@ static void add_watch(uint32_t a, const char *name)
 }
 
 static long g_frame;
+static unsigned g_vw_lo = 1, g_vw_hi = 0, g_vw_n, g_vw_zero;   /* --vramw LO HI: VRAM writes */
 static long g_hist_from = -1, g_hist_to = -1;
 static unsigned *g_hist;    /* executed-instruction count per address (--hist FROM TO) */
 
 static void hook(int type, int width, unsigned addr, unsigned value)
 {
 	(void)width; (void)value;
+	if (type == EMU_HOOK_VRAM_W) {
+		if (addr >= g_vw_lo && addr < g_vw_hi) {
+			g_vw_n++;
+			g_vw_zero += !value;
+		}
+		return;
+	}
 	if (type != EMU_HOOK_EXEC)
 		return;
 	addr &= 0xFFFFFF;
@@ -120,6 +128,9 @@ int main(int argc, char **argv)
 			g_hist = calloc(0x400000, sizeof *g_hist);
 		} else if (!strcmp(argv[i], "--hle") && i + 1 < argc) {
 			hle_spec = argv[++i];
+		} else if (!strcmp(argv[i], "--vramw") && i + 2 < argc) {
+			g_vw_lo = (unsigned)strtoul(argv[++i], NULL, 16);
+			g_vw_hi = (unsigned)strtoul(argv[++i], NULL, 16);
 		} else if (!strcmp(argv[i], "--frames"))
 			per_frame = true;
 		else {
@@ -165,9 +176,13 @@ int main(int argc, char **argv)
 		unsigned pad;
 		while (script_step(s, &pad)) {
 			g_vbl = g_hbl = g_loop = g_wait = g_vmain = 0;
+			g_vw_n = g_vw_zero = 0;
 			emu_set_pad(0, mouse_frame(pad));   /* script mouse/click commands (#23) */
 			emu_run_frame();
 			uint32_t vh = emu_ram32(0xFF0000), hh = emu_ram32(0xFF0004);
+			if (g_vw_n)
+				fprintf(stderr, "frame %ld: %u VRAM writes in $%04X-$%04X (%u zero)\n", g_frame, g_vw_n, g_vw_lo, g_vw_hi,
+				        g_vw_zero);
 			if (vh == 0x00A65C) {
 				/* gameplay: vblank_main must run every frame (regression check for #30) */
 				frames_main_hook++;

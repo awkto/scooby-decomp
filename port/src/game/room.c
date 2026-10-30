@@ -56,15 +56,20 @@ enum {
 #define FLAGS_09DE        0xFF09DE  /* byte: room/scene mode flags (bit2, bit3, bit5, bit6, bit7 used here) */
 #define GAME_STATE        0xFF2A00
 
-/* Run 68k code that costs millions of cycles (LZSS) without advancing the CPU clock: advancing
- * it inside one HLE call made the next Z80 bus request catch the Z80/YM2612 up by several frames,
- * which overflowed the YM buffer (segfault in YM2612Update, found by the mouse soak test).  The
- * cost is part of the function's charged cycles instead. */
+/* Heavy nested 68k code (LZSS): the HLE layer rewinds the CPU clock after every nested call
+ * and adds the nested time to the function's charge (hle.c, #31), so a later Z80 bus request
+ * no longer catches the Z80/YM2612 up by frames at once (the YM buffer overflow found by the
+ * mouse soak test). Charges below are "original total - hle_nested_cycles()". */
 static void nested68k(hle_ctx *ctx, uint32_t addr)
 {
-	int c0 = gx_m68k_cycles();
 	hle_call68k(ctx, addr);
-	gx_m68k_set_cycles(c0);
+}
+
+/* total 68k cost of the original, minus what the nested calls already accounted for */
+static int charge_total(int original_total)
+{
+	int c = original_total - hle_nested_cycles();
+	return c > 0 ? c : 0;
 }
 
 /* LZSS: a0 = stream (after the u32 length), a1 = ring buffer, a2 = output; size left at (a1).l */
@@ -148,7 +153,7 @@ HLE_FUNC(0x007A2A, font_tiles_load, 0)
 		cc_logic32(ctx, pair);
 		cc_set(ctx, CC_X, x_carry ? CC_X : 0);
 	}
-	ctx->cycles = 1021000;
+	ctx->cycles = 1021000;   /* original avg; capped by the layer when called with VBlank unmasked (scripts) */
 }
 
 /* $007950: draw the 32 x 19 cell window of the room at the camera (CAM_X, CAM_Y; multiples of
@@ -189,7 +194,7 @@ HLE_FUNC(0x007950, room_draw_view, 0)
 	hle_call68k(ctx, 0x00FD5E);
 	hle_call68k(ctx, 0x00FE74);
 	hle_call68k(ctx, 0x00FF68);
-	ctx->cycles = 380000;
+	ctx->cycles = charge_total(380000);
 }
 
 /* $007A8C: (re)initialise the per-room actor slots after a load.
@@ -443,7 +448,9 @@ HLE_FUNC(0x00758A, room_load, 0)
 	RAM16(CAM_Y) = (uint16_t)(cy << 3);
 	room_draw_view(ctx);
 	room_setup_actors(ctx);
-	ctx->cycles = 8800000;   /* original avg; includes the rewound LZSS time */   /* C-side share only: the nested 68k calls (LZSS...) are charged as they run; original total avg 8.8M */
+	/* original avg 8.8M cycles, with interrupts masked by the caller ($002138): charged in
+	 * full (the original loses those VBlanks too) */
+	ctx->cycles = charge_total(8800000);
 }
 
 /* $007F22: copy the initial game-state block of mystery MYSTERY_IDX into FF2A00 (the first 256
