@@ -29,28 +29,42 @@
 	.equ ram_title_scroll, 0xff001d
 	.equ ram_inv_nametable, 0xff0328
 	.equ ram_rng_state, 0xff0428
-	.equ ram_list_484, 0xff0484
-	.equ ram_cur_index, 0xff0488
-	.equ ram_484a, 0xff048a
-	.equ ram_484c, 0xff048c
+	.equ ram_actor_animset, 0xff0470
+	.equ ram_actor_anim, 0xff0488
+	.equ ram_actor_script_pos, 0xff0494
+	.equ ram_actor_frame, 0xff04a0
+	.equ ram_actor_hot_x, 0xff04ac
+	.equ ram_actor_hot_y, 0xff04b8
+	.equ ram_actor_shown_hot_x, 0xff04c4
+	.equ ram_actor_shown_hot_y, 0xff04d0
 	.equ ram_shaggy_x, 0xff04dc
 	.equ ram_scooby_x, 0xff04e0
 	.equ ram_actor_x2, 0xff04e4
 	.equ ram_shaggy_y, 0xff04f4
 	.equ ram_scooby_y, 0xff04f8
 	.equ ram_actor_y2, 0xff04fc
+	.equ ram_actor_anim_delay, 0xff050c
 	.equ ram_actor_step_x, 0xff0514
 	.equ ram_actor_step_y, 0xff052c
+	.equ ram_actor_src, 0xff0540
+	.equ ram_actor_shown_frame, 0xff0558
+	.equ ram_actor_next_frame, 0xff0570
+	.equ ram_actor_dma_words, 0xff0588
 	.equ ram_actor_depth_x, 0xff05a0
 	.equ ram_actor_depth_y, 0xff05ac
 	.equ ram_shaggy_facing, 0xff05b8
 	.equ ram_scooby_facing, 0xff05ba
+	.equ ram_actor_shown_depth_x, 0xff05c4
+	.equ ram_actor_shown_depth_y, 0xff05d0
 	.equ ram_actor_target_x, 0xff05dc
 	.equ ram_actor_target_y, 0xff05e8
 	.equ ram_actor_path_ptr, 0xff05f4
 	.equ ram_actor_path_pos, 0xff060c
-	.equ ram_618, 0xff0618
+	.equ ram_actor_timer, 0xff0618
 	.equ ram_scooby_anim_lock, 0xff061a
+	.equ ram_actor_timer2, 0xff061c
+	.equ ram_scale_depth_x, 0xff0624
+	.equ ram_scale_depth_y, 0xff0626
 	.equ ram_shaggy_speed, 0xff062a
 	.equ ram_shaggy_dir_x, 0xff062e
 	.equ ram_shaggy_dir_y, 0xff0630
@@ -130,7 +144,10 @@
 	.equ ram_bar_saved, 0xff0876
 	.equ ram_script_cb, 0xff0878
 	.equ ram_palcyc, 0xff087c
+	.equ ram_fx_sprite_tile, 0xff08a4
+	.equ ram_fx_sprite_ptr, 0xff08a6
 	.equ ram_frame_countdown, 0xff08ae
+	.equ ram_follow_slot, 0xff08b0
 	.equ ram_hblank_hv, 0xff08b2
 	.equ ram_ui_tile_base_f, 0xff08b8
 	.equ ram_08bc, 0xff08bc
@@ -153,23 +170,31 @@
 	.equ ram_actor_path_reload, 0xff0aab
 	.equ ram_camera_scroll_req, 0xff0ab3
 	.equ ram_actors_active, 0xff0ab4
-	.equ ram_0ab5, 0xff0ab5
+	.equ ram_actors_anim_new, 0xff0ab5
+	.equ ram_actors_tiles_ready, 0xff0ab6
 	.equ ram_actors_moving, 0xff0ab7
 	.equ ram_actors_depth_on, 0xff0ab8
+	.equ ram_actors_need_scale, 0xff0ab9
+	.equ ram_actors_draw_todo, 0xff0aba
 	.equ ram_actors_behind, 0xff0abb
 	.equ ram_actors_anim_done, 0xff0abc
 	.equ ram_actors_anim_looped, 0xff0abd
 	.equ ram_actors_depth_new, 0xff0abe
 	.equ ram_actors_frozen, 0xff0abf
 	.equ ram_actors_on_path, 0xff0ac0
+	.equ ram_actors_dma_done, 0xff0ac1
 	.equ ram_actors_no_zone, 0xff0ac2
 	.equ ram_actors_path_once, 0xff0ac3
+	.equ ram_actors_drawn, 0xff0ac4
+	.equ ram_actors_drawn_prev, 0xff0ac5
+	.equ ram_actors_follow_sync, 0xff0ac6
 	.equ ram_vbl_countdown_b, 0xff0ac7
 	.equ ram_script_flags, 0xff0ac9
 	.equ ram_script_flags2, 0xff0aca
 	.equ ram_bar_slide, 0xff0acb
 	.equ ram_shaggy_turning, 0xff0acc
 	.equ ram_palcyc_on, 0xff0acd
+	.equ ram_fx_blink, 0xff0ace
 	.equ ram_verb_bar_window, 0xff0ad1
 	.equ ram_objects, 0xff1200
 	.equ ram_game_state, 0xff2a00
@@ -730,7 +755,7 @@ game_start:
 	move.w #0x2700,sr
 	jsr (game_reset).l
 	bsr.w mystery_load
-	bsr.w sub_00801A
+	bsr.w actors_init
 	bset.b #0x7,(ram_vblank_flags).l
 	bclr.b #0x1,(ram_script_flags2).l
 	bclr.b #0x0,(ram_script_flags2).l
@@ -873,7 +898,7 @@ loc_000F72:
 	btst.b #0x1,(0x18,a0)
 	beq.w loc_001018
 	move.w d2,-(sp)
-	lea.l (dat_032670).l,a2
+	lea.l (sprite_sets).l,a2
 	lea.l (ram_actor_x2).l,a5
 	move.b (0x19,a0),d4
 	andi.w #0xff,d4
@@ -1174,7 +1199,7 @@ loc_001376:
 	jsr (wait_vblank).l
 	bra.w main_loop
 loc_0013B0:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	bra.w main_loop
 mystery_intro:
 	move.w sr,-(sp)
@@ -1712,7 +1737,7 @@ loc_001C78:
 	bsr.w sub_0022F2
 	move.b #0x10,(ram_bar_slide).l
 loc_001C98:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	tst.b (ram_bar_slide).l
 	bpl.w loc_001C98
 	move.l a5,(ram_title_piece_w).l
@@ -1786,7 +1811,7 @@ loc_001DA6:
 	dbra d0,loc_001D9A
 loc_001DAA:
 	bset.b #0x0,(ram_vblank_flags).l
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	btst.b #0x0,(ram_pad1).l
 	bne.w loc_001DF2
 	btst.b #0x0,(ram_pad_last).l
@@ -1868,8 +1893,8 @@ loc_001E72:
 	bclr.b #0x4,(ram_verb_state).l
 	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	movem.w (sp)+,d0-d3
 	movem.l d2-d4/a0,-(sp)
 	move.w d3,d0
@@ -1911,11 +1936,11 @@ loc_001E72:
 	add.w d1,d1
 	tst.w (0xff06b2).l
 	bmi.s loc_001FB8
-	lea.l (ram_484c).l,a0
+	lea.l (ram_actor_anim+4).l,a0
 	move.w (0xff06b2).l,(0x0,a0,d1.w)
-	lea.l (0xff061c).l,a0
+	lea.l (ram_actor_timer2).l,a0
 	move.w #0xffff,(0x0,a0,d1.w)
-	bset.b d0,(ram_0ab5).l
+	bset.b d0,(ram_actors_anim_new).l
 loc_001FB8:
 	movem.l (sp)+,d0-d7/a0-a6
 	jsr (sub_00A130).l
@@ -1960,7 +1985,7 @@ loc_00206A:
 	bsr.w sub_0022F2
 	move.b #0x10,(ram_bar_slide).l
 loc_00207E:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	tst.b (ram_bar_slide).l
 	bpl.w loc_00207E
 	move.w d4,d0
@@ -2007,8 +2032,8 @@ loc_002120:
 	lsl.w #0x2,d1
 	add.w d1,d0
 	addi.w #0x24,d0
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_002136:
 	rts
 room_load:
@@ -2024,10 +2049,10 @@ room_load:
 	bne.w loc_002178
 	bsr.w inventory_arrows_update
 loc_002178:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 loc_00217E:
 	bsr.w wait_vblank
-	tst.b (0xff0ab6).l
+	tst.b (ram_actors_tiles_ready).l
 	bne.w loc_00217E
 	bsr.w run_load_script
 	movem.l (sp)+,d0-d7/a0-a6
@@ -2382,12 +2407,12 @@ script_op_1E_face:
 	add.w d2,d1
 	move.w d0,(ram_shaggy_facing).l
 	lea.l (dat_0FC740).l,a0
-	move.w (0x0,a0,d1.w),(ram_cur_index).l
+	move.w (0x0,a0,d1.w),(ram_actor_anim).l
 	tst.w (0x2,a5)
-	bset.b #0x0,(ram_0ab5).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bpl.s loc_00272C
 loc_0026D4:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.s loc_0026D4
 	bra.s loc_00272C
@@ -2399,12 +2424,12 @@ loc_0026E6:
 	add.w d2,d1
 	move.w d0,(ram_scooby_facing).l
 	lea.l (scooby_pose_table).l,a0
-	move.w (0x0,a0,d1.w),(ram_484a).l
+	move.w (0x0,a0,d1.w),(ram_actor_anim+2).l
 	tst.w (0x2,a5)
 	bpl.s loc_00272C
-	bset.b #0x1,(ram_0ab5).l
+	bset.b #0x1,(ram_actors_anim_new).l
 loc_002716:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	btst.b #0x1,(ram_actors_anim_done).l
 	beq.s loc_002716
 	move.w d0,(ram_scooby_facing).l
@@ -2554,7 +2579,7 @@ loc_0028C4:
 	andi.w #0xff,d1
 	addq.w #0x2,d1
 	bclr.b d1,(ram_actors_active).l
-	bclr.b d1,(0xff0ab6).l
+	bclr.b d1,(ram_actors_tiles_ready).l
 	move.b #0xff,(0x19,a0)
 loc_002908:
 	move.w (0x4,a5),(0x6,a0)
@@ -2570,7 +2595,7 @@ loc_002918:
 	bra.w loc_002ACA
 loc_002930:
 	move.w (0x2,a0),d2
-	lea.l (dat_032670).l,a1
+	lea.l (sprite_sets).l,a1
 	moveq #0x23,d1
 loc_00293C:
 	movea.l (a1)+,a2
@@ -2588,13 +2613,13 @@ loc_00294C:
 	move.l d3,(0x0,a3,d1.w)
 	lsr.l #0x1,d3
 	move.l d3,(0x14,a3,d1.w)
-	lea.l (0xff0470).l,a1
+	lea.l (ram_actor_animset).l,a1
 	move.l a2,(0x0,a1,d1.w)
-	lea.l (ram_cur_index).l,a1
+	lea.l (ram_actor_anim).l,a1
 	dc.w 0x33a8,0x0000,0x2000	| move.w $0(a0), (a1, d2.w)
 	move.w (0x12,a0),(0x54,a1,d1.w)
 	move.w (0x14,a0),(0x6c,a1,d1.w)
-	lea.l (ram_618).l,a1
+	lea.l (ram_actor_timer).l,a1
 	move.w #0xffff,(0x0,a1,d1.w)
 	lea.l (ram_actor_target_x).l,a1
 	move.w (0x12,a0),(0x0,a1,d2.w)
@@ -2607,13 +2632,13 @@ loc_00294C:
 	beq.w loc_0029C6
 	bset.b d0,(ram_actors_depth_on).l
 loc_0029C6:
-	bclr.b d0,(0xff0ab6).l
-	bclr.b d0,(0xff0ab9).l
+	bclr.b d0,(ram_actors_tiles_ready).l
+	bclr.b d0,(ram_actors_need_scale).l
 	bclr.b d0,(ram_actors_anim_looped).l
-	bset.b d0,(ram_0ab5).l
+	bset.b d0,(ram_actors_anim_new).l
 	bset.b d0,(ram_actors_active).l
 loc_0029E4:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	btst.l d0,(ram_actors_anim_looped).l
 	beq.w loc_0029E4
 	move.w (0x4,a5),(0x6,a0)
@@ -2727,7 +2752,7 @@ loc_002B26:
 loc_002B38:
 	bset.b d0,(ram_actors_depth_new).l
 loc_002B3E:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	btst.l d0,(ram_actors_anim_looped).l
 	beq.w loc_002B3E
 	bclr.b d0,(ram_actors_frozen).l
@@ -2739,19 +2764,19 @@ script_op_06_anim_wait:
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
 	bne.w loc_002B76
-	move.w (0x4,a5),(ram_cur_index).l
+	move.w (0x4,a5),(ram_actor_anim).l
 	moveq #0x0,d1
 	bra.w loc_002B86
 loc_002B76:
 	subq.w #0x1,d0
 	bne.w loc_002BA0
-	move.w (0x4,a5),(ram_484a).l
+	move.w (0x4,a5),(ram_actor_anim+2).l
 	moveq #0x1,d1
 loc_002B86:
-	bset.b d1,(ram_0ab5).l
+	bset.b d1,(ram_actors_anim_new).l
 loc_002B8C:
-	jsr (sub_00B0B8).l
-	btst.l d1,(ram_0ab5).l
+	jsr (actor_animate).l
+	btst.l d1,(ram_actors_anim_new).l
 	bne.w loc_002B8C
 	bra.w loc_002BF2
 loc_002BA0:
@@ -2761,16 +2786,16 @@ loc_002BA0:
 	move.b (0x19,a0,d0.w),d1
 	bmi.w loc_002BEC
 	andi.w #0xff,d1
-	lea.l (ram_484c).l,a1
+	lea.l (ram_actor_anim+4).l,a1
 	move.w d1,d2
 	add.w d2,d2
 	move.w (0x4,a5),(0x0,a1,d2.w)
-	lea.l (0xff061c).l,a1
+	lea.l (ram_actor_timer2).l,a1
 	move.w #0xffff,(0x0,a1,d2.w)
 	addq.w #0x2,d1
-	bset.b d1,(ram_0ab5).l
+	bset.b d1,(ram_actors_anim_new).l
 loc_002BDC:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	btst.l d1,(ram_actors_anim_looped).l
 	beq.w loc_002BDC
 loc_002BEC:
@@ -3084,23 +3109,23 @@ loc_002FFA:
 script_subop_0B_scooby_pose_on:
 	move.w (ram_scooby_facing).l,d0
 	addq.w #0x4,d0
-	move.w d0,(ram_484a).l
+	move.w d0,(ram_actor_anim+2).l
 	bset.b #0x2,(ram_09eb).l
 	rts
 script_subop_36_scooby_pose_off:
 	bclr.b #0x2,(ram_09eb).l
 	rts
 script_subop_35_shaggy_pose_45:
-	move.w #0x45,(ram_cur_index).l
+	move.w #0x45,(ram_actor_anim).l
 loc_003026:
-	btst.b #0x0,(0xff0ab6).l
+	btst.b #0x0,(ram_actors_tiles_ready).l
 	bne.s loc_003026
-	bset.b #0x0,(ram_0ab5).l
-	jsr (sub_00B0B8).l
+	bset.b #0x0,(ram_actors_anim_new).l
+	jsr (actor_animate).l
 	move.w #0x128,(ram_shaggy_x).l
 	move.w #0x40,(ram_shaggy_y).l
 loc_00304E:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.s loc_00304E
 	btst.b #0x7,(ram_verb_state).l
@@ -3110,26 +3135,26 @@ loc_00304E:
 loc_003072:
 	btst.b #0x7,(ram_verb_state).l
 	bne.s loc_003086
-	move.w #0x0,(ram_484c).l
+	move.w #0x0,(ram_actor_anim+4).l
 	bra.s loc_00308E
 loc_003086:
-	move.w #0x4,(ram_484c).l
+	move.w #0x4,(ram_actor_anim+4).l
 loc_00308E:
-	bset.b #0x2,(ram_0ab5).l
-	jsr (sub_00B0B8).l
+	bset.b #0x2,(ram_actors_anim_new).l
+	jsr (actor_animate).l
 	ori.b #0x3,(ram_actors_frozen).l
 	rts
 script_subop_37_shaggy_pose_47:
-	move.w #0x47,(ram_cur_index).l
+	move.w #0x47,(ram_actor_anim).l
 loc_0030AE:
-	btst.b #0x0,(0xff0ab6).l
+	btst.b #0x0,(ram_actors_tiles_ready).l
 	bne.s loc_0030AE
-	bset.b #0x0,(ram_0ab5).l
-	jsr (sub_00B0B8).l
+	bset.b #0x0,(ram_actors_anim_new).l
+	jsr (actor_animate).l
 	move.w #0x58,(ram_shaggy_x).l
 	move.w #0x50,(ram_shaggy_y).l
 loc_0030D6:
-	jsr (sub_00B0B8).l
+	jsr (actor_animate).l
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.s loc_0030D6
 	btst.b #0x7,(ram_verb_state).l
@@ -3139,13 +3164,13 @@ loc_0030D6:
 loc_0030FA:
 	btst.b #0x7,(ram_verb_state).l
 	bne.s loc_00310E
-	move.w #0x1,(ram_484c).l
+	move.w #0x1,(ram_actor_anim+4).l
 	bra.s loc_003116
 loc_00310E:
-	move.w #0x5,(ram_484c).l
+	move.w #0x5,(ram_actor_anim+4).l
 loc_003116:
-	bset.b #0x2,(ram_0ab5).l
-	jsr (sub_00B0B8).l
+	bset.b #0x2,(ram_actors_anim_new).l
+	jsr (actor_animate).l
 	ori.b #0x3,(ram_actors_frozen).l
 	rts
 script_subop_33_flag09eb_0_on:
@@ -3254,13 +3279,13 @@ loc_00324A:
 	lea.l (ram_inv_nametable).l,a0
 	move.w #0xa400,d0
 	bsr.w vdp_copy_to_vram
-	move.l #0xf88dc,(0xff0470).l
+	move.l #0xf88dc,(ram_actor_animset).l
 	bclr.b #0x0,(ram_actors_depth_on).l
-	move.w #0x2,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
-	move.w #0xffff,(ram_618).l
+	move.w #0x2,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
+	move.w #0xffff,(ram_actor_timer).l
 loc_00331A:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.s loc_00331A
 	dc.w 0x203c,0x0000,0x0058	| move.l #$58, d0
@@ -3281,7 +3306,7 @@ loc_00331A:
 	bsr.w wait_vblanks
 sub_003372:
 	bsr.w wait_vblank
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	tst.w (0xff0a98).l
 	bmi.w loc_0038C2
 	tst.w (0xff0a9a).l
@@ -3409,7 +3434,7 @@ loc_003562:
 loc_003574:
 	btst.b #0x2,(ram_actors_anim_done).l
 	beq.w loc_00362E
-	move.w (ram_484c).l,d0
+	move.w (ram_actor_anim+4).l,d0
 	btst.b #0x3,(ram_09ea).l
 	beq.s loc_003592
 	addq.w #0x1,d0
@@ -3447,14 +3472,14 @@ loc_0035FE:
 	add.w (0xff0a9e).l,d0
 	andi.w #0x7,d0
 loc_003608:
-	cmp.w (ram_484c).l,d0
+	cmp.w (ram_actor_anim+4).l,d0
 	beq.s loc_00362E
 	subq.w #0x1,(0xff0a92).l
 	bpl.s loc_003620
 	move.w #0x0,(0xff0a92).l
 loc_003620:
-	move.w d0,(ram_484c).l
-	bset.b #0x2,(ram_0ab5).l
+	move.w d0,(ram_actor_anim+4).l
+	bset.b #0x2,(ram_actors_anim_new).l
 loc_00362E:
 	tst.w (0xff0a94).l
 	bne.s loc_003640
@@ -3463,7 +3488,7 @@ loc_00362E:
 loc_003640:
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.s loc_0036AA
-	move.w (ram_cur_index).l,d0
+	move.w (ram_actor_anim).l,d0
 	btst.b #0x1,(ram_09ea).l
 	beq.s loc_00365C
 	addq.w #0x1,d0
@@ -3481,17 +3506,17 @@ loc_003674:
 	subq.w #0x1,d0
 loc_003680:
 	andi.w #0x7,d0
-	cmp.w (ram_cur_index).l,d0
+	cmp.w (ram_actor_anim).l,d0
 	beq.s loc_0036AA
 	subq.w #0x1,(0xff0a90).l
 	bpl.s loc_00369C
 	move.w #0x0,(0xff0a90).l
 loc_00369C:
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_0036AA:
 	move.w (0xff0a92).l,d0
-	move.w (ram_484c).l,d1
+	move.w (ram_actor_anim+4).l,d1
 	add.w d0,d0
 	lsl.w #0x5,d1
 	add.w d1,d0
@@ -3520,7 +3545,7 @@ loc_0036AA:
 loc_003724:
 	movea.l (sp)+,a0
 	move.w (0xff0a90).l,d0
-	move.w (ram_cur_index).l,d1
+	move.w (ram_actor_anim).l,d1
 	add.w d0,d0
 	lsl.w #0x5,d1
 	add.w d1,d0
@@ -3551,31 +3576,31 @@ loc_003790:
 	move.w (0xff0a86).l,(ram_shaggy_y).l
 	move.w (0xff0a88).l,(ram_actor_x2).l
 	move.w (0xff0a8a).l,(ram_actor_y2).l
-	move.w (0xff0a8c).l,(ram_cur_index).l
-	move.w (0xff0a8e).l,(ram_484c).l
-	ori.b #0x5,(ram_0ab5).l
-	move.w #0xffff,(ram_618).l
-	move.w #0xffff,(0xff061c).l
+	move.w (0xff0a8c).l,(ram_actor_anim).l
+	move.w (0xff0a8e).l,(ram_actor_anim+4).l
+	ori.b #0x5,(ram_actors_anim_new).l
+	move.w #0xffff,(ram_actor_timer).l
+	move.w #0xffff,(ram_actor_timer2).l
 	bra.s loc_003860
 loc_0037F0:
 	btst.b #0x0,(0xff09ec).l
 	beq.s loc_003828
 	move.w (0xff0a84).l,(ram_shaggy_x).l
 	move.w (0xff0a86).l,(ram_shaggy_y).l
-	move.w (0xff0a8c).l,(ram_cur_index).l
-	move.w #0xffff,(ram_618).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w (0xff0a8c).l,(ram_actor_anim).l
+	move.w #0xffff,(ram_actor_timer).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_003828:
 	btst.b #0x1,(0xff09ec).l
 	beq.s loc_003860
 	move.w (0xff0a88).l,(ram_actor_x2).l
 	move.w (0xff0a8a).l,(ram_actor_y2).l
-	move.w (0xff0a8e).l,(ram_484c).l
-	move.w #0xffff,(0xff061c).l
-	bset.b #0x2,(ram_0ab5).l
+	move.w (0xff0a8e).l,(ram_actor_anim+4).l
+	move.w #0xffff,(ram_actor_timer2).l
+	bset.b #0x2,(ram_actors_anim_new).l
 loc_003860:
-	move.w (ram_484c).l,(0xff0a8e).l
-	move.w (ram_cur_index).l,(0xff0a8c).l
+	move.w (ram_actor_anim+4).l,(0xff0a8e).l
+	move.w (ram_actor_anim).l,(0xff0a8c).l
 	move.w (ram_shaggy_x).l,(0xff0a84).l
 	move.w (ram_shaggy_y).l,(0xff0a86).l
 	move.w (ram_actor_x2).l,(0xff0a88).l
@@ -3583,18 +3608,18 @@ loc_003860:
 	bsr.w sub_00393A
 	bra.w sub_003372
 loc_0038A4:
-	move.w #0x8,(ram_484c).l
-	bset.b #0x2,(ram_0ab5).l
+	move.w #0x8,(ram_actor_anim+4).l
+	bset.b #0x2,(ram_actors_anim_new).l
 	move.w #0x1,(ram_objects+12).l
 	moveq #0x2,d0
 	bra.w loc_0038DC
 loc_0038C2:
-	move.w #0x8,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w #0x8,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	move.w #0x0,(ram_objects+12).l
 	moveq #0x0,d0
 loc_0038DC:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.l d0,(ram_actors_anim_done).l
 	beq.s loc_0038DC
 	bsr.w script_subop_03_fade_out
@@ -3605,7 +3630,7 @@ loc_0038DC:
 	bsr.w sound_play
 	move.w (sp)+,(ram_shaggy_facing).l
 	bclr.b #0x6,(ram_verb_state).l
-	move.l #0x32700,(0xff0470).l
+	move.l #0x32700,(ram_actor_animset).l
 	bset.b #0x0,(ram_actors_depth_on).l
 	bclr.b #0x0,(ram_09ea).l
 	bclr.b #0x2,(ram_09e8).l
@@ -3661,7 +3686,7 @@ loc_0039AA:
 	dbra d3,loc_003996
 	rts
 sub_0039D4:
-	move.w (ram_cur_index).l,d0
+	move.w (ram_actor_anim).l,d0
 	add.w d0,d0
 	lea.l (dat_0F88DC).l,a0
 	add.w (0x4,a0),d0
@@ -3675,7 +3700,7 @@ sub_0039D4:
 	sub.w (0x2,a0),d1
 	sub.w (0x4,a0),d2
 	sub.w (0x6,a0),d3
-	move.w (ram_484c).l,d4
+	move.w (ram_actor_anim+4).l,d4
 	add.w d4,d4
 	lea.l (dat_0FA77A).l,a0
 	add.w (0x4,a0),d4
@@ -3782,32 +3807,32 @@ sub_003AF0:
 	lea.l (dat_003D86).l,a0
 	move.w (0x0,a0,d0.w),d5
 	move.w (0xff0a90).l,d0
-	cmp.w (ram_cur_index).l,d4
+	cmp.w (ram_actor_anim).l,d4
 	beq.s loc_003B24
 	lsr.w #0x1,d0
 loc_003B24:
-	cmp.w (ram_484c).l,d5
+	cmp.w (ram_actor_anim+4).l,d5
 	bne.s loc_003B30
 	moveq #0x0,d0
 	bra.s loc_003B3A
 loc_003B30:
-	cmp.w (ram_484c).l,d4
+	cmp.w (ram_actor_anim+4).l,d4
 	bne.s loc_003B3A
 	lsr.w #0x1,d0
 loc_003B3A:
 	sub.w d0,(0xff0a9a).l
 	move.w d0,d1
 	move.w (0xff0a92).l,d0
-	cmp.w (ram_484c).l,d5
+	cmp.w (ram_actor_anim+4).l,d5
 	beq.s loc_003B52
 	lsr.w #0x1,d0
 loc_003B52:
-	cmp.w (ram_cur_index).l,d4
+	cmp.w (ram_actor_anim).l,d4
 	bne.s loc_003B5E
 	moveq #0x0,d0
 	bra.s loc_003B68
 loc_003B5E:
-	cmp.w (ram_cur_index).l,d5
+	cmp.w (ram_actor_anim).l,d5
 	bne.s loc_003B68
 	lsr.w #0x1,d0
 loc_003B68:
@@ -3896,7 +3921,7 @@ loc_003C98:
 loc_003CDE:
 	bset.b #0x1,(ram_09ea).l
 loc_003CE6:
-	move.w (ram_cur_index).l,d6
+	move.w (ram_actor_anim).l,d6
 	add.w d6,d6
 	lea.l (dat_003D86).l,a0
 	move.w (0x0,a0,d6.w),(ram_shaggy_facing).l
@@ -3926,7 +3951,7 @@ loc_003D26:
 loc_003D6C:
 	bset.b #0x3,(ram_09ea).l
 loc_003D74:
-	move.w (ram_484c).l,d6
+	move.w (ram_actor_anim+4).l,d6
 	add.w d6,d6
 	move.w (dat_003D86,pc,d6.w),(0xff05bc).l
 	rts
@@ -3954,18 +3979,18 @@ script_subop_2E_flag09e9_6_off:
 script_subop_2B_shaggy_alt_sprite_on:
 	bset.b #0x4,(ram_09e9).l
 	bclr.b #0x0,(ram_actors_depth_on).l
-	move.l #0xb5d02,(0xff0470).l
-	move.w #0x1e,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.l #0xb5d02,(ram_actor_animset).l
+	move.w #0x1e,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_003EFC:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_003EFC
 	bclr.b #0x7,(ram_vblank_flags).l
 	rts
 script_subop_2C_shaggy_alt_sprite_off:
 	bset.b #0x0,(ram_actors_depth_on).l
-	move.l #0x32700,(0xff0470).l
+	move.l #0x32700,(ram_actor_animset).l
 	bclr.b #0x4,(ram_09e9).l
 	bclr.b #0x7,(ram_vblank_flags).l
 	rts
@@ -3987,7 +4012,7 @@ script_subop_27_minigame_throw:
 	clr.w (ram_actor_path_pos+4).l
 loc_003F7A:
 	move.w #0x0,(ram_frame_countdown).l
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x2,(ram_pad1).l
 	bne.s loc_003F92
 	dc.w 0x72fe	| moveq #$fe, d1
@@ -4053,16 +4078,16 @@ loc_004046:
 loc_004052:
 	dc.w 0x203c,0x0000,0x0063	| move.l #$63, d0
 	bsr.w sound_play
-	move.w #0x1c,(ram_list_484+10).l
+	move.w #0x1c,(ram_actor_anim+6).l
 	move.w #0x1,(ram_objects+12).l
 	bra.s loc_00407E
 loc_00406E:
-	move.w #0x1b,(ram_list_484+10).l
+	move.w #0x1b,(ram_actor_anim+6).l
 	move.w #0x0,(ram_objects+12).l
 loc_00407E:
-	bset.b #0x3,(ram_0ab5).l
+	bset.b #0x3,(ram_actors_anim_new).l
 loc_004086:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x3,(ram_actors_anim_done).l
 	beq.s loc_004086
 	dc.w 0x203c,0x0000,0x0062	| move.l #$62, d0
@@ -4088,7 +4113,7 @@ script_subop_26_test_shaggy_path:
 loc_0040FA:
 	rts
 script_subop_25_wait_shaggy_path:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_on_path).l
 	bne.s script_subop_25_wait_shaggy_path
 	rts
@@ -4105,16 +4130,16 @@ script_subop_22_shaggy_anim_by_x:
 	blt.s loc_004132
 	addq.w #0x1,d1
 loc_004132:
-	move.w d1,(ram_cur_index).l
-	move.w #0xffff,(ram_618).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d1,(ram_actor_anim).l
+	move.w #0xffff,(ram_actor_timer).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_004148:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_004148
 	rts
 script_subop_21_wait_dpad_choice:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x2,(ram_pad1).l
 	bne.s loc_004172
 	move.w #0x0,(ram_objects+12).l
@@ -4169,7 +4194,7 @@ loc_00420A:
 	moveq #0x0,d5
 loc_00421C:
 	move.w d3,(ram_vscroll).l
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	bsr.w wait_vblank
 	eori.w #0x1,d5
 	bne.s loc_00421C
@@ -4187,7 +4212,7 @@ loc_00421C:
 	bgt.s loc_00421C
 	move.w #0x12c,(ram_frame_countdown).l
 loc_004258:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	tst.w (ram_frame_countdown).l
 	bpl.s loc_004258
 	bclr.b #0x6,(ram_vblank_flags).l
@@ -4203,18 +4228,18 @@ script_subop_1B_pal_flash_off:
 	bclr.b #0x7,(ram_09e8).l
 	rts
 script_subop_17_overlay_a_on:
-	move.w #0x7f8,(0xff08a4).l
+	move.w #0x7f8,(ram_fx_sprite_tile).l
 	move.w #0xff00,d0
 	move.w #0x80,d1
 	lea.l (dat_0321BE).l,a0
 	bsr.w vdp_copy_to_vram
-	move.l #0x323be,(0xff08a6).l
-	move.b #0x7,(0xff0ace).l
+	move.l #0x323be,(ram_fx_sprite_ptr).l
+	move.b #0x7,(ram_fx_blink).l
 	bset.b #0x5,(ram_09e8).l
 	bset.b #0x4,(ram_09e8).l
 	rts
 script_subop_18_overlay_b_on:
-	move.w #0x47f8,(0xff08a4).l
+	move.w #0x47f8,(ram_fx_sprite_tile).l
 	move.w #0xff00,d0
 	move.w #0x40,d1
 	lea.l (dat_0322BE).l,a0
@@ -4222,7 +4247,7 @@ script_subop_18_overlay_b_on:
 	addi.w #0x80,d0
 	lea.l (-0x80,a0),a0
 	bsr.w vdp_copy_to_vram
-	move.l #0x323be,(0xff08a6).l
+	move.l #0x323be,(ram_fx_sprite_ptr).l
 	bset.b #0x5,(ram_09e8).l
 	bset.b #0x4,(ram_09e8).l
 	rts
@@ -4230,7 +4255,7 @@ script_subop_19_overlay_off:
 	bclr.b #0x4,(ram_09e8).l
 	rts
 script_subop_15_follow_mode_on:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w script_subop_15_follow_mode_on
 	moveq #0x2,d0
@@ -4241,9 +4266,9 @@ loc_00433E:
 	cmpi.w #0x6,d0
 	bne.s loc_00433E
 loc_004350:
-	move.w d0,(0xff08b0).l
+	move.w d0,(ram_follow_slot).l
 	bset.b #0x3,(ram_09e8).l
-	clr.b (0xff0ac6).l
+	clr.b (ram_actors_follow_sync).l
 	bsr.w wait_vblank
 	rts
 script_subop_16_follow_mode_off:
@@ -4294,7 +4319,7 @@ loc_00440A:
 	move.w d1,(0xff08b6).l
 	bset.b #0x5,(ram_09e9).l
 loc_004418:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x5,(ram_09e9).l
 	bne.s loc_004418
 loc_004426:
@@ -4313,7 +4338,7 @@ script_subop_10_camera_pan_left:
 loc_004468:
 	bset.b #0x5,(ram_09e9).l
 loc_004470:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x5,(ram_09e9).l
 	bne.w loc_004470
 loc_004480:
@@ -4333,7 +4358,7 @@ script_subop_0A_scooby_back:
 	bclr.b #0x1,(ram_actors_frozen).l
 	rts
 script_subop_07_closeup_picture:
-	tst.b (0xff0ab6).l
+	tst.b (ram_actors_tiles_ready).l
 	bne.s script_subop_07_closeup_picture
 	bset.b #0x6,(ram_verb_state).l
 	lea.l (dat_031DFA).l,a0
@@ -4382,7 +4407,7 @@ script_subop_03_fade_out:
 	rts
 script_subop_04_wait_button:
 	bsr.w run_object_events
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x6,(ram_pad1).l
 	bne.w loc_00458A
 	btst.b #0x6,(ram_pad_last).l
@@ -4404,7 +4429,7 @@ loc_0045B2:
 	beq.w loc_0047A6
 	movem.l d0-d7/a0-a6,-(sp)
 loc_0045C8:
-	tst.b (0xff0ab6).l
+	tst.b (ram_actors_tiles_ready).l
 	bne.w loc_0045C8
 	bclr.b #0x6,(ram_vblank_flags).l
 	moveq #0x0,d0
@@ -4499,7 +4524,7 @@ loc_004716:
 	movem.l (sp)+,d0-d7/a0-a6
 	bset.b #0x6,(ram_vblank_flags).l
 	bset.b #0x6,(ram_vblank_flags).l
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	bset.b #0x1,(ram_verb_state).l
 	bsr.w status_line_update
 	moveq #0x5,d0
@@ -4563,7 +4588,7 @@ loc_004836:
 	bsr.w sub_0047AC
 	move.b #0x10,(ram_bar_slide).l
 loc_00484C:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	tst.b (ram_bar_slide).l
 	bpl.w loc_00484C
 	move.w d4,(ram_bar_saved).l
@@ -4572,7 +4597,7 @@ script_subop_1C_bar_show:
 	move.w (ram_bar_saved).l,d4
 	move.b #0x10,(ram_bar_slide).l
 loc_004870:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	tst.b (ram_bar_slide).l
 	bpl.w loc_004870
 	move.w d4,d0
@@ -4608,7 +4633,7 @@ script_op_15_wait:
 	beq.w loc_0048F2
 	move.w (0x2,a5),(ram_frame_countdown).l
 loc_0048E4:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	tst.w (ram_frame_countdown).l
 	bpl.w loc_0048E4
 loc_0048F2:
@@ -4704,11 +4729,11 @@ loc_0049FC:
 	move.w d1,(ram_shaggy_y).l
 	tst.w d7
 	bmi.w loc_004B0E
-	move.w d7,(ram_cur_index).l
-	move.w #0xffff,(ram_618).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d7,(ram_actor_anim).l
+	move.w #0xffff,(ram_actor_timer).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_004A30:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_004A30
 	bra.w loc_004B0E
@@ -4740,11 +4765,11 @@ loc_004A7A:
 	move.w d1,(ram_scooby_y).l
 	tst.w d7
 	bmi.w loc_004B0E
-	move.w d7,(ram_484a).l
+	move.w d7,(ram_actor_anim+2).l
 	move.w #0x1,(ram_scooby_anim_lock).l
-	bset.b #0x1,(ram_0ab5).l
+	bset.b #0x1,(ram_actors_anim_new).l
 loc_004AAE:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x1,(ram_actors_anim_looped).l
 	beq.w loc_004AAE
 	bra.w loc_004B0E
@@ -4815,13 +4840,13 @@ loc_004B4C:
 	move.w (sp)+,(0x18,a0,d2.w)
 	move.w (sp)+,d3
 	bmi.w loc_004BAA
-	lea.l (ram_484c).l,a0
+	lea.l (ram_actor_anim+4).l,a0
 	move.w d3,(0x0,a0,d1.w)
-	lea.l (0xff061c).l,a0
+	lea.l (ram_actor_timer2).l,a0
 	move.w #0xffff,(0x0,a0,d1.w)
-	bset.b d7,(ram_0ab5).l
+	bset.b d7,(ram_actors_anim_new).l
 loc_004B9C:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.l d7,(ram_actors_anim_looped).l
 	beq.w loc_004B9C
 loc_004BAA:
@@ -4841,23 +4866,23 @@ loc_004BB8:
 	move.w d3,(0x0,a3,d1.w)
 	move.w (sp)+,d4
 	move.w d4,(0xc,a3,d1.w)
-	lea.l (ram_484c).l,a3
+	lea.l (ram_actor_anim+4).l,a3
 	tst.w (sp)
 	bpl.w loc_004BE6
 	tst.w (sp)+
 	bra.w loc_004BFC
 loc_004BE6:
 	move.w (sp)+,(0x0,a3,d1.w)
-	lea.l (0xff061c).l,a0
+	lea.l (ram_actor_timer2).l,a0
 	move.w #0xffff,(0x0,a0,d1.w)
-	bset.b d7,(ram_0ab5).l
+	bset.b d7,(ram_actors_anim_new).l
 loc_004BFC:
 	bset.b d7,(ram_actors_moving).l
 	lea.l (ram_actor_x2).l,a3
 	tst.w (0x2,a5)
 	bmi.w loc_004C1E
 loc_004C10:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.l d7,(ram_actors_moving).l
 	bne.w loc_004C10
 loc_004C1E:
@@ -4869,12 +4894,12 @@ script_op_0F_walk_obj:
 	andi.w #0x7fff,d0
 	subq.w #0x1,d0
 	bne.w loc_004C3E
-	movea.l (0xff0470).l,a1
+	movea.l (ram_actor_animset).l,a1
 	bra.w loc_004C7A
 loc_004C3E:
 	subq.w #0x1,d0
 	bne.w loc_004C52
-	movea.l (0xff0474).l,a1
+	movea.l (ram_actor_animset+4).l,a1
 	bra.w loc_004C7A
 sub_004C4E:
 	bra.w sub_004D78
@@ -4883,7 +4908,7 @@ loc_004C52:
 	mulu.w #0x1a,d0
 	lea.l (ram_objects).l,a0
 	move.w (0x2,a0,d0.w),d0
-	lea.l (dat_032670).l,a0
+	lea.l (sprite_sets).l,a0
 	moveq #0x23,d1
 loc_004C6A:
 	movea.l (a0)+,a1
@@ -4985,20 +5010,20 @@ loc_004DA2:
 	lsl.w #0x3,d1
 	add.w d1,d0
 	lea.l (dat_0FC740).l,a0
-	move.w (0x0,a0,d0.w),(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w (0x0,a0,d0.w),(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_004DDA:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_done).l
 	bne.w loc_004DDA
 loc_004DEA:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w loc_004DEA
 	move.w (ram_shaggy_facing).l,d0
 	addi.w #0x4,d0
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_004E12:
 	bsr.w sub_00A172
 	move.w (ram_font_base).l,d2
@@ -5034,20 +5059,20 @@ loc_004E12:
 	lsl.w #0x3,d1
 	add.w d1,d0
 	lea.l (dat_0FC740).l,a0
-	move.w (0x0,a0,d0.w),(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w (0x0,a0,d0.w),(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_004EA4:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_done).l
 	bne.w loc_004EA4
 loc_004EB4:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w loc_004EB4
 	move.w (ram_shaggy_facing).l,d0
 	addi.w #0x4,d0
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_004EDC:
 	move.w (sp)+,d7
 loc_004EDE:
@@ -5106,7 +5131,7 @@ loc_004F8A:
 	andi.w #0xff,d0
 	addq.w #0x2,d0
 loc_004FA0:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.l d0,(ram_actors_moving).l
 	bne.w loc_004FA0
 	btst.l d0,(ram_actors_on_path).l
@@ -5131,7 +5156,7 @@ loc_004FD8:
 	andi.w #0xff,d0
 	addq.w #0x2,d0
 loc_004FEE:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.l d0,(ram_actors_anim_done).l
 	beq.w loc_004FEE
 loc_004FFC:
@@ -5580,18 +5605,18 @@ loc_005592:
 	add.w d6,d0
 	add.w d6,d0
 	lea.l (shaggy_turn_anims).l,a0
-	move.w (0x0,a0,d0.w),(ram_cur_index).l
+	move.w (0x0,a0,d0.w),(ram_actor_anim).l
 	bra.s loc_0055DA
 loc_0055D2:
 	add.w d6,d7
-	move.w d7,(ram_cur_index).l
+	move.w d7,(ram_actor_anim).l
 loc_0055DA:
 	move.w d6,(ram_shaggy_facing).l
-	move.w #0xffff,(ram_618).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w #0xffff,(ram_actor_timer).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_0055F0:
-	bsr.w sub_00B0B8
-	btst.b #0x0,(ram_0ab5).l
+	bsr.w actor_animate
+	btst.b #0x0,(ram_actors_anim_new).l
 	bne.w loc_0055F0
 	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_0055F0
@@ -5599,16 +5624,16 @@ loc_0055F0:
 	tst.w (0x2,a5)
 	bmi.s loc_005654
 loc_00561A:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x0,(ram_actors_moving).l
 	bne.w loc_00561A
 	addi.w #0x4,d6
-	move.w d6,(ram_cur_index).l
-	move.w #0xffff,(ram_618).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d6,(ram_actor_anim).l
+	move.w #0xffff,(ram_actor_timer).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_005644:
-	bsr.w sub_00B0B8
-	btst.b #0x0,(ram_0ab5).l
+	bsr.w actor_animate
+	btst.b #0x0,(ram_actors_anim_new).l
 	bne.w loc_005644
 loc_005654:
 	move.b (sp)+,d0
@@ -5621,16 +5646,16 @@ sub_00566A:
 	tst.w (0x2,a5)
 	bmi.s loc_0056AE
 loc_005674:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	btst.b #0x1,(ram_actors_moving).l
 	bne.w loc_005674
 	addi.w #0x4,d6
-	move.w d6,(ram_484a).l
+	move.w d6,(ram_actor_anim+2).l
 	move.w #0xffff,(ram_scooby_anim_lock).l
-	bset.b #0x1,(ram_0ab5).l
+	bset.b #0x1,(ram_actors_anim_new).l
 loc_00569E:
-	bsr.w sub_00B0B8
-	btst.b #0x1,(ram_0ab5).l
+	bsr.w actor_animate
+	btst.b #0x1,(ram_actors_anim_new).l
 	bne.w loc_00569E
 loc_0056AE:
 	rts
@@ -5952,18 +5977,18 @@ scooby_walk_start:
 	add.w d6,d0
 	add.w d6,d0
 	lea.l (scooby_turn_anims).l,a0
-	move.w (0x0,a0,d0.w),(ram_484a).l
+	move.w (0x0,a0,d0.w),(ram_actor_anim+2).l
 	bra.s loc_005B1A
 loc_005B12:
 	add.w d6,d7
-	move.w d7,(ram_484a).l
+	move.w d7,(ram_actor_anim+2).l
 loc_005B1A:
 	move.w d6,(ram_scooby_facing).l
 	move.w #0xffff,(ram_scooby_anim_lock).l
-	bset.b #0x1,(ram_0ab5).l
+	bset.b #0x1,(ram_actors_anim_new).l
 loc_005B30:
-	bsr.w sub_00B0B8
-	btst.b #0x1,(ram_0ab5).l
+	bsr.w actor_animate
+	btst.b #0x1,(ram_actors_anim_new).l
 	bne.w loc_005B30
 	btst.b #0x1,(ram_actors_anim_looped).l
 	beq.w loc_005B30
@@ -6110,7 +6135,7 @@ loc_005CDA:
 	bsr.w vdp_fill_vram
 	rts
 inventory_refresh:
-	btst.b #0x0,(0xff0ab6).l
+	btst.b #0x0,(ram_actors_tiles_ready).l
 	bne.w inventory_refresh
 	bsr.w inventory_build_page
 	bset.b #0x5,(ram_vblank_flags).l
@@ -6247,8 +6272,8 @@ loc_005E70:
 	bpl.s loc_005EDE
 	cmpi.w #0xfffd,d1
 	bne.s loc_005E9C
-	move.w d2,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d2,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bra.s loc_005E70
 loc_005E9C:
 	cmpi.w #0xfffc,d1
@@ -6396,8 +6421,8 @@ loc_0060CA:
 	bne.s loc_006114
 	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_006114:
 	btst.b #0x2,(ram_pad1).l
 	bne.w loc_006140
@@ -6615,25 +6640,25 @@ loc_006478:
 	move.w #0x12c,(ram_shaggy_idle_timer).l
 	move.w #0x20,d0
 	add.w (ram_shaggy_facing).l,d0
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bra.w loc_00681A
 loc_0064FE:
-	cmpi.w #0x20,(ram_cur_index).l
+	cmpi.w #0x20,(ram_actor_anim).l
 	blt.w loc_006522
-	cmpi.w #0x24,(ram_cur_index).l
+	cmpi.w #0x24,(ram_actor_anim).l
 	bge.w loc_006522
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w loc_00681A
 loc_006522:
 	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
-	cmp.w (ram_cur_index).l,d0
+	cmp.w (ram_actor_anim).l,d0
 	beq.w loc_00681A
-	btst.b #0x0,(ram_0ab5).l
+	btst.b #0x0,(ram_actors_anim_new).l
 	bne.w loc_00681A
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bra.w loc_00681A
 loc_006552:
 	move.l (ram_shaggy_speed).l,d0
@@ -6641,17 +6666,17 @@ loc_006552:
 	btst.b #0x2,(ram_pad1).l
 	bne.w loc_0065E4
 loc_00656C:
-	cmpi.w #0x1,(ram_cur_index).l
+	cmpi.w #0x1,(ram_actor_anim).l
 	beq.w loc_0065B0
 	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
 	lea.l (shaggy_turn_anims).l,a0
 	lsr.l #0x1,d0
 	move.w (0x2,a0,d1.w),d1
-	cmp.w (ram_cur_index).l,d1
+	cmp.w (ram_actor_anim).l,d1
 	beq.w loc_0065CC
-	move.w d1,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d1,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bset.b #0x1,(ram_shaggy_turning).l
 	bra.w loc_006682
 loc_0065B0:
@@ -6667,24 +6692,24 @@ loc_0065CC:
 loc_0065E4:
 	btst.b #0x1,(ram_shaggy_turning).l
 	beq.s loc_006600
-	cmpi.w #0x3,(ram_cur_index).l
+	cmpi.w #0x3,(ram_actor_anim).l
 	bgt.s loc_006600
 	bclr.b #0x1,(ram_shaggy_turning).l
 loc_006600:
 	btst.b #0x3,(ram_pad1).l
 	bne.w loc_006682
 loc_00660C:
-	tst.w (ram_cur_index).l
+	tst.w (ram_actor_anim).l
 	beq.w loc_00664E
 	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
 	lea.l (shaggy_turn_anims).l,a0
 	move.w (0x0,a0,d1.w),d1
 	lsr.l #0x1,d0
-	cmp.w (ram_cur_index).l,d1
+	cmp.w (ram_actor_anim).l,d1
 	beq.w loc_00666A
-	move.w d1,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d1,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bset.b #0x0,(ram_shaggy_turning).l
 	bra.w loc_00669E
 loc_00664E:
@@ -6701,7 +6726,7 @@ loc_00666A:
 loc_006682:
 	btst.b #0x0,(ram_shaggy_turning).l
 	beq.s loc_00669E
-	cmpi.w #0x3,(ram_cur_index).l
+	cmpi.w #0x3,(ram_actor_anim).l
 	bgt.s loc_00669E
 	bclr.b #0x0,(ram_shaggy_turning).l
 loc_00669E:
@@ -6718,17 +6743,17 @@ loc_00669E:
 	btst.b #0x3,(ram_pad1).l
 	beq.w loc_006726
 loc_0066E2:
-	cmpi.w #0x2,(ram_cur_index).l
+	cmpi.w #0x2,(ram_actor_anim).l
 	beq.w loc_006726
 	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
 	lea.l (shaggy_turn_anims).l,a0
 	move.w (0x4,a0,d1.w),d1
 	lsr.l #0x1,d0
-	cmp.w (ram_cur_index).l,d1
+	cmp.w (ram_actor_anim).l,d1
 	beq.w loc_00674A
-	move.w d1,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d1,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bset.b #0x2,(ram_shaggy_turning).l
 	bra.w loc_00681A
 loc_006726:
@@ -6753,17 +6778,17 @@ loc_00676C:
 	btst.b #0x3,(ram_pad1).l
 	beq.w loc_0067D4
 loc_006790:
-	cmpi.w #0x3,(ram_cur_index).l
+	cmpi.w #0x3,(ram_actor_anim).l
 	beq.w loc_0067D4
 	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
 	lea.l (shaggy_turn_anims).l,a0
 	move.w (0x6,a0,d1.w),d1
 	lsr.l #0x1,d0
-	cmp.w (ram_cur_index).l,d1
+	cmp.w (ram_actor_anim).l,d1
 	beq.w loc_0067F8
-	move.w d1,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d1,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bset.b #0x3,(ram_shaggy_turning).l
 	bra.w loc_00681A
 loc_0067D4:
@@ -6913,7 +6938,7 @@ loc_006A22:
 	move.w (0x8,a0,d0.w),(ram_shaggy_dir_x).l
 	move.w (0xc,a0,d0.w),(ram_shaggy_dir_y).l
 	move.w (0x10,a0,d0.w),d0
-	move.w (ram_cur_index).l,d1
+	move.w (ram_actor_anim).l,d1
 	sub.w (ram_shaggy_facing).l,d1
 	cmpi.w #0x0,d1
 	bne.s loc_006AA8
@@ -6922,14 +6947,14 @@ loc_006A22:
 	lsl.w #0x3,d7
 	add.w d0,d7
 	add.w d0,d7
-	move.w (0x0,a0,d7.w),(ram_cur_index).l
+	move.w (0x0,a0,d7.w),(ram_actor_anim).l
 	bra.s loc_006AB0
 loc_006AA8:
 	add.w d0,d1
-	move.w d1,(ram_cur_index).l
+	move.w d1,(ram_actor_anim).l
 loc_006AB0:
 	move.w d0,(ram_shaggy_facing).l
-	bset.b #0x0,(ram_0ab5).l
+	bset.b #0x0,(ram_actors_anim_new).l
 	bra.s player_zone_flags
 loc_006AC0:
 	bclr.b #0x0,(ram_actors_moving).l
@@ -6937,8 +6962,8 @@ loc_006AC0:
 	beq.s player_zone_flags
 	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 player_zone_flags:
 	move.w (ram_shaggy_x).l,d0
 	move.w (ram_shaggy_y).l,d1
@@ -7067,8 +7092,8 @@ loc_006CD8:
 	bne.s loc_006CF8
 	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
-	move.w d0,(ram_cur_index).l
-	bset.b #0x0,(ram_0ab5).l
+	move.w d0,(ram_actor_anim).l
+	bset.b #0x0,(ram_actors_anim_new).l
 loc_006CF8:
 	move.w (ram_shaggy_x).l,d0
 	sub.w (ram_camera_x).l,d0
@@ -7093,17 +7118,17 @@ actors_update:
 	btst.b #0x3,(ram_vblank_flags).l
 	bne.s loc_006D8E
 	addi.w #0x0,d1
-	cmp.w (ram_484a).l,d1
+	cmp.w (ram_actor_anim+2).l,d1
 	beq.w loc_00707E
-	move.w d1,(ram_484a).l
-	bset.b #0x1,(ram_0ab5).l
+	move.w d1,(ram_actor_anim+2).l
+	bset.b #0x1,(ram_actors_anim_new).l
 	bra.w loc_00707E
 loc_006D8E:
 	addi.w #0x4,d1
-	cmp.w (ram_484a).l,d1
+	cmp.w (ram_actor_anim+2).l,d1
 	beq.w loc_00707E
-	move.w d1,(ram_484a).l
-	bset.b #0x1,(ram_0ab5).l
+	move.w d1,(ram_actor_anim+2).l
+	bset.b #0x1,(ram_actors_anim_new).l
 	bra.w loc_00707E
 loc_006DAE:
 	btst.b #0x1,(ram_actors_on_path).l
@@ -7120,8 +7145,8 @@ loc_006DD4:
 	bpl.w loc_006E30
 	cmpi.w #0xfffd,d5
 	bne.w loc_006E04
-	move.w d6,(ram_484a).l
-	bset.b #0x1,(ram_0ab5).l
+	move.w d6,(ram_actor_anim+2).l
+	bset.b #0x1,(ram_actors_anim_new).l
 	bra.s loc_006DD4
 loc_006E04:
 	move.w #0x0,(ram_actor_path_pos+2).l
@@ -7147,16 +7172,16 @@ loc_006E40:
 loc_006E5E:
 	btst.b #0x5,(ram_verb_state).l
 	beq.s loc_006EC0
-	btst.b #0x1,(ram_0ab5).l
+	btst.b #0x1,(ram_actors_anim_new).l
 	bne.w loc_00707E
 	btst.b #0x1,(ram_actors_anim_done).l
 	beq.w loc_00707E
 	move.w (ram_scooby_pose_anim).l,d0
 	add.w (ram_scooby_pose_facing).l,d0
-	move.w d0,(ram_484a).l
+	move.w d0,(ram_actor_anim+2).l
 	move.w (ram_scooby_pose_facing).l,(ram_scooby_facing).l
 	move.w #0xffff,(ram_scooby_anim_lock).l
-	bset.b #0x1,(ram_0ab5).l
+	bset.b #0x1,(ram_actors_anim_new).l
 	bclr.b #0x1,(ram_actors_moving).l
 	bclr.b #0x5,(ram_verb_state).l
 	bra.w loc_00707E
@@ -7218,7 +7243,7 @@ loc_006F7A:
 	move.w (0x8,a0,d0.w),(ram_scooby_dir_x).l
 	move.w (0xc,a0,d0.w),(ram_scooby_dir_y).l
 	move.w (0x10,a0,d0.w),d0
-	move.w (ram_484a).l,d1
+	move.w (ram_actor_anim+2).l,d1
 	sub.w (ram_scooby_facing).l,d1
 	cmpi.w #0x0,d1
 	bne.s loc_007002
@@ -7227,14 +7252,14 @@ loc_006F7A:
 	lsl.w #0x3,d2
 	add.w d0,d2
 	add.w d0,d2
-	move.w (0x0,a0,d2.w),(ram_484a).l
+	move.w (0x0,a0,d2.w),(ram_actor_anim+2).l
 	bra.s loc_00700A
 loc_007002:
 	add.w d0,d1
-	move.w d1,(ram_484a).l
+	move.w d1,(ram_actor_anim+2).l
 loc_00700A:
 	move.w d0,(ram_scooby_facing).l
-	bset.b #0x1,(ram_0ab5).l
+	bset.b #0x1,(ram_actors_anim_new).l
 	move.w #0xffff,(ram_scooby_anim_lock).l
 	bra.s loc_00707E
 loc_007022:
@@ -7242,8 +7267,8 @@ loc_007022:
 	btst.b #0x7,(ram_vblank_flags).l
 	beq.s loc_00704C
 	addq.w #0x4,d0
-	move.w d0,(ram_484a).l
-	bset.b #0x1,(ram_0ab5).l
+	move.w d0,(ram_actor_anim+2).l
+	bset.b #0x1,(ram_actors_anim_new).l
 	bclr.b #0x1,(ram_actors_moving).l
 	bra.s loc_00707E
 loc_00704C:
@@ -7253,9 +7278,9 @@ loc_00704C:
 	move.w (ram_scooby_pose_facing).l,d1
 	add.w d1,d1
 	add.w d1,d0
-	move.w (0x0,a0,d0.w),(ram_484a).l
+	move.w (0x0,a0,d0.w),(ram_actor_anim+2).l
 	move.w #0xffff,(ram_scooby_anim_lock).l
-	bset.b #0x1,(ram_0ab5).l
+	bset.b #0x1,(ram_actors_anim_new).l
 loc_00707E:
 	move.w (ram_scooby_x).l,d2
 	move.w (ram_scooby_y).l,d3
@@ -7369,7 +7394,7 @@ loc_007208:
 	btst.b #0x3,(ram_09e8).l
 	beq.w loc_00723A
 	lea.l (ram_actor_depth_x).l,a0
-	move.w (0xff08b0).l,d0
+	move.w (ram_follow_slot).l,d0
 	add.w d0,d0
 	move.w (ram_actor_depth_x).l,(0x0,a0,d0.w)
 	move.w (ram_actor_depth_y).l,(0xc,a0,d0.w)
@@ -7411,7 +7436,7 @@ loc_0072B0:
 	cmpi.w #0xfffd,d5
 	bne.w loc_0072D8
 	move.w d6,(-0x54,a4,d1.w)
-	bset.b d0,(ram_0ab5).l
+	bset.b d0,(ram_actors_anim_new).l
 	bra.s loc_0072B0
 loc_0072D8:
 	move.w #0x0,(0x0,a5,d1.w)
@@ -8012,7 +8037,7 @@ room_setup_actors:
 	move.w #0x64,(ram_scooby_wander_timer).l
 	bclr.b #0x5,(ram_verb_state).l
 	moveq #0x5,d0
-	lea.l (ram_618).l,a0
+	lea.l (ram_actor_timer).l,a0
 loc_007AB8:
 	move.w #0xffff,(-0x10c,a0)
 	move.w #0xffff,(a0)+
@@ -8023,21 +8048,21 @@ loc_007AB8:
 	moveq #0x1,d0
 	move.w #0x4,d1
 	add.w (ram_shaggy_facing).l,d1
-	move.w d1,(ram_cur_index).l
+	move.w d1,(ram_actor_anim).l
 	btst.b #0x7,(ram_verb_state).l
 	bne.w loc_007B0E
 	addq.b #0x2,d0
 	move.w #0x4,d1
 	add.w (ram_shaggy_facing).l,d1
-	move.w d1,(ram_484a).l
+	move.w d1,(ram_actor_anim+2).l
 loc_007B0E:
 	move.b #0x0,(ram_actors_depth_new).l
 	moveq #0x3,d0
 	move.b d0,d3
 	move.b d0,d6
 	lea.l (ram_objects).l,a0
-	lea.l (0xff0478).l,a1
-	lea.l (ram_484c).l,a2
+	lea.l (ram_actor_animset+8).l,a1
+	lea.l (ram_actor_anim+4).l,a2
 	lea.l (ram_actor_step_x+8).l,a5
 	lea.l (ram_actor_x2).l,a6
 	move.w (ram_obj_last).l,d1
@@ -8050,7 +8075,7 @@ loc_007B42:
 	cmp.w (ram_room_index).l,d4
 	bne.w loc_007BCA
 	move.w (0x2,a0),d4
-	lea.l (dat_032670).l,a3
+	lea.l (sprite_sets).l,a3
 	moveq #0x23,d5
 loc_007B6C:
 	movea.l (a3)+,a4
@@ -8088,10 +8113,10 @@ loc_007BCA:
 	dbra d1,loc_007B42
 loc_007BD2:
 	move.b d0,(ram_actors_active).l
-	move.b d3,(ram_0ab5).l
+	move.b d3,(ram_actors_anim_new).l
 	move.b d6,(ram_actors_depth_on).l
-	clr.b (0xff0ab6).l
-	clr.b (0xff0ab9).l
+	clr.b (ram_actors_tiles_ready).l
+	clr.b (ram_actors_need_scale).l
 	btst.b #0x7,(ram_verb_state).l
 	beq.s loc_007C02
 	bset.b #0x1,(ram_actors_frozen).l
@@ -8431,55 +8456,55 @@ loc_007FD6:
 	dc.w 0x203c,0x0000,0x001e	| move.l #$1e, d0
 	bsr.w sound_stop
 	rts
-sub_00801A:
-	move.l #0x32700,(0xff0470).l
-	move.l #0x642d0,(0xff0474).l
-	clr.w (0xff04a0).l
-	clr.w (0xff04a2).l
+actors_init:
+	move.l #0x32700,(ram_actor_animset).l
+	move.l #0x642d0,(ram_actor_animset+4).l
+	clr.w (ram_actor_frame).l
+	clr.w (ram_actor_frame+2).l
 	move.b #0x3,(ram_actors_active).l
-	move.b #0x3,(ram_0ab5).l
+	move.b #0x3,(ram_actors_anim_new).l
 	move.b #0x3,(ram_actors_depth_on).l
 	clr.b (0xff0ac8).l
-	clr.b (0xff0ab6).l
+	clr.b (ram_actors_tiles_ready).l
 	clr.b (ram_actors_moving).l
-	clr.b (0xff0ab9).l
+	clr.b (ram_actors_need_scale).l
 	clr.b (ram_actors_behind).l
 	clr.b (ram_actors_frozen).l
 	clr.b (ram_actors_no_zone).l
-	move.w #0x4,(ram_cur_index).l
-	move.w #0x4,(ram_484a).l
-	clr.w (ram_484c).l
-	clr.w (ram_list_484+10).l
-	clr.w (0xff0490).l
-	clr.w (0xff0492).l
+	move.w #0x4,(ram_actor_anim).l
+	move.w #0x4,(ram_actor_anim+2).l
+	clr.w (ram_actor_anim+4).l
+	clr.w (ram_actor_anim+6).l
+	clr.w (ram_actor_anim+8).l
+	clr.w (ram_actor_anim+10).l
 	clr.w (ram_shaggy_facing).l
 	clr.w (ram_scooby_facing).l
 	clr.w (0xff05bc).l
 	clr.w (0xff05be).l
 	clr.w (0xff05c0).l
 	clr.w (0xff05c2).l
-	move.w #0xffff,(ram_618).l
+	move.w #0xffff,(ram_actor_timer).l
 	move.w #0xffff,(ram_scooby_anim_lock).l
-	move.w #0xffff,(0xff061c).l
-	move.w #0xffff,(0xff061e).l
-	move.w #0xffff,(0xff0620).l
-	move.w #0xffff,(0xff0622).l
-	move.b #0xff,(0xff0558).l
-	move.b #0xff,(0xff055c).l
-	move.b #0xff,(0xff0560).l
-	move.b #0xff,(0xff0564).l
-	move.b #0xff,(0xff0568).l
-	move.b #0xff,(0xff056c).l
-	move.b #0xff,(0xff0570).l
-	move.b #0xff,(0xff0574).l
-	move.b #0xff,(0xff0578).l
-	move.b #0xff,(0xff057c).l
-	move.b #0xff,(0xff0580).l
-	move.b #0xff,(0xff0584).l
-	clr.w (0xff05c4).l
-	clr.w (0xff05d0).l
-	clr.w (0xff05c6).l
-	clr.w (0xff05d2).l
+	move.w #0xffff,(ram_actor_timer2).l
+	move.w #0xffff,(ram_actor_timer2+2).l
+	move.w #0xffff,(ram_actor_timer2+4).l
+	move.w #0xffff,(ram_actor_timer2+6).l
+	move.b #0xff,(ram_actor_shown_frame).l
+	move.b #0xff,(ram_actor_shown_frame+4).l
+	move.b #0xff,(ram_actor_shown_frame+8).l
+	move.b #0xff,(ram_actor_shown_frame+12).l
+	move.b #0xff,(ram_actor_shown_frame+16).l
+	move.b #0xff,(ram_actor_shown_frame+20).l
+	move.b #0xff,(ram_actor_next_frame).l
+	move.b #0xff,(ram_actor_next_frame+4).l
+	move.b #0xff,(ram_actor_next_frame+8).l
+	move.b #0xff,(ram_actor_next_frame+12).l
+	move.b #0xff,(ram_actor_next_frame+16).l
+	move.b #0xff,(ram_actor_next_frame+20).l
+	clr.w (ram_actor_shown_depth_x).l
+	clr.w (ram_actor_shown_depth_y).l
+	clr.w (ram_actor_shown_depth_x+2).l
+	clr.w (ram_actor_shown_depth_y+2).l
 	move.w (ram_obj_last).l,d0
 	lea.l (ram_objects).l,a0
 loc_00817C:
@@ -8489,7 +8514,7 @@ loc_00817C:
 loc_008188:
 	lea.l (0x1a,a0),a0
 	dbra d0,loc_00817C
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	rts
 title_screen:
 	bsr.w palette_read_cram
@@ -8610,8 +8635,8 @@ loc_0083CE:
 	lea.l (ram_pal_target).l,a0
 	jsr (palette_fade).l
 	bset.b #0x7,(ram_09eb).l
-	move.w #0xe0,(0xff0624).l
-	move.w #0xe0,(0xff0626).l
+	move.w #0xe0,(ram_scale_depth_x).l
+	move.w #0xe0,(ram_scale_depth_y).l
 	lea.l (title_bats_frames).l,a6
 	move.w #0x1b,d6
 	bsr.w wait_vblank
@@ -8631,8 +8656,8 @@ loc_00842C:
 	movem.l d0-d7/a0-a6,-(sp)
 	btst.b #0x4,(ram_09ed).l
 	bne.s loc_008464
-	move.w (ram_sat_buf+8).l,(0xff0624).l
-	move.w (ram_sat_buf+8).l,(0xff0626).l
+	move.w (ram_sat_buf+8).l,(ram_scale_depth_x).l
+	move.w (ram_sat_buf+8).l,(ram_scale_depth_y).l
 	beq.s loc_008464
 	subi.w #0x20,(ram_sat_buf+8).l
 loc_008464:
@@ -8641,8 +8666,8 @@ loc_008464:
 	bne.s loc_0084A6
 	btst.b #0x4,(ram_09ed).l
 	bne.s loc_0084A2
-	move.w (ram_sat_buf+10).l,(0xff0624).l
-	move.w (ram_sat_buf+10).l,(0xff0626).l
+	move.w (ram_sat_buf+10).l,(ram_scale_depth_x).l
+	move.w (ram_sat_buf+10).l,(ram_scale_depth_y).l
 	bne.s loc_00849A
 	bset.b #0x4,(ram_09ed).l
 	bra.s loc_0084A2
@@ -8680,8 +8705,8 @@ loc_0084F6:
 	move.w #0x4,(ram_frame_countdown).l
 	dbra d6,loc_008416
 sub_00851E:
-	move.w #0x0,(0xff0624).l
-	move.w #0x0,(0xff0626).l
+	move.w #0x0,(ram_scale_depth_x).l
+	move.w #0x0,(ram_scale_depth_y).l
 	bset.b #0x4,(ram_09ed).l
 	bsr.w sub_00E40C
 	bsr.w sub_00F272
@@ -8849,7 +8874,7 @@ loc_00878E:
 title_anim:
 	btst.b #0x4,(ram_09ed).l
 	beq.s loc_0087B2
-	move.b (ram_title_scroll).l,(0xff0627).l
+	move.b (ram_title_scroll).l,(ram_scale_depth_y+1).l
 loc_0087B2:
 	tst.b (ram_title_scroll_dir).l
 	bne.s loc_0087D4
@@ -10751,7 +10776,7 @@ loc_00A192:
 	btst.b #0x4,(ram_pad1).l
 	beq.w loc_00A192
 loc_00A1AA:
-	bsr.w sub_00B0B8
+	bsr.w actor_animate
 	bsr.w run_object_events
 	btst.b #0x1,(ram_script_flags2).l
 	beq.w loc_00A1CA
@@ -11173,8 +11198,8 @@ loc_00A978:
 	bsr.w sub_00A054
 	rts
 sprite_build:
-	move.b (0xff0ac4).l,(0xff0ac5).l
-	move.b #0x0,(0xff0ac4).l
+	move.b (ram_actors_drawn).l,(ram_actors_drawn_prev).l
+	move.b #0x0,(ram_actors_drawn).l
 	moveq #0x1,d5
 	lea.l (ram_sat_buf).l,a0
 	btst.b #0x3,(ram_vblank_flags).l
@@ -11256,25 +11281,25 @@ loc_00AA76:
 loc_00AAB6:
 	btst.b #0x4,(ram_09e8).l
 	beq.s loc_00AB3E
-	movea.l (0xff08a6).l,a1
+	movea.l (ram_fx_sprite_ptr).l,a1
 	move.w (0x48,a1),(a0)
 	move.w (a1)+,(0x6,a0)
-	move.l a1,(0xff08a6).l
+	move.l a1,(ram_fx_sprite_ptr).l
 	addi.w #0x90,(a0)
 	addi.w #0x90,(0x6,a0)
 	btst.b #0x5,(ram_09e8).l
 	beq.s loc_00AAFC
-	move.l a1,(0xff08a6).l
+	move.l a1,(ram_fx_sprite_ptr).l
 	cmpa.l #0x32406,a1
 	bne.s loc_00AAFC
-	subq.l #0x2,(0xff08a6).l
+	subq.l #0x2,(ram_fx_sprite_ptr).l
 loc_00AAFC:
 	move.w d5,d0
 	ori.w #0x500,d0
 	move.w d0,(0x2,a0)
-	subq.b #0x1,(0xff0ace).l
+	subq.b #0x1,(ram_fx_blink).l
 	bpl.w loc_00AB20
-	move.b #0x7,(0xff0ace).l
+	move.b #0x7,(ram_fx_blink).l
 	bchg.b #0x6,(ram_09e8).l
 loc_00AB20:
 	moveq #0x0,d0
@@ -11282,7 +11307,7 @@ loc_00AB20:
 	beq.s loc_00AB2E
 	moveq #0x4,d0
 loc_00AB2E:
-	add.w (0xff08a4).l,d0
+	add.w (ram_fx_sprite_tile).l,d0
 	move.w d0,(0x4,a0)
 	addq.w #0x1,d5
 	lea.l (0x8,a0),a0
@@ -11357,13 +11382,13 @@ loc_00AC0A:
 	move.w d0,(a0)+
 	move.l #0x0,(a0)+
 	addq.w #0x4,d5
-	move.b (ram_actors_frozen).l,(0xff0aba).l
+	move.b (ram_actors_frozen).l,(ram_actors_draw_todo).l
 	move.b (ram_actors_active).l,d0
-	eori.b #0xff,(0xff0aba).l
-	and.b d0,(0xff0aba).l
+	eori.b #0xff,(ram_actors_draw_todo).l
+	and.b d0,(ram_actors_draw_todo).l
 	move.w d5,-(sp)
 loc_00AC68:
-	tst.b (0xff0aba).l
+	tst.b (ram_actors_draw_todo).l
 	bne.w loc_00AC94
 	move.w (sp)+,d0
 	cmpa.l #ram_sat_buf,a0
@@ -11380,7 +11405,7 @@ loc_00AC94:
 	move.w #0x8001,d0
 	lea.l (ram_actor_y2+12).l,a1
 loc_00ACA2:
-	btst.l d1,(0xff0aba).l
+	btst.l d1,(ram_actors_draw_todo).l
 	beq.w loc_00ACC4
 	btst.b #0x2,(ram_09e9).l
 	beq.s loc_00ACBA
@@ -11395,16 +11420,16 @@ loc_00ACC4:
 	tst.l -(a1)
 	dbra d1,loc_00ACA2
 loc_00ACCA:
-	bclr.b d4,(0xff0aba).l
-	btst.l d4,(0xff0ac5).l
+	bclr.b d4,(ram_actors_draw_todo).l
+	btst.l d4,(ram_actors_drawn_prev).l
 	bne.s loc_00ACE0
 	btst.l d4,(ram_actors_anim_looped).l
 	beq.s loc_00AC68
 loc_00ACE0:
-	bset.b d4,(0xff0ac4).l
-	lea.l (dat_0FC860).l,a5
-	lea.l (0xff0558).l,a2
-	lea.l (0xff04a0).l,a3
+	bset.b d4,(ram_actors_drawn).l
+	lea.l (slot_vram_tbl).l,a5
+	lea.l (ram_actor_shown_frame).l,a2
+	lea.l (ram_actor_frame).l,a3
 	move.w d4,d0
 	add.w d0,d0
 	move.w d0,d1
@@ -11412,20 +11437,20 @@ loc_00ACE0:
 	lea.l (0x0,a5,d0.w),a5
 	lea.l (0x0,a2,d1.w),a2
 	lea.l (0x0,a3,d0.w),a3
-	bsr.w sub_00AD16
+	bsr.w actor_draw
 	bra.w loc_00AC68
-sub_00AD14:
+sprite_build_nop:
 	rts
-sub_00AD16:
+actor_draw:
 	move.w (a5),d6
 	lsr.w #0x5,d6
-	btst.l d4,(0xff0ac1).l
+	btst.l d4,(ram_actors_dma_done).l
 	bne.s loc_00AD54
-	btst.l d4,(0xff0ab9).l
+	btst.l d4,(ram_actors_need_scale).l
 	bne.s loc_00AD54
-	btst.l d4,(0xff0ab6).l
+	btst.l d4,(ram_actors_tiles_ready).l
 	bne.s loc_00AD54
-	bset.b d4,(0xff0ac1).l
+	bset.b d4,(ram_actors_dma_done).l
 	move.l (0x18,a2),(a2)
 	move.w (0x100,a3),(0x124,a3)
 	move.w (0x10c,a3),(0x130,a3)
@@ -11560,19 +11585,19 @@ loc_00AF22:
 	rts
 actor_dma:
 	moveq #0x0,d2
-	lea.l (dat_0FC860).l,a1
-	lea.l (0xff0540).l,a2
-	lea.l (0xff0588).l,a3
+	lea.l (slot_vram_tbl).l,a1
+	lea.l (ram_actor_src).l,a2
+	lea.l (ram_actor_dma_words).l,a3
 	move.w #0xd800,d3
 	move.b (ram_actors_active).l,d4
-	move.b (0xff0ab6).l,d5
+	move.b (ram_actors_tiles_ready).l,d5
 	move.b (ram_actors_anim_looped).l,d7
 loc_00AF4E:
 	btst.l d2,d4
 	beq.s loc_00AF94
 	btst.b #0x3,(ram_09e8).l
 	beq.s loc_00AF68
-	cmp.w (0xff08b0).l,d2
+	cmp.w (ram_follow_slot).l,d2
 	beq.s loc_00AF7A
 	tst.w d0
 	beq.s loc_00AF7A
@@ -11590,7 +11615,7 @@ loc_00AF7A:
 	move.w (a1),d0
 	bclr.b d2,d5
 	bsr.w vdp_dma_vram
-	bclr.b d2,(0xff0ac1).l
+	bclr.b d2,(ram_actors_dma_done).l
 	bset.b d2,d7
 	bra.s loc_00AFA2
 loc_00AF94:
@@ -11601,14 +11626,14 @@ loc_00AF94:
 	cmpi.w #0x6,d2
 	bne.s loc_00AF4E
 loc_00AFA2:
-	move.b d5,(0xff0ab6).l
+	move.b d5,(ram_actors_tiles_ready).l
 	move.b d7,(ram_actors_anim_looped).l
 	bsr.w sprite_build
 	lea.l (ram_sat_buf).l,a0
 	move.w #0xc8,d1
 	move.w #0xd800,d0
 	bsr.w vdp_dma_vram
-	lea.l (ram_618).l,a0
+	lea.l (ram_actor_timer).l,a0
 	moveq #0x5,d0
 loc_00AFCC:
 	tst.w (a0)+
@@ -11668,24 +11693,24 @@ loc_00B09A:
 	move.l (sp)+,(ram_script_cb).l
 	movem.l (sp)+,d0-d7/a0-a6
 	rts
-sub_00B0B8:
+actor_animate:
 	movem.l d0-d7/a0-a6,-(sp)
 	btst.b #0x3,(ram_09e9).l
 	beq.s loc_00B0F8
-	btst.b #0x0,(ram_0ab5).l
+	btst.b #0x0,(ram_actors_anim_new).l
 	beq.s loc_00B0F8
-	move.w (ram_618).l,(0xff061c).l
-	move.w (ram_cur_index).l,d0
+	move.w (ram_actor_timer).l,(ram_actor_timer2).l
+	move.w (ram_actor_anim).l,d0
 	add.w d0,d0
-	lea.l (dat_0FC760).l,a0
-	move.w (0x0,a0,d0.w),(ram_484c).l
-	bset.b #0x2,(ram_0ab5).l
+	lea.l (follow_anim_tbl).l,a0
+	move.w (0x0,a0,d0.w),(ram_actor_anim+4).l
+	bset.b #0x2,(ram_actors_anim_new).l
 loc_00B0F8:
 	moveq #0x5,d4
-	lea.l (ram_list_484).l,a6
+	lea.l (ram_actor_animset+20).l,a6
 	moveq #0x1,d5
-	lea.l (0xff0622).l,a3
-	lea.l (0xff0492).l,a4
+	lea.l (ram_actor_timer2+6).l,a3
+	lea.l (ram_actor_anim+10).l,a4
 	lea.l (dat_0FCA08).l,a5
 	lea.l (ram_sat_buf).l,a0
 loc_00B11A:
@@ -11695,14 +11720,14 @@ loc_00B11A:
 	bgt.w loc_00B374
 	btst.b #0x3,(ram_09e8).l
 	beq.w loc_00B140
-	btst.l d4,(0xff0ac6).l
+	btst.l d4,(ram_actors_follow_sync).l
 	bne.w loc_00B374
 loc_00B140:
 	move.w d4,d1
 	add.w d1,d1
-	lea.l (dat_0FC860).l,a1
+	lea.l (slot_vram_tbl).l,a1
 	move.w (0x0,a1,d1.w),d6
-	btst.l d4,(ram_0ab5).l
+	btst.l d4,(ram_actors_anim_new).l
 	bne.s loc_00B1A6
 	btst.l d4,(ram_actors_depth_new).l
 	bne.s loc_00B1A6
@@ -11726,11 +11751,11 @@ loc_00B140:
 loc_00B1A6:
 	movea.l (a6),a1
 	move.w (0xc,a4),d0
-	btst.l d4,(ram_0ab5).l
+	btst.l d4,(ram_actors_anim_new).l
 	beq.w loc_00B1F2
-	btst.l d4,(0xff0ab6).l
+	btst.l d4,(ram_actors_tiles_ready).l
 	bne.w loc_00B374
-	btst.l d4,(0xff0ab9).l
+	btst.l d4,(ram_actors_need_scale).l
 	bne.w loc_00B374
 	bclr.b d4,(ram_actors_anim_done).l
 	bclr.b d4,(ram_actors_anim_looped).l
@@ -11741,7 +11766,7 @@ loc_00B1A6:
 	add.w d1,d0
 	move.w (0x0,a1,d0.w),(0xc,a4)
 	move.w #0xffff,(a3)
-	bclr.b d4,(ram_0ab5).l
+	bclr.b d4,(ram_actors_anim_new).l
 loc_00B1F2:
 	movea.l (a6),a1
 	btst.l d4,(ram_actors_anim_done).l
@@ -11781,10 +11806,10 @@ loc_00B260:
 	move.w d1,(0x18,a4)
 	tst.w d4
 	beq.w loc_00B27C
-	cmp.w (0xff08b0).l,d4
+	cmp.w (ram_follow_slot).l,d4
 	bne.w loc_00B2EA
 loc_00B27C:
-	bset.b d4,(0xff0ac6).l
+	bset.b d4,(ram_actors_follow_sync).l
 	bra.w loc_00B2EA
 loc_00B286:
 	cmpi.w #0x9,d0
@@ -11851,10 +11876,10 @@ loc_00B332:
 	move.w d1,(0x100,a4)
 	btst.l d4,(ram_actors_depth_on).l
 	beq.w loc_00B358
-	btst.l d4,(0xff0ab6).l
+	btst.l d4,(ram_actors_tiles_ready).l
 	bne.w loc_00B374
 	move.l d0,(0xd0,a6)
-	bset.b d4,(0xff0ab9).l
+	bset.b d4,(ram_actors_need_scale).l
 	bra.w loc_00B36C
 loc_00B358:
 	movea.l d0,a1
@@ -11862,7 +11887,7 @@ loc_00B358:
 	movea.l d0,a0
 	movea.l (a5),a2
 	bsr.w rle_decompress
-	bset.b d4,(0xff0ab6).l
+	bset.b d4,(ram_actors_tiles_ready).l
 loc_00B36C:
 	move.l d2,(0x100,a6)
 	move.w (-0x10c,a3),(a3)
@@ -11872,24 +11897,24 @@ loc_00B374:
 	tst.w -(a3)
 	tst.l -(a5)
 	dbra d4,loc_00B11A
-	lea.l (0xff0554).l,a0
+	lea.l (ram_actor_src+20).l,a0
 	lea.l (dat_0FCA08).l,a1
-	lea.l (0xff04aa).l,a5
+	lea.l (ram_actor_frame+10).l,a5
 	moveq #0x5,d0
 loc_00B394:
-	btst.l d0,(0xff0ab9).l
+	btst.l d0,(ram_actors_need_scale).l
 	beq.w loc_00B4E8
 	btst.b #0x3,(ram_09e8).l
 	beq.w loc_00B3D6
 	tst.w d0
 	beq.w loc_00B3BA
-	cmp.w (0xff08b0).l,d0
+	cmp.w (ram_follow_slot).l,d0
 	bne.w loc_00B3D6
 loc_00B3BA:
-	btst.b #0x0,(0xff0ac6).l
+	btst.b #0x0,(ram_actors_follow_sync).l
 	beq.w loc_00B4E8
-	move.w (0xff08b0).l,d1
-	btst.l d1,(0xff0ac6).l
+	move.w (ram_follow_slot).l,d1
+	btst.l d1,(ram_actors_follow_sync).l
 	beq.w loc_00B4E8
 loc_00B3D6:
 	movea.l a0,a3
@@ -11897,8 +11922,8 @@ loc_00B3D6:
 	movea.l (a0),a0
 	tst.w d0
 	bne.s loc_00B3FE
-	movea.l (0xff0470).l,a2
-	move.w (0xff04a0).l,d1
+	movea.l (ram_actor_animset).l,a2
+	move.w (ram_actor_frame).l,d1
 	cmpi.b #0x70,(0x4,a2,d1.w)
 	bne.w loc_00B3FE
 	lea.l (ram_buf_5000).l,a2
@@ -11907,8 +11932,8 @@ loc_00B3FE:
 	lea.l (ram_buf_6000).l,a2
 loc_00B404:
 	bsr.w rle_decompress
-	move.w (0x100,a5),(0xff0624).l
-	move.w (0x10c,a5),(0xff0626).l
+	move.w (0x100,a5),(ram_scale_depth_x).l
+	move.w (0x10c,a5),(ram_scale_depth_y).l
 	movem.l d0/a3-a5,-(sp)
 	movea.l (-0xd0,a3),a1
 	move.w (a5),d0
@@ -11949,10 +11974,10 @@ loc_00B460:
 	move.w (a5),d0
 	cmpi.b #0x30,(0x4,a1,d0.w)
 	bne.s loc_00B49A
-	bsr.w sub_00D3F0
+	bsr.w frame_pack_48x80
 	bra.s loc_00B4BE
 loc_00B49A:
-	bsr.w sub_00D42C
+	bsr.w frame_pack_80x48
 	bra.s loc_00B4BE
 loc_00B4A0:
 	movea.l (a4),a0
@@ -11960,10 +11985,10 @@ loc_00B4A0:
 	move.w (a5),d0
 	cmpi.b #0x30,(0x4,a1,d0.w)
 	bne.w loc_00B4BA
-	bsr.w sub_00D468
+	bsr.w frame_scale_48x80
 	bra.w loc_00B4BE
 loc_00B4BA:
-	bsr.w sub_00DA6A
+	bsr.w frame_scale_80x48
 loc_00B4BE:
 	movem.l (sp)+,d0/a0-a1/a5
 	move.l (a1),(a0)
@@ -11971,11 +11996,11 @@ loc_00B4BE:
 	beq.w loc_00B4DC
 	tst.w d0
 	beq.s loc_00B4E8
-	cmp.w (0xff08b0).l,d0
+	cmp.w (ram_follow_slot).l,d0
 	beq.s loc_00B4E8
 loc_00B4DC:
-	bset.b d0,(0xff0ab6).l
-	bclr.b d0,(0xff0ab9).l
+	bset.b d0,(ram_actors_tiles_ready).l
+	bclr.b d0,(ram_actors_need_scale).l
 loc_00B4E8:
 	tst.l -(a0)
 	tst.l -(a1)
@@ -11983,15 +12008,15 @@ loc_00B4E8:
 	dbra d0,loc_00B394
 	btst.b #0x3,(ram_09e8).l
 	beq.w loc_00B5BA
-	btst.b #0x0,(0xff0ac6).l
+	btst.b #0x0,(ram_actors_follow_sync).l
 	beq.w loc_00B5BA
-	move.w (0xff08b0).l,d0
-	btst.l d0,(0xff0ac6).l
+	move.w (ram_follow_slot).l,d0
+	btst.l d0,(ram_actors_follow_sync).l
 	beq.w loc_00B5BA
 	move.w #0x2700,sr
-	clr.b (0xff0ac6).l
-	movea.l (0xff0470).l,a0
-	move.w (0xff04a0).l,d0
+	clr.b (ram_actors_follow_sync).l
+	movea.l (ram_actor_animset).l,a0
+	move.w (ram_actor_frame).l,d0
 	lea.l (0x0,a0,d0.w),a0
 	move.w (0xe,a0),d0
 	move.w (0x10,a0),d1
@@ -12007,21 +12032,21 @@ loc_00B4E8:
 	neg.w d1
 	add.w (ram_shaggy_x).l,d0
 	add.w (ram_shaggy_y).l,d1
-	move.w (0xff08b0).l,d2
+	move.w (ram_follow_slot).l,d2
 	lsl.w #0x2,d2
 	lea.l (ram_shaggy_x).l,a0
 	move.w d0,(0x0,a0,d2.w)
 	move.w d1,(0x18,a0,d2.w)
-	move.w (0xff08b0).l,d0
-	bclr.b #0x0,(0xff0ab9).l
-	bclr.b d0,(0xff0ab9).l
-	bset.b #0x0,(0xff0ab6).l
-	bset.b d0,(0xff0ab6).l
+	move.w (ram_follow_slot).l,d0
+	bclr.b #0x0,(ram_actors_need_scale).l
+	bclr.b d0,(ram_actors_need_scale).l
+	bset.b #0x0,(ram_actors_tiles_ready).l
+	bset.b d0,(ram_actors_tiles_ready).l
 	move.w #0x2000,sr
 loc_00B5A4:
-	btst.b #0x0,(0xff0ab6).l
+	btst.b #0x0,(ram_actors_tiles_ready).l
 	bne.w loc_00B5A4
-	btst.l d0,(0xff0ab6).l
+	btst.l d0,(ram_actors_tiles_ready).l
 	bne.w loc_00B5A4
 loc_00B5BA:
 	movem.l (sp)+,d0-d7/a0-a6
@@ -12031,14 +12056,14 @@ dat_00B5C0:
 	.incbin "baserom.md",0xB5C0,0x4B0
 dat_00BA70:
 	.incbin "baserom.md",0xBA70,0x200
-dat_00BC70:
+chunky_ofs_48x80:
 	.incbin "baserom.md",0xBC70,0x3C0
-dat_00C030:
+chunky_ofs_80x48:
 	.incbin "baserom.md",0xC030,0x3C0
-dat_00C3F0:
+depth_masks:
 	.incbin "baserom.md",0xC3F0,0x1000
-sub_00D3F0:
-	lea.l (dat_00BC70).l,a1
+frame_pack_48x80:
+	lea.l (chunky_ofs_48x80).l,a1
 	lea.l (ram_buf_6000).l,a2
 	move.w #0x1df,d0
 loc_00D400:
@@ -12061,8 +12086,8 @@ loc_00D400:
 	move.w d2,(0x2,a0,d1.w)
 	dbra d0,loc_00D400
 	rts
-sub_00D42C:
-	lea.l (dat_00C030).l,a1
+frame_pack_80x48:
+	lea.l (chunky_ofs_80x48).l,a1
 	lea.l (ram_buf_6000).l,a2
 	move.w #0x1df,d0
 loc_00D43C:
@@ -12085,16 +12110,16 @@ loc_00D43C:
 	move.w d2,(0x2,a0,d1.w)
 	dbra d0,loc_00D43C
 	rts
-sub_00D468:
+frame_scale_48x80:
 	lea.l (ram_buf_6000).l,a1
-	move.w (0xff0626).l,d0
+	move.w (ram_scale_depth_y).l,d0
 	lsl.w #0x4,d0
-	lea.l (dat_00C3F0).l,a3
+	lea.l (depth_masks).l,a3
 	lea.l (0x0,a3,d0.w),a2
-	move.w (0xff0624).l,d0
+	move.w (ram_scale_depth_x).l,d0
 	lsl.w #0x4,d0
 	lea.l (0x0,a3,d0.w),a3
-	lea.l (dat_00BC70).l,a4
+	lea.l (chunky_ofs_48x80).l,a4
 	move.l #0x40000,d0
 	moveq #0x0,d2
 loc_00D49A:
@@ -12730,16 +12755,16 @@ loc_00DA40:
 	dbra d2,loc_00DA40
 loc_00DA68:
 	rts
-sub_00DA6A:
+frame_scale_80x48:
 	lea.l (ram_buf_6000).l,a1
-	move.w (0xff0626).l,d0
+	move.w (ram_scale_depth_y).l,d0
 	lsl.w #0x4,d0
-	lea.l (dat_00C3F0).l,a3
+	lea.l (depth_masks).l,a3
 	lea.l (0x0,a3,d0.w),a2
-	move.w (0xff0624).l,d0
+	move.w (ram_scale_depth_x).l,d0
 	lsl.w #0x4,d0
 	lea.l (0x0,a3,d0.w),a3
-	lea.l (dat_00C030).l,a4
+	lea.l (chunky_ofs_80x48).l,a4
 	move.l #0x20000,d0
 	moveq #0x0,d2
 loc_00DA9C:
@@ -13775,11 +13800,11 @@ sub_00E40C:
 	lea.l (0x0,a6,d0.w),a6
 	lea.l (ram_zone_map).l,a0
 	lea.l (ram_buf_3800).l,a1
-	move.w (0xff0626).l,d0
+	move.w (ram_scale_depth_y).l,d0
 	lsl.w #0x4,d0
-	lea.l (dat_00C3F0).l,a3
+	lea.l (depth_masks).l,a3
 	lea.l (0x0,a3,d0.w),a2
-	move.w (0xff0624).l,d0
+	move.w (ram_scale_depth_x).l,d0
 	lsl.w #0x4,d0
 	lea.l (0x0,a3,d0.w),a3
 	lea.l (dat_00B5C0).l,a4
@@ -15322,11 +15347,11 @@ sub_00F272:
 	lea.l (0x0,a6,d0.w),a6
 	lea.l (ram_planea_names).l,a0
 	lea.l (ram_buf_5000).l,a1
-	move.w (0xff0626).l,d0
+	move.w (ram_scale_depth_y).l,d0
 	lsl.w #0x4,d0
-	lea.l (dat_00C3F0).l,a3
+	lea.l (depth_masks).l,a3
 	lea.l (0x0,a3,d0.w),a2
-	move.w (0xff0624).l,d0
+	move.w (ram_scale_depth_x).l,d0
 	lsl.w #0x4,d0
 	lea.l (0x0,a3,d0.w),a3
 	lea.l (dat_00BA70).l,a4
@@ -16850,8 +16875,12 @@ dat_032598:
 	.incbin "baserom.md",0x32598,0x2
 dat_03259A:
 	.incbin "baserom.md",0x3259A,0xD6
-dat_032670:
-	.incbin "baserom.md",0x32670,0xC626C
+sprite_sets:
+	.incbin "baserom.md",0x32670,0x90
+animset_shaggy:
+	.incbin "baserom.md",0x32700,0x31BD0
+animset_scooby:
+	.incbin "baserom.md",0x642D0,0x9460C
 dat_0F88DC:
 	.incbin "baserom.md",0xF88DC,0x1E9E
 dat_0FA77A:
@@ -16864,9 +16893,9 @@ shaggy_turn_anims:
 	.incbin "baserom.md",0xFC720,0x20
 dat_0FC740:
 	.incbin "baserom.md",0xFC740,0x20
-dat_0FC760:
+follow_anim_tbl:
 	.incbin "baserom.md",0xFC760,0x100
-dat_0FC860:
+slot_vram_tbl:
 	.incbin "baserom.md",0xFC860,0xC
 dat_0FC86C:
 	.incbin "baserom.md",0xFC86C,0x10
@@ -16927,7 +16956,9 @@ dat_0FC9C0:
 dat_0FC9D0:
 	.incbin "baserom.md",0xFC9D0,0xC
 dat_0FC9DC:
-	.incbin "baserom.md",0xFC9DC,0x2C
+	.incbin "baserom.md",0xFC9DC,0x18
+slot_buffer_tbl:
+	.incbin "baserom.md",0xFC9F4,0x14
 dat_0FCA08:
 	.incbin "baserom.md",0xFCA08,0xBEF42
 z80_driver_blob:

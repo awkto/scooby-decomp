@@ -520,3 +520,15 @@ action_execute, run_object_events, the room scripts and the TALK menu loop as ra
 | --- | --- | --- | --- |
 | $0097AA | lzss_decompress (per-token cycle model, called directly by room.c / reset.c) | decomp.c | 484/484 (60 route states + 212 stream variants x 2 states) |
 | $009C64 | rle_decompress | decomp.c | 248/248 (8 route states + 31 title/logo streams, with and without the $FF09ED bit 3 side effect) |
+
+#15 (sprites and actor animation), files `sprite.c`/`sprite.h`. Details: `docs/subsystems/sprite.md`,
+formats: `docs/formats.md` "Actor sprites":
+
+| Address | Name | File | difftest result |
+| --- | --- | --- | --- |
+| $00A984 | sprite_build (SAT; incl. helper $00AD16 actor_draw) | sprite.c | 200/200 |
+| $00B0B8 | actor_animate (scripts, frame decode, depth scaling; follow-mode spin stays 68k via hle_jump) | sprite.c | 200/200 (flags ignored) |
+| $00D468 / $00DA6A | frame_scale_48x80 / _80x48 (depth scalers) | sprite.c | 200/200, 115/115 (all calls on the route; regs/flags ignored) |
+| $00D3F0 / $00D42C | frame_pack_48x80 / _80x48 | sprite.c | 11/11 each (`scripts/sprite_pack.txt`, all calls) |
+| $00801A | actors_init (tail-jumps to its `bsr actor_animate`) | sprite.c | 2/2 (all calls on the route) |
+| $00AF24 | actor_dma | stays 68k (HV read, #33); C reference under `#ifdef SPRITE_ACTOR_DMA_C` | |

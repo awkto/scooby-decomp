@@ -193,7 +193,7 @@
 007d54   462 overlay_apply  # 200 insns +007c82:210
 007f22    68 game_state_init  # 17 insns
 007f66   180 mystery_load  # 45 insns
-00801a   380 sub_00801A  # 57 insns
+00801a   380 actors_init  # 57 insns
 008196   904 title_screen  # 176 insns
 00851e   190 sub_00851E  # 45 insns
 008660   174 sub_008660  # 50 insns
@@ -274,15 +274,15 @@
 00a7ce    90 palette_cycle  # 26 insns
 00a828   348 status_line_update  # 76 insns
 00a984   912 sprite_build  # 214 insns
-00ad14     2 sub_00AD14  # 1 insns
-00ad16   526 sub_00AD16  # 123 insns
+00ad14     2 sprite_build_nop  # 1 insns
+00ad16   526 actor_draw  # 123 insns
 00af24   182 actor_dma  # 51 insns
 00afda   222 run_object_events  # 47 insns
-00b0b8  1288 sub_00B0B8  # 315 insns
-00d3f0    60 sub_00D3F0  # 22 insns
-00d42c    60 sub_00D42C  # 22 insns
-00d468  1538 sub_00D468  # 588 insns
-00da6a  2466 sub_00DA6A  # 950 insns
+00b0b8  1288 actor_animate  # 315 insns
+00d3f0    60 frame_pack_48x80  # 22 insns
+00d42c    60 frame_pack_80x48  # 22 insns
+00d468  1538 frame_scale_48x80  # 588 insns
+00da6a  2466 frame_scale_80x48  # 950 insns
 00e40c  3686 sub_00E40C  # 1416 insns
 00f272  2054 sub_00F272  # 780 insns
 00fa78   450 camera_update  # 90 insns

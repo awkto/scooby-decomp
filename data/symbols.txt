@@ -269,3 +269,21 @@
 00221A run_load_script     # run the room entry +$0C script
 002278 run_arrival_script  # run the room entry +$10 script
 # (dup, superseded) 0013BA mystery_intro       # mystery title card + start script (from header +$30)
+# ---- #15 sprite / actor animation (port/src/game/sprite.c, docs/subsystems/sprite.md)
+00801A actors_init          # reset the 6 actor slots; Shaggy set $032700, Scooby $0642D0; then actor_animate
+00AD14 sprite_build_nop     # lone rts (dead)
+00AD16 actor_draw           # sprite_build helper: latch the DMA'd frame, emit its pieces into the SAT
+00B0B8 actor_animate        # step every slot's animation script, RLE-decode / depth-scale new frames
+00D3F0 frame_pack_48x80     # chunky $FF6000 -> 4bpp tiles (table $00BC70), no scaling
+00D42C frame_pack_80x48     # same, 80x48 (table $00C030)
+00D468 frame_scale_48x80    # depth scaler: keep masked rows/columns ($00C3F0 + depth*16), pack to tiles
+00DA6A frame_scale_80x48    # same, 80x48
+00BC70 chunky_ofs_48x80     # w[480] tile-buffer offset of each 8-pixel row group (48x80 frames)
+00C030 chunky_ofs_80x48     # w[480] same for 80x48 frames
+00C3F0 depth_masks          # 256 x 8 words: keep bits per depth level (MSB first)
+032670 sprite_sets          # l[36] animation set per sprite type (object +$02)
+032700 animset_shaggy       # animation set 0 (docs/formats.md "Actor sprites")
+0642D0 animset_scooby       # animation set 1
+0FC760 follow_anim_tbl      # w[]: partner animation per Shaggy animation (follow mode)
+0FC860 slot_vram_tbl        # w[6] VRAM address of each slot's tiles
+0FC9F4 slot_buffer_tbl      # l[6] RAM staging buffer of each slot
