@@ -1,0 +1,15 @@
+# Boot sequence screenshots (no input): logos, intro, title. See docs/subsystems/mainloop.md
+run 150
+shot f0150
+run 250
+shot f0400
+run 300
+shot f0700
+run 300
+shot f1000
+run 300
+shot f1300
+run 300
+shot f1600
+run 300
+shot f1900

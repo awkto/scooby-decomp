@@ -83,7 +83,7 @@ void hle_register_def(const hle_def *def)
 
 void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles)
 {
-	hle_def d = { addr, name, fn, cycles, "(runtime)" };
+	hle_def d = { addr, name, fn, cycles, "(runtime)", NULL };
 	if (!name) {
 		char *buf = malloc(16);
 		snprintf(buf, 16, "sub_%06X", addr);
@@ -208,7 +208,17 @@ static int run_def(const hle_def *def, entry *e)
 		e->calls++;
 	g_frame_calls++;
 	def->fn(&c);
-	if (!c.jumped) {
+	if (def->exits) {
+		/* HLE_RANGE: must leave through a declared exit */
+		bool ok = false;
+		for (const uint32_t *x = def->exits; c.jumped && *x; x++)
+			ok |= *x == c.pc;
+		if (!ok) {
+			fprintf(stderr, "hle: range %s ($%06X) left via $%06X%s, not a declared exit\n", def->name,
+			        def->addr, c.pc, c.jumped ? "" : " (no hle_jump)");
+			abort();
+		}
+	} else if (!c.jumped) {
 		c.pc = bus_r32(c.a[7]);   /* rts */
 		c.a[7] += 4;
 	}
@@ -281,6 +291,39 @@ static void call68k(hle_ctx *c, uint32_t addr, bool orig)
 }
 
 void hle_call68k(hle_ctx *c, uint32_t addr) { call68k(c, addr, false); }
+
+void hle_run68k_until(hle_ctx *c, const uint32_t *exits)
+{
+	hle_ctx save = *c;
+	uint32_t sp = c->a[7], start = c->pc;
+	ctx_store(c);
+	m68k_hle_skip_pc = start;
+	for (unsigned long n = 0;; n++) {
+		if (n) {
+			uint32_t pc = gx_m68k_pc();
+			bool hit = false;
+			for (const uint32_t *x = exits; *x && !hit; x++)
+				hit = *x == pc;
+			if (hit && gx_m68k_dar()[15] == sp)
+				break;
+		}
+		if (m68k_step_one() < 0) {
+			fprintf(stderr, "hle_run68k_until($%06X): address error at pc $%06X\n", start, gx_m68k_pc());
+			abort();
+		}
+		if (hle_post_access)
+			hle_post_access();
+		if (n > 200000000ul) {
+			fprintf(stderr, "hle_run68k_until($%06X): no exit after %lu instructions\n", start, n);
+			abort();
+		}
+	}
+	m68k_hle_skip_pc = 0xFFFFFFFF;
+	ctx_load(c);
+	c->def = save.def;
+	c->cycles = save.cycles;
+	c->jumped = 1;
+}
 void hle_call68k_orig(hle_ctx *c, uint32_t addr) { call68k(c, addr, true); }
 
 /* ------------------------------------------------------------------ bus */

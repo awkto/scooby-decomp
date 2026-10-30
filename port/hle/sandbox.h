@@ -46,6 +46,10 @@ void sb_end(void);
  * returns. Returns false if it did not return within max_insns or took an address error.
  * *cycles receives the 68k cycles used, *min_sp the lowest SP seen. */
 bool sb_run_68k(unsigned long max_insns, unsigned long *insns, unsigned long *cycles, uint32_t *min_sp);
+/* Same for a code range (HLE_RANGE): run until the PC is one of the 0-terminated exits
+ * with SP == the entry SP, after at least one instruction. exits == NULL: sb_run_68k. */
+bool sb_run_68k_until(const uint32_t *exits, unsigned long max_insns, unsigned long *insns, unsigned long *cycles,
+                      uint32_t *min_sp);
 
 /* start / stop recording port writes into snap->ev */
 void sb_record_begin(void);

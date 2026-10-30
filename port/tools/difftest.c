@@ -11,7 +11,8 @@
  * calls made on that route.
  *
  * For every captured entry state: load it, run the original 68k code until it returns
- * (other HLE functions disabled unless --with-hle), snapshot; reload, run the C function,
+ * (an HLE_RANGE: until it reaches one of its declared exits at the entry SP; other HLE
+ * functions disabled unless --with-hle), snapshot; reload, run the C function,
  * snapshot; compare registers, SR, work RAM (minus dead stack), VRAM/CRAM/VSRAM, VDP
  * registers + port latches, Z80 RAM / bus state, I/O registers and the ordered list of
  * writes to the VDP ports, Z80 area and I/O area. The first failing state is reported in
@@ -169,7 +170,10 @@ static char **list_states(const char *dir, int *count)
 
 static void passthrough_fn(hle_ctx *ctx)
 {
-	hle_call68k_orig(ctx, ctx->pc);
+	if (ctx->def && ctx->def->exits)
+		hle_run68k_until(ctx, ctx->def->exits);   /* HLE_RANGE */
+	else
+		hle_call68k_orig(ctx, ctx->pc);
 }
 
 static bool *g_saved_enable;
@@ -235,7 +239,7 @@ static int do_run(const hle_def *target, const opts *o)
 		sb_record_begin();
 		unsigned long insns, cycles;
 		uint32_t min_sp;
-		bool ok = sb_run_68k(50000000ul, &insns, &cycles, &min_sp);
+		bool ok = sb_run_68k_until(target->exits, 50000000ul, &insns, &cycles, &min_sp);
 		sb_snapshot(ref);
 		sb_end();
 		if (!ok) {

@@ -50,3 +50,8 @@ endif()
 add_executable(difftest tools/difftest.c)
 target_link_libraries(difftest PRIVATE scooby_common)
 target_compile_options(difftest PRIVATE -Wall -Wextra -Wno-unused-parameter)
+
+# ---- frame-structure profiler (main loop / interrupt hooks per frame) ----
+add_executable(frameprof tools/frameprof.c)
+target_link_libraries(frameprof PRIVATE scooby_common)
+target_compile_options(frameprof PRIVATE -Wall -Wextra -Wno-unused-parameter)
