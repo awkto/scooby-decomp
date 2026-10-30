@@ -229,6 +229,9 @@ difftest options:
   caller reads them.
 - `--strict-stack`: also compare the scratch stack.
 - `--with-hle`: keep other C replacements active on both sides.
+- `--poke "W:FF06AC=5,L:FF068E=0xFCA0C,D0=7"` (repeatable): run every state once per variant after patching
+  work RAM (`B/W/L:HEXADDR=VALUE`) and registers (`D0..D7/A0..A7=VALUE`). Use it to reach inputs the capture
+  route never produces (other rooms, ids, flag bits); see `port/tools/dt-room`.
 - `--passthrough`: the C side calls the original through `hle_call68k_orig`. This
   self-tests the harness and must always pass.
 - `--keep-going`, `-v`, `--max N`, `--states DIR`.
@@ -372,6 +375,18 @@ It may call anything non-blocking through `hle_call68k`.
 | $0073D6 | walk_blocked_probe (per-pixel collision test) | walk.c | 200/200 |
 | $007476 | walk_blocked_line_probe | walk.c | 200/200 |
 | $00750A | pad_dir8 | walk.c | 7/7 (all calls on the route) + walk_dt.sh |
+| $00758A | room_load (room/scene loader) | room.c | 306/306 (6 captured states x 51 rooms of both mysteries, via `--poke`) |
+| $007950 | room_draw_view | room.c | 120/120 (6 states x 20 camera positions) |
+| $007A2A | font_tiles_load (exact regs+flags) | room.c | 42/42 (all calls on the route) |
+| $007A8C | room_setup_actors | room.c | 180/180 (6 states x 30 rooms) |
+| $007F22 | game_state_init | room.c | 2/2 (all calls on the route) |
+| $007F66 | object_table_init (ends by `hle_jump` into the 68k mystery intro) | room.c | not difftestable; object table identical after boot, C vs 68k (`dt-room`) |
+| $00750A | pad_direction | room.c | 7/7 (all calls on the route) |
+| $0073D6 / $007476 | zone_probe_cursor / zone_probe_point (exact regs+flags) | room.c | 12/12 each |
+| $007D54 | overlay_apply | room.c | 1008/1008 (12 states x 84 ids/camera/DMA-mode variants, flags ignored) |
+| $007C04 | objects_update | room.c | 12/12 |
+
+`port/tools/dt-room` runs the room.c functions with the extra `--poke` variants.
 
 The "pad read $9D3A" in older notes is the body of $9D34. The function is entered at
 $9D34 with `jsr $1F6D7A` (Z80 bus request) and is called from $A4A4 and $A6C0.

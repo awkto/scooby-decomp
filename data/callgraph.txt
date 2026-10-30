@@ -15,14 +15,14 @@
 00197e sub_00197E -> -
 0019b0 action_execute -> sub_001BDA sub_001C0C script_run_nested script_run script_run_frame strcpy sub_00A130
 001bda sub_001BDA -> verb_label_redraw
-001c0c sub_001C0C -> sub_0020DA sub_0022F2 script_run_nested script_run_frame inventory_arrows_update inventory_refresh sub_007A2A wait_vblank sub_009996 vdp_dma_vram sub_009FA2 sub_00A054 sub_00A130 sub_00A18C sub_00B0B8
+001c0c sub_001C0C -> sub_0020DA sub_0022F2 script_run_nested script_run_frame inventory_arrows_update inventory_refresh font_tiles_load wait_vblank sub_009996 vdp_dma_vram sub_009FA2 sub_00A054 sub_00A130 sub_00A18C sub_00B0B8
 0020d2 sub_0020D2 -> -
 0020da sub_0020DA -> rng_next
-002138 room_load -> sub_00221A inventory_arrows_update sub_00758A wait_vblank sub_00B0B8
+002138 room_load -> run_load_script inventory_arrows_update sub_00758A wait_vblank sub_00B0B8
 002196 room_reload -> room_load
-00219a room_fade_in -> sub_002278 wait_vblank palette_fade status_line_update
-00221a sub_00221A -> script_run_frame
-002278 sub_002278 -> script_run_frame
+00219a room_fade_in -> run_arrival_script wait_vblank palette_fade status_line_update
+00221a run_load_script -> script_run_frame
+002278 run_arrival_script -> script_run_frame
 0022d6 rng_next -> -
 0022f2 sub_0022F2 -> vdp_write_word
 002320 script_run_nested -> script_run
@@ -119,11 +119,11 @@
 004548 script_subop_02 -> room_fade_in
 00454e script_subop_03 -> palette_read_cram
 004568 script_subop_04 -> run_object_events sub_00B0B8
-0045a4 script_subop_05 -> script_subop_1D sub_007950 sub_009716 sub_009722 wait_vblanks wait_vblank vdp_copy_to_vram vdp_dma_cram vdp_clear_cram status_line_update sub_00B0B8
+0045a4 script_subop_05 -> script_subop_1D room_draw_view sub_009716 sub_009722 wait_vblanks wait_vblank vdp_copy_to_vram vdp_dma_cram vdp_clear_cram status_line_update sub_00B0B8
 0047ac sub_0047AC -> vdp_write_word sub_009996
 00481a script_subop_06 -> script_subop_1C
 00482e script_subop_1D -> sub_0047AC sub_00B0B8
-004862 script_subop_1C -> sub_007A2A vdp_dma_vram sub_00B0B8
+004862 script_subop_1C -> font_tiles_load vdp_dma_vram sub_00B0B8
 0048b6 script_op_0D -> sound_play sound_stop
 0048d8 script_op_15 -> sub_00B0B8
 0048f8 script_op_20 -> -
@@ -134,7 +134,7 @@
 004c4e sub_004C4E -> sub_004D78^
 004d78 sub_004D78 -> -
 004d7a sub_004D7A -> -
-004d80 script_op_10 -> sub_007A2A sub_00A130 sub_00A172 sub_00B0B8
+004d80 script_op_10 -> font_tiles_load sub_00A130 sub_00A172 sub_00B0B8
 004ee4 script_op_18 -> room_load
 004f0e script_op_11 -> room_reload palette_read_cram
 004f50 script_op_12 -> -
@@ -184,16 +184,16 @@
 0073d6 walk_blocked_probe -> -
 007476 walk_blocked_line_probe -> -
 00750a pad_dir8 -> -
-00758a sub_00758A -> sub_0047AC inventory_upload inventory_build_page sub_007950 sub_007A2A sub_007A8C lzss_decompress vdp_copy_to_vram vdp_write_word vdp_fill_vram vdp_clear_vram
-007950 sub_007950 -> vdp_write_word sub_00FC3A sub_00FD5E sub_00FE74 sub_00FF68
-007a2a sub_007A2A -> vdp_write_word
-007a8c sub_007A8C -> -
-007c04 object_timers -> sub_007D54
-007d54 sub_007D54 -> vdp_write_word vdp_dma_vram
-007f22 sub_007F22 -> -
+00758a sub_00758A -> sub_0047AC inventory_upload inventory_build_page room_draw_view font_tiles_load room_setup_actors lzss_decompress vdp_copy_to_vram vdp_write_word vdp_fill_vram vdp_clear_vram
+007950 room_draw_view -> vdp_write_word sub_00FC3A sub_00FD5E sub_00FE74 sub_00FF68
+007a2a font_tiles_load -> vdp_write_word
+007a8c room_setup_actors -> -
+007c04 object_timers -> overlay_apply
+007d54 overlay_apply -> vdp_write_word vdp_dma_vram
+007f22 game_state_init -> -
 007f66 mystery_load -> mystery_intro sound_stop
 00801a sub_00801A -> sub_00B0B8
-008196 title_screen -> sub_007A2A sub_00851E^ sub_008660 sub_008F40 wait_vblank sound_play lzss_decompress vdp_copy_to_vram vdp_write_word vdp_dma_vram vdp_fill_vram vdp_clear_vram rle_decompress palette_read_cram palette_fade sub_00E40C sub_00F272
+008196 title_screen -> font_tiles_load sub_00851E^ sub_008660 sub_008F40 wait_vblank sound_play lzss_decompress vdp_copy_to_vram vdp_write_word vdp_dma_vram vdp_fill_vram vdp_clear_vram rle_decompress palette_read_cram palette_fade sub_00E40C sub_00F272
 00851e sub_00851E -> sub_0088A2* sub_008C40* menu_start_game* sub_008D6A sub_008F1C sub_008F8A* sub_008FB8* sub_008FC2* sound_test* vdp_dma_vram rle_decompress draw_text_plane_a sub_00E40C sub_00F272
 008660 sub_008660 -> sub_00870E sub_008710 sub_00873E
 00870e sub_00870E -> -
@@ -205,7 +205,7 @@
 0088a2 sub_0088A2 -> sub_00851E^ sub_0088D8 sub_0096F4 vdp_dma_vram
 0088d8 sub_0088D8 -> wait_vblank sub_009F46
 008ab4 sub_008AB4 -> wait_vblank sub_009F46
-008c40 sub_008C40 -> sub_007A2A sub_00851E^ sub_0088D8 sub_008AB4 sub_0096F4 vdp_dma_vram
+008c40 sub_008C40 -> font_tiles_load sub_00851E^ sub_0088D8 sub_008AB4 sub_0096F4 vdp_dma_vram
 008cd6 menu_start_game -> palette_read_cram
 008d36 sub_008D36 -> sub_008F1C vdp_dma_vram rle_decompress
 008d6a sub_008D6A -> sub_008F1C wait_vblank sound_play sub_00E40C sub_00F272
@@ -215,7 +215,7 @@
 008f9a soft_reset -> Reset* palette_read_cram
 008fb8 sub_008FB8 -> sub_008FCA^
 008fc2 sub_008FC2 -> -
-008fca sub_008FCA -> sub_007F22 sub_00851E^ sub_008660 menu_start_game^ sub_008D36 sub_008F1C sub_009162* sub_00927A* sub_009298* sub_0093A2* sub_0093B6* sub_0093CC* sub_0093DC* wait_vblank sound_play vdp_dma_vram rle_decompress sub_009F58 sub_00E40C sub_00F272
+008fca sub_008FCA -> game_state_init sub_00851E^ sub_008660 menu_start_game^ sub_008D36 sub_008F1C sub_009162* sub_00927A* sub_009298* sub_0093A2* sub_0093B6* sub_0093CC* sub_0093DC* wait_vblank sound_play vdp_dma_vram rle_decompress sub_009F58 sub_00E40C sub_00F272
 009162 sub_009162 -> -
 00927a sub_00927A -> sub_00851E^ wait_vblank
 009298 sub_009298 -> sub_00876C menu_start_game^ sub_009382 wait_vblanks sound_play

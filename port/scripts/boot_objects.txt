@@ -1,0 +1,14 @@
+# title -> new game: the object table is built by $007F66 right after the 5th Start press;
+# dump work RAM before game scripts start modifying objects (timing differs between C and 68k)
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+ram objs

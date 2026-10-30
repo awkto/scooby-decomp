@@ -250,3 +250,21 @@
 00AF24 actor_dma         # VBlank: actor tile DMA, sprite table, actor timers
 00A704 meters_draw       # VBlank: the two status meters
 007C04 object_timers     # VBlank: object timers (+$0A)
+# ---- room / scene loader (issue #18; docs/subsystems/room.md)
+# (dup, superseded) 0073D6 zone_probe_cursor   # d2,d3 = max x/y; tests zone-map collision mask pixel at (ram_cursor_x, ram_cursor_y); d5 = nibble
+# (dup, superseded) 007476 zone_probe_point    # same at ($FF064A, $FF064E)
+# (dup, superseded) 00750A pad_direction       # pad 1 d-pad -> d0 direction index 0-7 (unchanged if none)
+# (dup, superseded) 00758A room_load           # load room ram_room_index of the active mystery: VRAM tiles/font/UI, map pack, zone map, camera
+007950 room_draw_view      # write the 32x19 cell camera window to plane B ($E000) / A ($C000)
+007A2A font_tiles_load     # d0=glyph colour, d1=background colour, d2=font base word: recolour + write 94 font tiles to VRAM
+007A8C room_setup_actors   # fill actor slots 2-5 from the objects of this room
+# (dup, superseded) 007C04 objects_update      # per-frame: object timers, apply overlays of objects in this room
+007D54 overlay_apply       # d0 = overlay id (bit15 restore, else draw): patch plane working copy + VRAM
+007F22 game_state_init     # copy the mystery's initial game-state block, fetch start room
+# (dup, superseded) 007F66 object_table_init   # build ram_objects from the header's object init records
+# (dup, superseded) 002138 room_enter          # room_load + sprite uploads + load script (called with interrupts managed here)
+# (dup, superseded) 002196 room_change         # room_enter + room_fade_in
+# (dup, superseded) 00219A room_fade_in        # palette fade-in to ram_pal_target, then the arrival script
+00221A run_load_script     # run the room entry +$0C script
+002278 run_arrival_script  # run the room entry +$10 script
+# (dup, superseded) 0013BA mystery_intro       # mystery title card + start script (from header +$30)
