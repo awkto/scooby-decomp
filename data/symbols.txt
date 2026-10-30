@@ -373,3 +373,12 @@
 # ---- #17 inventory arrows (port/src/game/verbs.c): spin until the VBlank consumed the last frame, then set it
 005C5A inventory_arrow_up_wait      # d0 = frame of the page-up arrow ($FF0804); spins on $FF0AB1; the range after the spin is inventory_arrow_up_set
 005C74 inventory_arrow_down_wait    # same for the page-down arrow ($FF0806, $FF0AB2)
+
+# ---- #19 third pass: Bumper Car duel helpers (minigames.c)
+00393A duel_meters             # draw the two 64-pixel hit point meters as tiles
+0039D4 duel_overlap            # do the two cars' hit boxes overlap? (d0 = 1/0)
+003A68 duel_aim                # d1 = heading opposite to the bearing to the Clown
+003A7A duel_bearing            # d0 = heading 0..7 from Shaggy's car to the Clown's
+003AF0 duel_bump               # the cars bump: damage, recoil, random spin
+003C70 duel_wall0              # Shaggy's car hit a wall
+003CFE duel_wall1              # the Clown's car hit a wall

@@ -295,11 +295,11 @@ static void leg0_wp1(hle_ctx *ctx, const walker *w) { leg_setup(ctx, w, 1, 0); }
 static void leg1_wp0(hle_ctx *ctx, const walker *w) { leg_setup(ctx, w, 0, 1); }
 static void leg1_wp1(hle_ctx *ctx, const walker *w) { leg_setup(ctx, w, 1, 1); }
 HLE_FUNC(0x00519C, shaggy_leg0_from_wp0, 0) { CHARGE(leg0_wp0(ctx, &SHAGGY)); }
-#ifdef SCRIPT_UNTESTED   /* no states on any route (the planner range calls the same C) */
+/* (the planner range calls the same C; w0_full / w1_part give states for $51E4 and $5276, $522E is
+ * tested by --entry from those) */
 HLE_FUNC(0x0051E4, shaggy_leg0_from_wp1, 0) { CHARGE(leg0_wp1(ctx, &SHAGGY)); }
 HLE_FUNC(0x00522E, shaggy_leg1_from_wp0, 0) { CHARGE(leg1_wp0(ctx, &SHAGGY)); }
 HLE_FUNC(0x005276, shaggy_leg1_from_wp1, 0) { CHARGE(leg1_wp1(ctx, &SHAGGY)); }
-#endif
 HLE_FUNC(0x005852, scooby_leg0_from_wp0, 0) { CHARGE(leg0_wp0(ctx, &SCOOBY)); }
 HLE_FUNC(0x00589A, scooby_leg0_from_wp1, 0) { CHARGE(leg0_wp1(ctx, &SCOOBY)); }
 HLE_FUNC(0x0058E4, scooby_leg1_from_wp0, 0) { CHARGE(leg1_wp0(ctx, &SCOOBY)); }

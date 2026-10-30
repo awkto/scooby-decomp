@@ -249,3 +249,21 @@ FF08BA 2    ram_cheat_progress   # keys of the DEBUG cheat code matched so far (
 
 # ---- #13 VDP helpers (vdp.c)
 FF080A 2    ram_text_count   # draw_text_wrapped: rows*300 (pause length); draw_status_line: characters*16
+
+# ---- #19 third pass: Bumper Car duel (sub-op $32, port/src/game/minigames.c, docs/subsystems/minigames.md)
+FF05BC 2    ram_duel_clown_push   # heading of the push (recoil) of the Clown's car
+FF09EC 1    ram_duel_hit          # bit 0 / 1: Shaggy's / the Clown's car hit a wall this frame
+FF0A84 12   ram_duel_prev         # last frame's x0 y0 x2 y2 anim0 anim2 (undo of a blocked move)
+FF0A90 2    ram_duel_speed0       # Shaggy's car speed 0..7
+FF0A92 2    ram_duel_speed1       # the Clown's car speed
+FF0A94 2    ram_duel_recoil0      # recoil speed of Shaggy's car
+FF0A96 2    ram_duel_recoil1
+FF0A98 2    ram_duel_hp0          # hit points 63..0, below 0 = destroyed
+FF0A9A 2    ram_duel_hp1
+FF0A9C 2    ram_duel_aim          # heading the Clown last aimed at
+FF0A9E 2    ram_duel_turn         # its turn direction +-1
+FF0AA0 1    ram_duel_tmr_gas0     # byte timers (frames): gas ramp, recoil step, Clown steering
+FF0AA1 1    ram_duel_tmr_gas1
+FF0AA2 1    ram_duel_tmr_rec0
+FF0AA3 1    ram_duel_tmr_rec1
+FF0AA4 1    ram_duel_tmr_steer
