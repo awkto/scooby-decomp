@@ -179,14 +179,14 @@ inputs from a few explicit values. The planned extensions:
 
 | groups | programs | frames compared | differing |
 |---|---:|---:|---:|
-| mouse, menus (tours 1-3), intros (w0, w1), extra (boot screens, Lobby, verbs, inventory, pointer, TALK, password, sound test, 20k-frame random capture route) | 42 | 338,542 | 0 |
+| menus (tours 1-3), intros (w0, w1), extra (boot screens, Lobby, verbs, inventory, pointer, TALK, password, sound test, 20k-frame random capture route) | 24 | 297,254 | 0 |
 | story (6 closed-loop routes, none + all) and mouse | 28 | 141,556 | 0 |
 
 This includes the H40 legal screen, the shadow/highlight title effects, the window-split dialogue rows,
 palette fades with CRAM writes in HBlank, and every scene change of the routes.
 
-`RENDERTEST_SPLIT=model` (bottom band from the model) on menus, intros and extra: 297,254 frames, 1,988
-differ, **all of them only in line 168**: in those frames the 68k's final register `$12` write landed
+`RENDERTEST_SPLIT=model` (bottom band from the model) on mouse, menus, intros and extra: 338,542 frames,
+2,623 differ, **all of them only in line 168**: in those frames the 68k's final register `$12` write landed
 after the VDP had drawn line 168, which GPGX then shows with the transient `$921C` value (the whole
 line is window, i.e. black) - a beam race of the original that the band model does not reproduce on
 purpose (one frame in intro_w0 differs in line 168 the other way: `ram_verb_bar_window` changed between
