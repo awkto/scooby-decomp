@@ -20,7 +20,7 @@ function while the 68k CPU is still emulated (docs/porting.md, "Waiting for VBla
   `move.x ...,-(sp)`) stay 68k because a range must exit with the SP it was entered with.
 * Callees of other subsystems go through `hle_call68k`: `sound_play`/`sound_stop` (sound),
   `vdp_dma_cram`/`vdp_dma_vram` (VDP), `verb_label_redraw`/`str_copy` (#17/util),
-  `sub_007A2A` font recolour (text).
+  `font_tiles_load` $007A2A font recolour (text, now C: room.c).
 
 In a native build without the CPU, the ranges collapse into one loop
 `while (pc < end) { handler[op](mode); if (stop) break; }` and each blocking handler becomes a
@@ -68,7 +68,7 @@ See "Difftest results" for the numbers.
 | 0D | $0048B6 | sound | func | C |
 | 0E / 1B | $0049BA | walk | | 68k: pushes D7 first; calls shaggy_walk_to/scooby_walk_to (walking, blocking) |
 | 0F | $004C20 | walk_obj | | 68k: same |
-| 10 | $004D80 | say | | 68k: pushes D7/font base around the text box (`sub_00A130`, blocks) |
+| 10 | $004D80 | say | ranges (text.c, #20) | C: 6 ranges `script_op_say*` split at the stack pushes/pops and the waits ($004D80 .. $004EB8), see docs/subsystems/text.md section 8 |
 | 11 | $004F0E | goto_room (+ $4F34, $4F4A) | ranges around palette_read_cram / room_reload | C |
 | 12 / 14 | $004F50 / $002E7E | set_hotspot / set_hotspot2 | func | 14 C; 12 same code, not registered (never executed) |
 | 13 | $002446 | on_event | func | C |

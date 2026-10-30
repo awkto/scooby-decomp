@@ -1,5 +1,9 @@
 # Passwords (CONTINUE screen)
 
+C port (GitLab #21): the codec as plain C is `port/src/game/password.c` (`password_encode` / `password_decode`, tested
+against `tools/py/password.py` by `port/tools/password_test.sh`); the screens are `menu_password.c`. See
+`docs/subsystems/menus.md`.
+
 Title menu -> PLAY BLAKE'S HOTEL / PLAY HA HA CARNIVAL -> sub-menu START / **CONTINUE** / CANCEL. CONTINUE opens
 "ENTER PASSWORD". The game encodes the whole story state (first 29 bytes of the state block `$FF2A00`) plus the
 current room into a 50-character password, so a password can place the player in any room with any flag set.

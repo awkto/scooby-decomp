@@ -244,6 +244,14 @@ class Game:
         ok = self.select_verb(verb)
         self.set_pointer(x, y)
         t = self.w(0xFF06AE)
+        if expect is not None:
+            # the main loop's hit test needs a pass or two after the crosshair moved; wait on the
+            # RAM condition (up to ~60 frames) instead of trusting a fixed 8-frame settle
+            for _ in range(15):
+                if t == expect:
+                    break
+                self.run(4)
+                t = self.w(0xFF06AE)
         if expect is not None and t != expect:
             return ("target-mismatch", t)
         self.press("B", 4, 10)

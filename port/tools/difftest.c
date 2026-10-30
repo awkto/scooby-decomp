@@ -246,6 +246,69 @@ static const struct {
 	{ 0x00DA6A, 0x3EFF, 0x1F },   /* frame_scale_80x48 */
 	{ 0x00B0B8, 0x0000, 0x1F },   /* actor_animate: flags only (registers restored by movem) */
 	{ 0x00AF24, 0x0040, 0x00 },   /* actor_dma (only with -DSPRITE_ACTOR_DMA_C): D6 = HV counter read; dead */
+	/* ---- #21 menus (menus.c, menu_password.c, menu_debug.c, soundtest.c): the proofs are in the
+	 * comment of each function ("live out").  Flags are dead everywhere in the menu code: the only
+	 * instructions that read X are the roxl in the password routines ($008710, $009392, $009382),
+	 * which are compared with X; every conditional branch after a range exit is preceded by a
+	 * flag-setting instruction (tst / btst / cmp / move). */
+	{ 0x00819E, 0x7EFF, 0x1F },   /* title_setup: live a0 */
+	{ 0x0083E8, 0x0000, 0x1F },   /* title_bats_start */
+	{ 0x00840E, 0x0000, 0x1F },   /* title_bats_first */
+	{ 0x008416, 0x3FBF, 0x1F },   /* title_bats_frame: live d6, a6 */
+	{ 0x0084AE, 0x3FBF, 0x1F },   /* title_bats_wait: live d6, a6 */
+	{ 0x00851E, 0x7CFE, 0x1F },   /* menu_open: live d0, a0, a1 */
+	{ 0x008590, 0x7FFF, 0x1F },   /* menu_show: nothing live */
+	{ 0x008D4A, 0x7FFF, 0x1F },   /* menu_choose_show */
+	{ 0x008D6A, 0x7F0F, 0x1F },   /* menu_select: live d4-d7 (the cursor state) */
+	{ 0x008D8E, 0x7F0F, 0x1F },
+	{ 0x008D96, 0x7F0F, 0x1F },
+	{ 0x008DA6, 0x7F0F, 0x1F },
+	{ 0x008E78, 0x7F0F, 0x1F },
+	{ 0x008EE6, 0x7FFE, 0x1F },   /* menu_select_done: live d0 (the choice) */
+	{ 0x008F94, 0x0000, 0x1F },   /* quit_confirm_done */
+	{ 0x008F9A, 0x0000, 0x1F },   /* soft_reset_begin */
+	{ 0x008FB8, 0x0000, 0x1F },   /* menu_play_blake / _carnival */
+	{ 0x008FC2, 0x0000, 0x1F },
+	{ 0x008FCA, 0x0000, 0x1F },   /* mystery_menu */
+	{ 0x008FEA, 0x7FFF, 0x1F },   /* mystery_menu_done: nothing live */
+	{ 0x00873E, 0x0107, 0x1F },   /* password_scramble: d0-d2, a0 scratch (only caller loads them afresh) */
+	{ 0x00876C, 0x010F, 0x1F },   /* password_unscramble: d0-d3, a0 */
+	{ 0x008660, 0x7FFF, 0x1F },   /* password_show: every register scratch for all callers */
+	{ 0x009392, 0x0000, 0x0F },   /* password_read_bit: X is the result */
+	{ 0x009382, 0x0000, 0x0F },   /* password_read_byte */
+	{ 0x009298, 0x7F0F, 0x1F },   /* password_check: live d4-d7 */
+	{ 0x00933E, 0x7FFF, 0x1F },   /* password_accept */
+	{ 0x0093A2, 0x0000, 0x1F },   /* password key handlers */
+	{ 0x0093B6, 0x0000, 0x1F },
+	{ 0x0093CC, 0x0000, 0x1F },
+	{ 0x0093DC, 0x0000, 0x1F },
+	{ 0x00927E, 0x0000, 0x1F },   /* password_cancel */
+	{ 0x009010, 0x7F0F, 0x1F },   /* password_screen_*: live d4-d7 (+ a0 where the icon handler is called) */
+	{ 0x00903A, 0x7E0F, 0x1F },
+	{ 0x009052, 0x7E0F, 0x1F },
+	{ 0x009160, 0x7F0F, 0x1F },
+	{ 0x0091D8, 0x7F0F, 0x1F },
+	{ 0x00940C, 0x7F1F, 0x1F },   /* sound_test: live d5-d7 */
+	{ 0x00944E, 0x7F1F, 0x1F },
+	{ 0x00946C, 0x7F1F, 0x1F },
+	{ 0x00947C, 0x7D1F, 0x1F },
+	{ 0x0096AC, 0x7F1F, 0x1F },
+	{ 0x009648, 0x7FFF, 0x1F },
+	{ 0x0088D8, 0x0000, 0x1F },   /* rooms browser: live d3-d5, d7, a2 (+d0 at the rts) */
+	{ 0x0088FC, 0x0001, 0x1F },
+	{ 0x00892C, 0x7B47, 0x1F },
+	{ 0x008976, 0x7B46, 0x1F },
+	{ 0x008AB4, 0x0000, 0x1F },
+	{ 0x008AD4, 0x0001, 0x1F },
+	{ 0x008B00, 0x7B47, 0x1F },
+	{ 0x008B1A, 0x7B46, 0x1F },
+	{ 0x0096F4, 0x0000, 0x1F },   /* menu_load_screen */
+	{ 0x009710, 0x0000, 0x1F },
+	{ 0x0088AC, 0x0000, 0x1F },   /* debug_rooms_pick */
+	{ 0x0088B6, 0x0000, 0x1F },
+	{ 0x008C40, 0x0000, 0x1F },   /* debug_objects */
+	{ 0x008C80, 0x7FFF, 0x1F },   /* debug_objects_move: nothing live at $008CC0 */
+	{ 0x008CC0, 0x0000, 0x1F },
 };
 
 static int do_run(const hle_def *target, const opts *o)
@@ -271,7 +334,7 @@ static int do_run(const hle_def *target, const opts *o)
 
 	sb_snap *ref = calloc(1, sizeof *ref), *got = calloc(1, sizeof *got);
 	int pass_n = 0, fail_n = 0, err_n = 0;
-	unsigned long cyc_min = ~0ul, cyc_max = 0, cyc_sum = 0, ins_sum = 0;
+	unsigned long cyc_min = ~0ul, cyc_max = 0, cyc_sum = 0, ins_sum = 0, c_sum = 0;
 	int nvar = o->npokes ? o->npokes : 1;
 	for (int k = 0; k < n * nvar; k++) {
 		int i = k / nvar;
@@ -321,7 +384,8 @@ static int do_run(const hle_def *target, const opts *o)
 		sb_begin();
 		sb_record_begin();
 		uint32_t ret0 = bus_r32(gx_m68k_dar()[15]) & 0xFFFFFF;
-		hle_invoke(cdef);
+		int charged = hle_invoke(cdef);
+		c_sum += charged > 0 ? (unsigned long)charged : 0;
 		/* a C function that ends in a tail jump into 68k code (hle_jump) is followed
 		 * until it returns like the original (ranges stop at their exit at once) */
 		if (!sb_run_68k_to(sp0, ret0, target->exits, 50000000ul)) {
@@ -377,8 +441,8 @@ static int do_run(const hle_def *target, const opts *o)
 	if (err_n)
 		printf(", %d errors", err_n);
 	if (pass_n + fail_n)
-		printf("; original: %lu insns avg, 68k cycles min/avg/max %lu/%lu/%lu", ins_sum / tested,
-		       cyc_min, cyc_sum / tested, cyc_max);
+		printf("; original: %lu insns avg, 68k cycles min/avg/max %lu/%lu/%lu; C charged avg %lu", ins_sum / tested,
+		       cyc_min, cyc_sum / tested, cyc_max, c_sum / tested);
 	printf("\n");
 	for (int i = 0; i < n; i++)
 		free(files[i]);
