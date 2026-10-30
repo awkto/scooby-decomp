@@ -593,7 +593,7 @@ action_execute, run_object_events, the room scripts and the TALK menu loop as ra
 Second pass (files `script_walk.c`, `script_ops.c`, `walkto.c`; `tools/py/script_dt_pass2.sh`): the
 walk ops $0E/$1B/$0F and the walk-to routines $5002-$5B54, face, wait_stop, path, stop_path,
 show_obj, set_icon, test_moving, the TALK menu after the pick, script_run_nested, the rest of
-`say`, and 45 sub-ops, using `HLE_EXIT_SP` for every push/pop that spans a blocking call.
+`say`, and 43 more sub-ops, using `HLE_EXIT_SP` for every push/pop that spans a blocking call.
 Handlers no route reaches are tested with synthetic dispatch states (`difftest --entry`).
 
 #14 (decompressors), file `decomp.c`, details in `docs/subsystems/decomp.md`; test driver
