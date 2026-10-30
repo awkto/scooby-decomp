@@ -1088,3 +1088,191 @@ HLE_RANGE(0x001BA0, action_execute_done, 60, AE_START, AE_RTS)
 {
 	ae_deselect(ctx);
 }
+
+/* ------------------------------------------------------------------ room scripts */
+/* $00221A room_enter_script (end of room_load) and $002278 room_after_fade_script (end of
+ * room_fade_in): run the current room's script (room entry +$0C resp. +$10, offset from
+ * header+$2C; [len][word] body) in execute mode with VBF_SCRIPT set. The 68k pushes the
+ * callback and ram_vblank_flags first; afterwards VBF_SCRIPT is restored to its old state.
+ *   $002226 / $002284  set up A5/A6 -> exit at bsr script_run_frame
+ *   $002266 / $0022C4  after `move.b (sp)+,d0`: restore VBF_SCRIPT -> exit at the pop of
+ *                      the callback */
+static void room_script_setup(hle_ctx *ctx, int field, uint32_t exit)
+{
+	RAM32_W(RAM_SCRIPT_CB, 0x002406);
+	set_w(&ctx->d[0], RAM16(RAM_ROOM_INDEX));
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 2, 16, true));
+	ctx->d[0] = (ctx->d[0] & 0xFFFF) * 0x14;              /* room entry */
+	ctx->a[0] = RAM32(RAM_MYSTERY_HDR);
+	ctx->a[1] = bus_r32(ctx->a[0] + 8);
+	ctx->d[0] = bus_r32(ctx->a[1] + field + (int16_t)ctx->d[0]);
+	ctx->a[5] = bus_r32(ctx->a[0] + 0x2C) + ctx->d[0];
+	uint16_t len = bus_r16(ctx->a[5]);
+	set_w(&ctx->d[0], len);
+	cc_logic16(ctx, bus_r16(ctx->a[5] + 2));
+	ctx->a[5] += 4;
+	ctx->a[6] = ctx->a[5] + (int16_t)len;
+	bit_set(ctx, VBLANK_FLAGS, 7);
+	hle_jump(ctx, exit);
+}
+static void room_script_restore(hle_ctx *ctx, uint32_t exit)
+{
+	uint8_t old = (uint8_t)ctx->d[0] & 0x80;              /* andi.b #$80,d0 */
+	set_b(&ctx->d[0], old);
+	uint8_t v = RAM8(VBLANK_FLAGS) | old;
+	RAM8(VBLANK_FLAGS) = v;
+	cc_logic8(ctx, v);
+	hle_jump(ctx, exit);
+}
+HLE_RANGE(0x002226, room_enter_script, 120, 0x002260) { room_script_setup(ctx, 0x0C, 0x002260); }
+HLE_RANGE(0x002266, room_enter_script_done, 30, 0x002270) { room_script_restore(ctx, 0x002270); }
+HLE_RANGE(0x002284, room_after_fade_script, 120, 0x0022BE) { room_script_setup(ctx, 0x10, 0x0022BE); }
+HLE_RANGE(0x0022C4, room_after_fade_script_done, 30, 0x0022CE) { room_script_restore(ctx, 0x0022CE); }
+
+/* ------------------------------------------------------------------ actor waits */
+/* "who -> actor bit" into D0 as ops $17/$19/$1F/$20 compute it (exact register and flag
+ * effects): 1 Shaggy -> 0, 2 Scooby -> 1, object -> its actor slot byte + 2 (andi: masked
+ * with $FF first; without it the byte lands in a word whose high byte is from the mulu). */
+static void actor_bit_d0(hle_ctx *ctx, bool andi)
+{
+	set_w(&ctx->d[0], opw(ctx, 2));
+	uint16_t w = (uint16_t)cc_sub(ctx, ctx->d[0], 1, 16, true);
+	set_w(&ctx->d[0], w);
+	if (w == 0)
+		return;
+	w = (uint16_t)cc_sub(ctx, ctx->d[0], 1, 16, true);
+	set_w(&ctx->d[0], w);
+	if (w != 0) {
+		ctx->d[0] = obj_mul(ctx, ctx->d[0], 1);
+		ctx->a[0] = RAM_OBJECTS;
+		uint8_t slot = RAM8(RAM_OBJECTS + (int16_t)ctx->d[0] + OBJ_ACTOR);
+		set_b(&ctx->d[0], slot);
+		cc_logic8(ctx, slot);
+		if (andi) {
+			set_w(&ctx->d[0], slot);
+			cc_logic16(ctx, slot);
+		}
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 2, 16));
+		return;
+	}
+	ctx->d[0] = 1;
+	cc_logic32(ctx, 1);
+}
+
+/* $002B0E op $19 unfreeze_wait [19][who]: set the actor's ram_actors_depth_new bit, then
+ * one actor frame at a time (jsr sub_00B0B8 at $002B3E) until its animation looped, then
+ * clear its freeze bit. */
+HLE_RANGE(0x002B0E, script_op_unfreeze_wait, 80, 0x002B3E, 0x002B58)
+{
+	if (!exec_mode(ctx)) {
+		ctx->a[5] += 4;
+		hle_jump(ctx, 0x002B58);
+		return;
+	}
+	actor_bit_d0(ctx, false);
+	bit_set(ctx, 0xFF0ABE, ctx->d[0]);
+	hle_jump(ctx, 0x002B3E);
+}
+HLE_RANGE(0x002B44, script_op_unfreeze_wait_loop, 40, 0x002B3E, 0x002B58)
+{
+	if (!bit_test(ctx, 0xFF0ABD, ctx->d[0])) {            /* ram_actors_anim_looped */
+		hle_jump(ctx, 0x002B3E);
+		return;
+	}
+	bit_clr(ctx, RAM_ACTORS_FROZEN, ctx->d[0]);
+	ctx->a[5] += 4;
+	hle_jump(ctx, 0x002B58);
+}
+
+/* $004FBE op $17 wait_anim [17][who]: actor frames (bsr sub_00B0B8 at $004FEE) until the
+ * actor's ram_actors_anim_done bit is set. */
+HLE_RANGE(0x004FBE, script_op_wait_anim, 80, 0x004FEE, 0x005000)
+{
+	if (!exec_mode(ctx)) {
+		ctx->a[5] += 4;
+		hle_jump(ctx, 0x005000);
+		return;
+	}
+	actor_bit_d0(ctx, true);
+	hle_jump(ctx, 0x004FEE);
+}
+HLE_RANGE(0x004FF2, script_op_wait_anim_loop, 40, 0x004FEE, 0x005000)
+{
+	if (!bit_test(ctx, RAM_ACTORS_ANIMDONE, ctx->d[0])) {
+		hle_jump(ctx, 0x004FEE);
+		return;
+	}
+	ctx->a[5] += 4;
+	hle_jump(ctx, 0x005000);
+}
+
+/* ------------------------------------------------------------------ verb bar slide */
+/* sub $1D bar_hide ($00482E): mark the bar hidden ($FF2A00 bit 1), wait for any slide to
+ * finish (68k spin at $004836), save the bar (sub_0047AC at $004840), start the slide
+ * ($FF0ACB = 16) and run actor frames ($00484C) until it is done; $FF0876 = plane address
+ * of the saved bar.
+ * sub $1C bar_show ($004862): slide back in, DMA the saved bar rows back, recolour the
+ * font, clear $FF2A00 bit 1. */
+#define RAM_BAR_SLIDE   0xFF0ACB
+#define RAM_BAR_SAVED   0xFF0876
+#define VDP_DMA_VRAM    0x0099F6
+#define FONT_RECOLOUR   0x007A2A
+HLE_RANGE(0x00482E, script_sys_bar_hide, 40, 0x004836)
+{
+	bit_set(ctx, RAM_GAME_STATE, 1);
+	hle_jump(ctx, 0x004836);
+}
+HLE_RANGE(0x004844, script_sys_bar_hide_slide, 30, 0x00484C)
+{
+	RAM8(RAM_BAR_SLIDE) = 0x10;
+	cc_logic8(ctx, 0x10);
+	hle_jump(ctx, 0x00484C);
+}
+HLE_RANGE(0x004850, script_sys_bar_hide_loop, 40, 0x00484C, 0x004860)
+{
+	uint8_t s = RAM8(RAM_BAR_SLIDE);
+	cc_logic8(ctx, s);
+	if (!(s & 0x80)) {
+		hle_jump(ctx, 0x00484C);
+		return;
+	}
+	RAM16(RAM_BAR_SAVED) = (uint16_t)ctx->d[4];
+	cc_logic16(ctx, ctx->d[4]);
+	hle_jump(ctx, 0x004860);
+}
+HLE_RANGE(0x004862, script_sys_bar_show, 40, 0x004870)
+{
+	set_w(&ctx->d[4], RAM16(RAM_BAR_SAVED));
+	RAM8(RAM_BAR_SLIDE) = 0x10;
+	cc_logic8(ctx, 0x10);
+	hle_jump(ctx, 0x004870);
+}
+HLE_RANGE(0x004874, script_sys_bar_show_loop, 600, 0x004870, 0x0048B4)
+{
+	uint8_t s = RAM8(RAM_BAR_SLIDE);
+	cc_logic8(ctx, s);
+	if (!(s & 0x80)) {
+		hle_jump(ctx, 0x004870);
+		return;
+	}
+	/* 6 rows of 32 words from the save buffer $FF2C00 back to the bar plane */
+	set_w(&ctx->d[0], (uint16_t)ctx->d[4]);
+	ctx->a[0] = 0xFF2C00;
+	ctx->d[2] = 5;
+	set_w(&ctx->d[1], 0x20);
+	for (;;) {
+		hle_call68k(ctx, VDP_DMA_VRAM);
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 0x80, 16));
+		uint16_t n = (uint16_t)(ctx->d[2] - 1);
+		set_w(&ctx->d[2], n);
+		if (n == 0xFFFF)
+			break;
+	}
+	set_w(&ctx->d[0], 0xF);
+	ctx->d[1] = 1;
+	set_w(&ctx->d[2], RAM16(0xFF068C) & 0x9FFF);          /* ram_font_base */
+	cc_logic16(ctx, ctx->d[2]);
+	hle_call68k(ctx, FONT_RECOLOUR);
+	bit_clr(ctx, RAM_GAME_STATE, 1);
+	hle_jump(ctx, 0x0048B4);
+}
