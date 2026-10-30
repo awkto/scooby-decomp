@@ -21,7 +21,7 @@ file(GLOB GAME_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/game/*
 file(GLOB MOUSE_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse/*.c")
 file(GLOB RENDER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/render/*.c")
 add_library(scooby_common OBJECT
-  src/emu.c src/sha1.c src/script.c src/capture.c src/sndlog.c src/ipprof.c
+  src/emu.c src/sha1.c src/saveslot.c src/script.c src/capture.c src/sndlog.c src/ipprof.c
   hle/hle.c hle/sandbox.c hle/gx.c
   ${GAME_SOURCES} ${MOUSE_SOURCES} ${RENDER_SOURCES})
 target_include_directories(scooby_common PUBLIC
@@ -37,7 +37,7 @@ set_source_files_properties(hle/gx.c PROPERTIES COMPILE_DEFINITIONS "${GPGX_DEFI
 # ---- SDL2 host ----
 find_package(SDL2 QUIET)
 if(SDL2_FOUND)
-  add_executable(scoobyport src/main.c src/overlay.c)
+  add_executable(scoobyport src/main.c src/overlay.c src/options.c src/romfind.c src/hostmenu.c)
   target_link_libraries(scoobyport PRIVATE scooby_common)
   if(TARGET SDL2::SDL2)
     target_link_libraries(scoobyport PRIVATE SDL2::SDL2)

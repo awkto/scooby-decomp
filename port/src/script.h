@@ -11,6 +11,7 @@
  *   echo TEXT        stderr and "FRAME TEXT" in OUTDIR/peek.log (live drivers sync on it)
  *   trace/untrace    ignored (harness only)
  *   peek LABEL ADDR [W]   append "frame LABEL value" (W bytes, hex) to OUTDIR/peek.log
+ *   slot N           store the running game in game-save slot N (#28)
  *   poke ADDR W VAL  write W (1/2/4) bytes of work RAM, big-endian hex VAL (cheat; #19 script routes)
  * Mouse (port/src/mouse, docs/mouse.md; game screen pixels 0..255 x 0..223):
  *   mouse X Y        move the mouse      mouse leave   move it off the game image

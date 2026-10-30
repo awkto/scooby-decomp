@@ -4,7 +4,7 @@
  *       F1 debug overlay, F2 toggle all C replacements (HLE), F5 save state, F9 load state,
  *       F6/F7 previous/next state slot, P pause, N or . frame advance (pauses),
  *       Tab (hold) fast forward, F11 or Alt+Enter fullscreen, F12 screenshot, Esc quit,
- *       F3 output filter (nearest / smooth / crt).
+ *       F3 output filter (nearest / smooth / crt), F8 game saves (8 slots, keyboard + mouse).
  * Gamepad (SDL GameController): D-pad / left stick, X/Y = A, A = B, B/RB = C, Start,
  *       Back = pause.
  * Mouse (docs/mouse.md; --no-mouse disables it): left click = walk there / use the
@@ -23,17 +23,23 @@
 
 #include "capture.h"
 #include "emu.h"
+#include "hostmenu.h"
 #include "ipprof.h"
 #include "hle.h"
 void sndlog_init(void);
 #include "mouse.h"
+#include "options.h"
 #include "overlay.h"
 #include "present.h"
 #include "render_emu.h"
+#include "romfind.h"
+#include "saveslot.h"
 #include "script.h"
 
 typedef struct {
-	const char *rom, *script, *outdir, *screenshot, *window_shot, *savedir, *hle, *renderer;
+	const char *rom, *script, *outdir, *screenshot, *window_shot, *savedir, *hle, *renderer, *config, *dump_ram;
+	int load_slot, save_slot;
+	bool list_slots;
 	present_filter filter;
 	const char *cap_dir;
 	uint32_t cap_addr;
@@ -46,7 +52,14 @@ typedef struct {
 static void usage(const char *argv0)
 {
 	printf("usage: %s [options]\n"
-	       "  --rom PATH              ROM (default rom/baserom.md; sha1 must match)\n"
+	       "  --rom PATH              ROM (default: ini, next to the binary, file picker; sha1 must match)\n"
+	       "  --options K=V,...       set options for this run (--options --json lists them all); an\n"
+	       "                          ini file ~/.config/scooby-decomp/scooby.ini holds the permanent ones\n"
+	       "  --config FILE           use this ini instead\n"
+	       "  --load-slot N           start by loading game save N (1..8, see F8 in the game)\n"
+	       "  --save-slot N           (after --script) store the running game in save slot N\n"
+	       "  --list-slots            list the game saves and exit\n"
+	       "  --dump-ram FILE         at exit, write the 64 KiB work RAM\n"
 	       "  --scale N               initial window scale (default 3)\n"
 	       "  --renderer R            native (default) | gpgx: the C renderer draws the picture and\n"
 	       "                          the verb-bar split is a band, not a raster effect (#25)\n"
@@ -63,7 +76,7 @@ static void usage(const char *argv0)
 	       "  --screenshot FILE.ppm   at exit, write the last emulated frame\n"
 	       "  --window-shot FILE.ppm  at exit, write the rendered window (scaling + overlay)\n"
 	       "  --outdir DIR            where script shot/ram/save files go (default runs/port)\n"
-	       "  --savedir DIR           savestate slots (default ~/.local/share/scoobyport)\n"
+	       "  --savedir DIR           game saves + quick states (default ~/.local/share/scooby-decomp)\n"
 	       "  --capture ADDR N        save the first N entry states of the 68k function at ADDR\n"
 	       "  --capture-dir DIR       (default runs/states/<ADDR>)  --capture-every K  --capture-skip K\n"
 	       "  --no-throttle           run as fast as possible\n"
@@ -89,19 +102,38 @@ static void mkdirs(const char *dir)
 static unsigned g_keys, g_padbtn;
 static int g_axis_x, g_axis_y;
 
+/* keyboard bindings: the key_* options (SDL names, several per button joined with |) */
+#define MAX_KEYS_PER_BUTTON 6
+static const struct { const char *opt; unsigned pad; } keybind[] = {
+	{ "key_up", PAD_UP }, { "key_down", PAD_DOWN }, { "key_left", PAD_LEFT }, { "key_right", PAD_RIGHT },
+	{ "key_a", PAD_A }, { "key_b", PAD_B }, { "key_c", PAD_C }, { "key_start", PAD_START },
+};
+static SDL_Keycode keymap[8][MAX_KEYS_PER_BUTTON];
+
+static void keys_configure(void)
+{
+	for (int b = 0; b < 8; b++) {
+		char list[256];
+		snprintf(list, sizeof list, "%s", options_str(keybind[b].opt));
+		int n = 0;
+		for (char *save, *t = strtok_r(list, "|", &save); t; t = strtok_r(NULL, "|", &save)) {
+			SDL_Keycode k = SDL_GetKeyFromName(t);
+			if (k == SDLK_UNKNOWN)
+				fprintf(stderr, "%s: unknown key name '%s' ignored\n", keybind[b].opt, t);
+			else if (n < MAX_KEYS_PER_BUTTON)
+				keymap[b][n++] = k;
+		}
+	}
+}
+
 static unsigned key_to_pad(SDL_Keycode k)
 {
-	switch (k) {
-	case SDLK_UP: return PAD_UP;
-	case SDLK_DOWN: return PAD_DOWN;
-	case SDLK_LEFT: return PAD_LEFT;
-	case SDLK_RIGHT: return PAD_RIGHT;
-	case SDLK_z: case SDLK_a: return PAD_A;
-	case SDLK_x: case SDLK_s: return PAD_B;
-	case SDLK_c: case SDLK_d: return PAD_C;
-	case SDLK_RETURN: case SDLK_KP_ENTER: return PAD_START;
-	}
-	return 0;
+	unsigned m = 0;
+	for (int b = 0; b < 8; b++)
+		for (int i = 0; i < MAX_KEYS_PER_BUTTON; i++)
+			if (keymap[b][i] == k)
+				m |= keybind[b].pad;
+	return m;
 }
 
 static unsigned button_to_pad(Uint8 b)
@@ -258,22 +290,63 @@ static bool window_shot(video_t *v, const char *path)
 /* mouse position (window coordinates) -> game pixel, through the placement of video_draw.
  * Window coordinates are converted to renderer output pixels first (they differ on HiDPI
  * displays). */
-static void mouse_from_window(video_t *v, int x, int y)
+/* returns 1 and the game pixel when the pointer is on the image, 0 when off it, -1 if unknown */
+static int window_to_game(video_t *v, int x, int y, int *gx, int *gy)
 {
 	int ww, wh, ow, oh, r[4];
 	if (!v->win || !v->ren)
-		return;
+		return -1;
 	SDL_GetWindowSize(v->win, &ww, &wh);
 	if (SDL_GetRendererOutputSize(v->ren, &ow, &oh) || ww <= 0 || wh <= 0)
-		return;
+		return -1;
 	int gw = v->gw ? v->gw : 256, gh = v->gh ? v->gh : 224;
 	present_rect(v->filter, gw, gh, ow, oh, r);
 	int px = x * ow / ww - r[0], py = y * oh / wh - r[1];
-	if (px < 0 || py < 0 || px >= r[2] || py >= r[3] || r[2] <= 0 || r[3] <= 0) {
+	if (px < 0 || py < 0 || px >= r[2] || py >= r[3] || r[2] <= 0 || r[3] <= 0)
+		return 0;
+	*gx = px * gw / r[2];
+	*gy = py * gh / r[3];
+	return 1;
+}
+
+static void mouse_from_window(video_t *v, int x, int y)
+{
+	int gx, gy, on = window_to_game(v, x, y, &gx, &gy);
+	if (on == 0)
 		mouse_leave();
+	else if (on > 0)
+		mouse_move(gx, gy);
+}
+
+/* ------------------------------------------------------------------ saves menu */
+/* carry out what the GAME SAVES overlay asked for; `status` is the line it shows */
+static void menu_do(hm_action act, int sl, long play_frames, char *status, size_t n, SDL_AudioDeviceID adev, bool mouse_on)
+{
+	char e[200];
+	status[0] = 0;
+	if (!hostmenu_active()) {            /* it closed itself (Esc / F8) */
+		if (mouse_on)
+			SDL_ShowCursor(SDL_DISABLE);
 		return;
 	}
-	mouse_move(px * gw / r[2], py * gh / r[3]);
+	if (act == HM_SAVE) {
+		if (slot_save_current(sl, play_frames, e, sizeof e))
+			snprintf(status, n, "SAVED %d", sl);
+		else
+			snprintf(status, n, "%.50s", e);
+	} else if (act == HM_ERASE) {
+		snprintf(status, n, slot_erase(sl) ? "ERASED %d" : "NOTHING TO ERASE", sl);
+	} else if (act == HM_LOAD) {
+		if (slot_load_begin(sl, e, sizeof e)) {
+			hostmenu_close();
+			if (mouse_on)
+				SDL_ShowCursor(SDL_DISABLE);
+			if (adev)
+				SDL_ClearQueuedAudio(adev);
+		} else {
+			snprintf(status, n, "%.50s", e);
+		}
+	}
 }
 
 /* ------------------------------------------------------------------ main */
@@ -286,23 +359,45 @@ int main(int argc, char **argv)
 	a.outdir = "runs/port";
 	a.cap_every = 1;
 	a.filter = PRESENT_NEAREST;
+
+	/* options: defaults < ini < command line (docs: options.h).  --config is looked for first
+	 * so that the ini is read before the flags that override it. */
+	char cfgpath[1024], operr[300];
+	options_default_path(cfgpath, sizeof cfgpath);
+	for (int i = 1; i + 1 < argc; i++)
+		if (!strcmp(argv[i], "--config"))
+			snprintf(cfgpath, sizeof cfgpath, "%s", argv[i + 1]);
+	options_init();
+	options_load(cfgpath);
 	for (int i = 1; i < argc; i++) {
 		const char *s = argv[i];
 #define NEXT() (i + 1 < argc ? argv[++i] : (usage(argv[0]), exit(2), ""))
+#define SETOPT(k, v) do { if (!options_set(k, v, OPT_CLI, operr, sizeof operr)) { fprintf(stderr, "%s\n", operr); return 2; } } while (0)
 		if (!strcmp(s, "--rom")) a.rom = NEXT();
-		else if (!strcmp(s, "--scale")) a.scale = atoi(NEXT());
-		else if (!strcmp(s, "--fullscreen")) a.fullscreen = true;
-		else if (!strcmp(s, "--no-vsync")) a.vsync = false;
-		else if (!strcmp(s, "--mute")) a.mute = true;
-		else if (!strcmp(s, "--overlay")) a.overlay = true;
-		else if (!strcmp(s, "--hle")) a.hle = NEXT();
-		else if (!strcmp(s, "--renderer")) a.renderer = NEXT();
-		else if (!strcmp(s, "--filter")) {
-			if (!present_filter_parse(NEXT(), &a.filter)) {
-				fprintf(stderr, "unknown --filter (nearest | smooth | crt)\n");
+		else if (!strcmp(s, "--config")) a.config = NEXT();
+		else if (!strcmp(s, "--options")) {
+			const char *v = NEXT();
+			if (!strcmp(v, "--json") || !strcmp(v, "list")) {
+				options_print(stdout, !strcmp(v, "--json"));
+				return 0;
+			}
+			if (!options_parse_list(v, OPT_CLI, operr, sizeof operr)) {
+				fprintf(stderr, "--options: %s\n", operr);
 				return 2;
 			}
 		}
+		else if (!strcmp(s, "--load-slot")) a.load_slot = atoi(NEXT());
+		else if (!strcmp(s, "--save-slot")) a.save_slot = atoi(NEXT());
+		else if (!strcmp(s, "--list-slots")) a.list_slots = true;
+		else if (!strcmp(s, "--dump-ram")) a.dump_ram = NEXT();
+		else if (!strcmp(s, "--scale")) SETOPT("scale", NEXT());
+		else if (!strcmp(s, "--fullscreen")) SETOPT("fullscreen", "on");
+		else if (!strcmp(s, "--no-vsync")) SETOPT("vsync", "off");
+		else if (!strcmp(s, "--mute")) SETOPT("mute", "on");
+		else if (!strcmp(s, "--overlay")) a.overlay = true;
+		else if (!strcmp(s, "--hle")) a.hle = NEXT();
+		else if (!strcmp(s, "--renderer")) SETOPT("renderer", NEXT());
+		else if (!strcmp(s, "--filter")) SETOPT("filter", NEXT());
 		else if (!strcmp(s, "--list-hle")) a.list_hle = true;
 		else if (!strcmp(s, "--script")) a.script = NEXT();
 		else if (!strcmp(s, "--realtime-script")) a.realtime_script = true;
@@ -312,7 +407,7 @@ int main(int argc, char **argv)
 		else if (!strcmp(s, "--outdir")) a.outdir = NEXT();
 		else if (!strcmp(s, "--savedir")) a.savedir = NEXT();
 		else if (!strcmp(s, "--no-throttle")) a.no_throttle = true;
-		else if (!strcmp(s, "--no-mouse")) a.no_mouse = true;
+		else if (!strcmp(s, "--no-mouse")) SETOPT("mouse", "off");
 		else if (!strcmp(s, "--capture")) {
 			const char *ad = NEXT();
 			a.cap_addr = (uint32_t)strtoul(ad + (ad[0] == '$'), NULL, 16);
@@ -323,35 +418,72 @@ int main(int argc, char **argv)
 		else if (!strcmp(s, "-h") || !strcmp(s, "--help")) { usage(argv[0]); return 0; }
 		else { fprintf(stderr, "unknown option %s\n", s); usage(argv[0]); return 2; }
 	}
-	if (a.scale < 1)
-		a.scale = 1;
+	present_filter_parse(options_str("filter"), &a.filter);
+	a.scale = options_int("scale");
+	a.fullscreen = options_bool("fullscreen");
+	a.vsync = options_bool("vsync");
+	a.mute = options_bool("mute");
+	a.no_mouse = !options_bool("mouse");
+	int volume = options_int("volume");
+	if (options_source("renderer") == OPT_CLI)
+		a.renderer = options_str("renderer");
 
-	const char *rom = emu_find_rom(a.rom, argv[0]);
-	if (!rom) {
-		fprintf(stderr, "ROM not found: put it at rom/baserom.md or pass --rom\n");
-		return 1;
-	}
 	char savedir[1024];
 	if (a.savedir)
 		snprintf(savedir, sizeof savedir, "%s", a.savedir);
-	else if (getenv("XDG_DATA_HOME"))
-		snprintf(savedir, sizeof savedir, "%s/scoobyport", getenv("XDG_DATA_HOME"));
 	else
-		snprintf(savedir, sizeof savedir, "%s/.local/share/scoobyport", getenv("HOME") ? getenv("HOME") : ".");
+		options_data_dir(savedir, sizeof savedir);
+	slots_init(savedir);
+	if (a.list_slots) {
+		for (int n = 1; n <= SLOT_COUNT; n++) {
+			slot_info si;
+			if (slot_read(n, &si))
+				printf("%d  %-9s room %-2d %-24s %s  %ld frames  %s\n", n, si.mystery ? "carnival" : "hotel", si.room,
+				       si.roomname, si.date, si.playtime, si.password);
+			else
+				printf("%d  empty\n", n);
+		}
+		return 0;
+	}
+	if ((a.load_slot && (a.load_slot < 1 || a.load_slot > SLOT_COUNT)) || (a.save_slot && (a.save_slot < 1 || a.save_slot > SLOT_COUNT))) {
+		fprintf(stderr, "slots are 1..%d\n", SLOT_COUNT);
+		return 2;
+	}
+
+	/* the ROM: --rom, ini, next to the binary, ./rom/baserom.md, then ask (picker / drop window) */
+	bool noninteractive = a.script || a.frames >= 0 || a.screenshot || a.window_shot || a.list_hle || a.cap_n > 0;
+	char rompath[1400], err[512];
+	if (!rom_locate(a.rom, options_str("rom"), argv[0], rompath, sizeof rompath)) {
+		if (noninteractive || !rom_ask_user(rompath, sizeof rompath, err, sizeof err)) {
+			fprintf(stderr, "Scooby-Doo Mystery ROM not found. Put the ROM (sha1 %s) next to the program,\n"
+			        "or pass --rom FILE, or set rom = FILE in %s\n", SCOOBY_ROM_SHA1, cfgpath);
+			return 1;
+		}
+	}
+	const char *rom = rompath;
 	mkdirs(savedir);
 	mkdirs(a.outdir);
 
-	char err[512];
 	if (!emu_init(rom, savedir, err, sizeof err)) {
 		fprintf(stderr, "%s\n", err);
 		return 1;
 	}
+	if (!noninteractive) {      /* remember a ROM that worked */
+		char *abs = realpath(rom, NULL);
+		if (abs && strcmp(abs, options_str("rom"))) {
+			options_set("rom", abs, OPT_INI, err, sizeof err);
+			if (!options_save(cfgpath))
+				fprintf(stderr, "cannot write %s\n", cfgpath);
+		}
+		free(abs);
+	}
+	keys_configure();
 	sndlog_init();   /* SCOOBY_SNDLOG=file: mailbox write log (src/sndlog.c) */
 	/* before the HLE spec: the native renderer activates the "native" group (#25) */
 	/* the native renderer is the player's default (#25: pixel-identical to GPGX on every gate
 	 * route, all gates incl. both full walkthroughs pass with it); tools keep gpgx */
 	if (!a.renderer && !getenv("SCOOBY_RENDERER"))
-		a.renderer = "native";
+		a.renderer = options_str("renderer");
 	if (a.renderer && !render_emu_select(a.renderer)) {
 		fprintf(stderr, "unknown --renderer %s (gpgx | native)\n", a.renderer);
 		return 2;
@@ -407,7 +539,11 @@ int main(int argc, char **argv)
 		if (!scr)
 			return 1;
 	}
-	bool batch = a.frames >= 0 || a.screenshot || a.window_shot;
+	bool batch = a.frames >= 0 || a.screenshot || a.window_shot || a.save_slot;
+	int rc = 0;
+	bool post_done = false;
+	long play_frames = 0;           /* emulated frames in a mystery: the saves' play time */
+	char menu_status[64] = "";
 
 	bool quit = false, paused = false, step = false, ff = false, overlay = a.overlay;
 	int slot = 0;
@@ -419,6 +555,14 @@ int main(int argc, char **argv)
 	Uint64 t_fps = t_start, next_tick = t_start;
 	long fps_frames = 0, total = 0;
 	const double frame_dt = 1.0 / emu_fps();
+	const bool mouse_on = !a.no_mouse;
+	if (a.load_slot && !a.script) {       /* straight into a save */
+		post_done = true;
+		if (!slot_load_begin(a.load_slot, err, sizeof err)) {
+			fprintf(stderr, "%s\n", err);
+			return 1;
+		}
+	}
 
 	while (!quit) {
 		SDL_Event e;
@@ -427,9 +571,37 @@ int main(int argc, char **argv)
 			case SDL_QUIT:
 				quit = true;
 				break;
+			case SDL_DROPFILE: {         /* a ROM dropped on the window: check it and remember it */
+				char derr[400];
+				if (rom_verify(e.drop.file, derr, sizeof derr)) {
+					options_set("rom", e.drop.file, OPT_INI, derr, sizeof derr);
+					options_save(cfgpath);
+					snprintf(msg, sizeof msg, "ROM REMEMBERED");
+				} else {
+					snprintf(msg, sizeof msg, "NOT THE RIGHT ROM");
+				}
+				msg_timer = 150;
+				SDL_free(e.drop.file);
+				break;
+			}
 			case SDL_KEYDOWN: {
 				SDL_Keycode k = e.key.keysym.sym;
+				if (hostmenu_active()) {         /* the saves menu has the keyboard */
+					int sl;
+					hm_action act = hostmenu_key(k, &sl);
+					g_keys = 0;
+					menu_do(act, sl, play_frames, menu_status, sizeof menu_status, adev, mouse_on);
+					break;
+				}
 				if (!e.key.repeat) {
+					if (k == SDLK_F8 && !slot_loader_active()) {
+						hostmenu_open();
+						g_keys = 0;
+						mouse_leave();
+						menu_status[0] = 0;
+						SDL_ShowCursor(SDL_ENABLE);
+						break;
+					}
 					if (k == SDLK_ESCAPE)
 						quit = true;
 					else if (k == SDLK_F11 || (k == SDLK_RETURN && (e.key.keysym.mod & KMOD_ALT))) {
@@ -492,12 +664,26 @@ int main(int argc, char **argv)
 			case SDL_MOUSEMOTION: {
 				int mx, my;
 				SDL_GetMouseState(&mx, &my);   /* window coordinates (events are rescaled) */
+				if (hostmenu_active()) {
+					int gx, gy, sl;
+					if (window_to_game(&v, mx, my, &gx, &gy) > 0)
+						hostmenu_pointer(gx, gy, 0, &sl);
+					break;
+				}
 				mouse_from_window(&v, mx, my);
 				break;
 			}
 			case SDL_MOUSEBUTTONDOWN: {
 				int mx, my;
 				SDL_GetMouseState(&mx, &my);
+				if (hostmenu_active()) {
+					int gx, gy, sl;
+					if (window_to_game(&v, mx, my, &gx, &gy) > 0) {
+						hm_action act = hostmenu_pointer(gx, gy, e.button.button == SDL_BUTTON_LEFT ? 1 : 3, &sl);
+						menu_do(act, sl, play_frames, menu_status, sizeof menu_status, adev, mouse_on);
+					}
+					break;
+				}
 				mouse_from_window(&v, mx, my);
 				mouse_click(e.button.button == SDL_BUTTON_RIGHT ? MOUSE_RIGHT :
 				            e.button.button == SDL_BUTTON_MIDDLE ? MOUSE_MIDDLE : MOUSE_LEFT);
@@ -534,7 +720,39 @@ int main(int argc, char **argv)
 
 		bool scripted = false;
 		bool ran = false;
-		if (scr) {
+		const bool frozen = paused || hostmenu_active();
+		if (!scr && !post_done) {            /* --save-slot / --load-slot once the script is over */
+			post_done = true;
+			if (a.save_slot && !slot_save_current(a.save_slot, play_frames, err, sizeof err)) {
+				fprintf(stderr, "save slot %d: %s\n", a.save_slot, err);
+				rc = 1;
+				break;
+			}
+			if (a.save_slot)
+				printf("saved slot %d\n", a.save_slot);
+			if (a.load_slot && !slot_load_begin(a.load_slot, err, sizeof err)) {
+				fprintf(stderr, "%s\n", err);
+				rc = 1;
+				break;
+			}
+		}
+		if (slot_loader_active()) {          /* a game save is being loaded: press the game's own buttons */
+			unsigned pad;
+			if (slot_loader_step(&pad)) {
+				emu_set_pad(0, mouse_frame(pad));
+				scripted = true;
+			} else {
+				bool ok = slot_loader_result(msg, sizeof msg);
+				msg_timer = 150;
+				printf("%s\n", msg);
+				if (ok)
+					play_frames = slot_loaded_playtime();
+				else
+					rc = 1;
+				if (adev)
+					SDL_ClearQueuedAudio(adev);
+			}
+		} else if (scr) {
 			unsigned pad;
 			if (script_step(scr, &pad)) {
 				emu_set_pad(0, mouse_frame(pad));
@@ -544,22 +762,25 @@ int main(int argc, char **argv)
 					fprintf(stderr, "script finished with %d error(s)\n", script_errors(scr));
 				script_close(scr);
 				scr = NULL;
-				if (batch && a.frames < 0)
+				if (batch && a.frames < 0 && !a.load_slot && !a.save_slot)
 					break;
+				continue;
 			}
 		}
 		if (!scripted) {
 			if (batch && frames_after_script >= a.frames && a.frames >= 0)
 				break;
 			/* the mouse state machine advances only on frames that are emulated */
-			emu_set_pad(0, (!paused || step) ? mouse_frame(live_pad()) : live_pad());
+			emu_set_pad(0, (!frozen || step) ? mouse_frame(live_pad()) : live_pad());
 		}
-		if (scripted || !paused || step) {
+		if (scripted || !frozen || step) {
 			emu_run_frame();
 			ran = true;
 			step = false;
 			total++;
 			fps_frames++;
+			if (slot_in_game())
+				play_frames++;
 			if (!scripted)
 				frames_after_script++;
 			if (capture_done()) {
@@ -569,18 +790,28 @@ int main(int argc, char **argv)
 		}
 
 		bool fast = a.no_throttle || ff || ((scripted || batch) && !a.realtime_script);
+		if (slot_loader_active())
+			fast = true;
 		/* audio: queue this frame's samples, and pace on the queue length */
 		if (ran && adev && !fast) {
 			size_t n;
 			const int16_t *s = emu_audio(&n);
-			SDL_QueueAudio(adev, s, (Uint32)(n * 4));
+			if (volume < 100) {
+				static int16_t vbuf[4096];
+				size_t m = n * 2 < 4096 ? n * 2 : 4096;
+				for (size_t i = 0; i < m; i++)
+					vbuf[i] = (int16_t)(s[i] * volume / 100);
+				SDL_QueueAudio(adev, vbuf, (Uint32)(m * 2));
+			} else {
+				SDL_QueueAudio(adev, s, (Uint32)(n * 4));
+			}
 		} else if (adev && fast) {
 			SDL_ClearQueuedAudio(adev);
 		}
 
 		/* video (skip most frames when running unthrottled) */
 		int w, h;
-		bool show = !fast || (total % 30) == 0 || paused;
+		bool show = !fast || (total % 30) == 0 || frozen;
 		if (v.ren && show && game_frame(&v, &w, &h)) {
 			if (overlay) {
 				char t[256];
@@ -598,6 +829,7 @@ int main(int argc, char **argv)
 				msg_timer--;
 			}
 			mouse_draw_rgba(v.buf, w, h);
+			hostmenu_draw(v.buf, w, h, menu_status);
 			video_present(&v, v.buf, w, h);
 		}
 
@@ -654,6 +886,10 @@ int main(int argc, char **argv)
 		else
 			fprintf(stderr, "cannot write window shot: %s\n", SDL_GetError());
 	}
+	if (a.dump_ram && !emu_write_ram(a.dump_ram)) {
+		fprintf(stderr, "cannot write %s\n", a.dump_ram);
+		rc = 1;
+	}
 	for (int i = 0; i < hle_count(); i++)
 		if (hle_calls(i))
 			printf("hle %-20s $%06X calls %lu\n", hle_get(i)->name, hle_get(i)->addr, hle_calls(i));
@@ -665,5 +901,5 @@ int main(int argc, char **argv)
 		SDL_CloseAudioDevice(adev);
 	SDL_Quit();
 	emu_shutdown();
-	return 0;
+	return rc;
 }
