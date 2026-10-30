@@ -12,6 +12,10 @@ void pad_read(hle_ctx *ctx);           /* $009D34 */
 
 /* vdp.c */
 void vram_write_words(hle_ctx *ctx);   /* $00992C */
+void lzss_decompress(hle_ctx *ctx);    /* $0097AA a0=stream a1=ring a2=out; (a1).l = size */
+void rle_decompress(hle_ctx *ctx);     /* $009C64 a0=stream a2=out */
+void lzss_call(hle_ctx *ctx);          /* C-to-C: same, adds the original's cycles to ctx->cycles */
+void rle_call(hle_ctx *ctx);
 void vram_write_word(hle_ctx *ctx);    /* $009964 */
 void vram_fill_words(hle_ctx *ctx);    /* $009BE4 */
 

@@ -75,7 +75,7 @@ static void unpack_tiles(hle_ctx *ctx, uint32_t src)
 	ctx->a[0] = src;
 	ctx->a[1] = LZSS_RING;
 	ctx->a[2] = DECOMP_BUF;
-	hle_call68k(ctx, LZSS);
+	lzss_call(ctx);
 	ctx->a[0] = ctx->a[2];
 	moveq(ctx, 0, 0);
 	ctx->d[1] = bus_r32(ctx->a[1]);
@@ -539,10 +539,10 @@ HLE_RANGE(0x000BB6, logo5, 40000, 0x000C48)
 	clear_vram(ctx);
 	unpack_tiles(ctx, 0x0287C8);
 	ctx->a[0] = 0x028220;
-	hle_call68k(ctx, LZSS);
+	lzss_call(ctx);
 	ctx->a[2] = BUF_5000;
 	ctx->a[0] = 0x02864C;
-	hle_call68k(ctx, LZSS);
+	lzss_call(ctx);
 	moveq(ctx, 3, 0);
 	logo5_frame(ctx);
 	set_sr(ctx, 0x2000);
