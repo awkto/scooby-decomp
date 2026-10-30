@@ -55,6 +55,9 @@ typedef enum { BAR_NONE, BAR_VERB, BAR_TOGGLE, BAR_ITEM, BAR_PAGE_UP, BAR_PAGE_D
 mg_bar_hit mg_bar_at(int sx, int sy);
 int  mg_verb_at(int sx, int sy);           /* verb id of the verb-view cell at (sx, sy) */
 int  mg_inv_page(void);                    /* $FF06EC inventory row */
+/* inventory view: the target the main loop ($0011B8) sets for the item cell at (sx, sy):
+ * carried object + 3, or 0 past the end of the list */
+int  mg_inventory_item_at(int sx, int sy);
 void mg_page_arrow_center(bool down, int *sx, int *sy);
 
 #endif

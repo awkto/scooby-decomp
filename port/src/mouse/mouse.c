@@ -372,9 +372,13 @@ static void pointer_sync(bool new_frame)
  * test done in C (mg_hit_test); on the bar pointer_update maps the cell every frame. */
 static bool hit_test_current(void)
 {
-	if (M.wy >= MG_BAR_TOP || M.wy < MG_ROOM_TOP)
+	int want;
+	if (M.wy >= MG_BAR_TOP && mg_bar_at(M.wx, M.wy) == BAR_ITEM)
+		want = mg_inventory_item_at(M.wx, M.wy);     /* the main loop maps items too */
+	else if (M.wy >= MG_BAR_TOP || M.wy < MG_ROOM_TOP)
 		return true;
-	int want = mg_hit_test(M.wx, M.wy);
+	else
+		want = mg_hit_test(M.wx, M.wy);
 	if (mg_second_object())
 		return mg_target2() == (want == mg_target() ? 0 : want);
 	return mg_target() == want;

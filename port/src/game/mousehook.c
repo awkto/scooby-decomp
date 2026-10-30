@@ -188,6 +188,30 @@ int mg_verb_at(int sx, int sy)
 
 int mg_inv_page(void) { return s16(0xFF06EC); }
 
+int mg_inventory_item_at(int sx, int sy)
+{
+	int px, py;
+	place(sx, sy, &px, &py);
+	/* pointer_update (inventory view): t = 1 + min(x / 40, 5), +6 on the lower row;
+	 * slot = t - 1 up to 7, else t - 2 (5 and 10 are the page arrows) */
+	int col = px < 0 ? 0 : px / 40;
+	if (col > 5)
+		col = 5;
+	int t = 1 + col + (py > 0xC0 ? 6 : 0);
+	int slot = t <= 7 ? t - 1 : t - 2;
+	if (slot == 5 || slot == 10)
+		return 0;
+	/* main loop $0011B8: list entry 4 * page + slot - 1 (slot - 1 above 5) */
+	if (slot >= 5)
+		slot--;
+	int idx = 4 * mg_inv_page() + slot, count = 0;
+	while (count < 64 && !(RAM16(0xFF0A1E + 2u * (unsigned)count) & 0x8000))
+		count++;
+	if (count < idx || idx < 1)
+		return 0;
+	return s16(0xFF0A1E + 2u * (unsigned)(idx - 1)) + 3;
+}
+
 mg_bar_hit mg_bar_at(int sx, int sy)
 {
 	if (sy < MG_BAR_TOP || sx < 0 || sx >= MG_SCREEN_W)

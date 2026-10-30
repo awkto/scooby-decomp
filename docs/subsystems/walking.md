@@ -347,6 +347,13 @@ The **auto-walk** state machine it drives *is* reusable, though. It runs every f
 
 ## 9. C API proposal for #23 (click-to-walk)
 
+**Implemented** (#23) in `port/src/game/walkpath.[ch]`, described in [docs/mouse.md](../mouse.md)
+section 3. Differences from the proposal below:
+* A* runs on full pixels, not a coarsened grid.
+* Planning is done fresh per click, with no cache.
+* The walk starts without waiting for the turn animation.
+* Exits are recognised by "default verb LOOK + rectangle reachable".
+
 Everything needed is in RAM once a room is loaded. All coordinates below are world pixels; convert
 a mouse position with section 2.
 
