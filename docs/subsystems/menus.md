@@ -167,3 +167,92 @@ quit, Carnival start, DEBUG ROOMS / OBJECTS) with `--hle none` and captures ever
 (`runs/states/<ADDR>`), then difftests each one. The exemption table (dead registers, flags) is in `difftest.c`
 ("#21 menus"); the proof of each entry is in the comment above the function ("live out").
 `port/scripts/menus/tour.sh N [hle]` runs one tour and makes a screenshot montage.
+
+## Difftest results
+
+`port/tools/dt-menus` (tours 1-3, one session; "N/N" = all calls on the route when it has fewer than 200). The
+registers and flags that are ignored for each range (dead for everything that runs after it) are in `difftest.c`;
+the "live out" comment above each C function is the proof. `port/tools/password_test.sh`: 5998 vectors (998 tampered),
+0 failures. Not testable: `title_strip_dma` and `password_unused_start` (dead code, no call on any route; both
+trivial) and the 68k remainders listed above.
+
+| Function | Address | States equal |
+| --- | --- | --- |
+| `password_show` | `$008660` | 2250/2250 (poked RAM variants) |
+| `password_check` | `$009298` | 600/600 (poked RAM variants) |
+| `password_scramble` | `$00873E` | 2250/2250 (poked RAM variants) |
+| `password_unscramble` | `$00876C` | 600/600 (poked RAM variants) |
+| `password_accept` | `$00933E` | 150/150 (poked RAM variants) |
+| `title_mask_irq` | `$00819A` | 10/10 |
+| `title_setup` | `$00819E` | 10/10 |
+| `title_bats_start` | `$0083E8` | 10/10 |
+| `title_bats_first` | `$00840E` | 10/10 |
+| `title_bats_frame` | `$008416` | 200/200 |
+| `title_bats_wait` | `$0084AE` | 200/200 |
+| `menu_open` | `$00851E` | 15/15 |
+| `menu_show` | `$008590` | 15/15 |
+| `menu_choose_show` | `$008D4A` | 5/5 |
+| `menu_select` | `$008D6A` | 20/20 |
+| `menu_select_frame` | `$008D8E` | 200/200 |
+| `menu_select_draw` | `$008D96` | 200/200 |
+| `menu_select_pad` | `$008DA6` | 200/200 |
+| `menu_select_tick` | `$008E78` | 200/200 |
+| `menu_select_done` | `$008EE6` | 19/19 |
+| `quit_confirm` | `$008F8A` | 2/2 |
+| `quit_confirm_done` | `$008F94` | 2/2 |
+| `soft_reset_begin` | `$008F9A` | 1/1 |
+| `menu_start_game` | `$008CDA` | 8/8 |
+| `menu_play_blake` | `$008FB8` | 2/2 |
+| `menu_play_carnival` | `$008FC2` | 1/1 |
+| `mystery_menu` | `$008FCA` | 3/3 |
+| `mystery_menu_done` | `$008FEA` | 3/3 |
+| `menu_refresh_planes` | `$008F1C` | 200/200 |
+| `menu_title_sprites` | `$008F40` | 200/200 |
+| `password_shift_bits` | `$008710` | 200/200 |
+| `password_shift_symbol` | `$00870E` | 200/200 |
+| `password_scramble` | `$00873E` | 15/15 |
+| `password_unscramble` | `$00876C` | 4/4 |
+| `password_show` | `$008660` | 15/15 |
+| `password_read_bit` | `$009392` | 200/200 |
+| `password_read_byte` | `$009382` | 128/128 |
+| `password_check` | `$009298` | 4/4 |
+| `password_accept` | `$00933E` | 1/1 |
+| `password_cursor_left` | `$0093A2` | 9/9 |
+| `password_cursor_right` | `$0093B6` | 9/9 |
+| `password_switch_row` | `$0093CC` | 6/6 |
+| `password_clear` | `$0093DC` | 3/3 |
+| `password_key_noop` | `$009162` | 3/3 |
+| `password_cancel` | `$00927E` | 1/1 |
+| `password_screen_start` | `$009010` | 2/2 |
+| `password_screen_frame` | `$00903A` | 200/200 |
+| `password_screen_input` | `$009052` | 200/200 |
+| `password_screen_icon_done` | `$009160` | 33/33 |
+| `password_screen_tick` | `$0091D8` | 200/200 |
+| `sound_test` | `$00940C` | 1/1 |
+| `sound_test_show` | `$00944E` | 1/1 |
+| `sound_test_frame` | `$00946C` | 200/200 |
+| `sound_test_poll` | `$00947C` | 200/200 |
+| `sound_test_name` | `$0096AC` | 33/33 |
+| `sound_test_exit` | `$009648` | 1/1 |
+| `rooms_browser` | `$0088D8` | 2/2 |
+| `rooms_page` | `$0088FC` | 9/9 |
+| `rooms_rows` | `$00892C` | 140/140 |
+| `rooms_input` | `$008976` | 200/200 |
+| `objects_browser` | `$008AB4` | 1/1 |
+| `objects_page` | `$008AD4` | 5/5 |
+| `objects_rows` | `$008B00` | 80/80 |
+| `objects_input` | `$008B1A` | 200/200 |
+| `menu_load_screen` | `$0096F4` | 2/2 |
+| `menu_load_screen_dma` | `$009710` | 2/2 |
+| `debug_rooms` | `$0088A2` | 1/1 |
+| `debug_rooms_pick` | `$0088AC` | 1/1 |
+| `debug_rooms_done` | `$0088B6` | 1/1 |
+| `debug_objects` | `$008C40` | 1/1 |
+| `debug_objects_move` | `$008C80` | 1/1 |
+| `debug_objects_done` | `$008CC0` | 1/1 |
+
+Gates after the change (all on a VM, `--hle all`, merged with main at `8a58544`): `hosttest.sh` PASS, `irqtest.sh` PASS
+(no lost VBlank on the pointer / inventory / mouse routes), `mousetest.sh` all passed (including "title -> Lobby with
+clicks" with the C menus), `STORYTEST_HLE=all storytest.sh` PASS on all 6 routes (none == all). The three tours also
+play to the end with `--hle all` (`tour.sh -h all 1 2 3`): every screen comes up; pixel-exact equality with `--hle none`
+is not expected (a recorded open-loop route drifts as soon as the charged cycles differ by a frame).

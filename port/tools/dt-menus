@@ -5,6 +5,7 @@
 #   port/tools/dt-menus                 run everything (states are captured on first use into runs/states/<ADDR>;
 #                                       delete them when a tour script changes)
 #   port/tools/dt-menus FUNC...         run the named functions
+#   DT_RERUN=1 port/tools/dt-menus      re-run on the states already in runs/states (no recapture: after a rebuild)
 # Register/flag exemptions are the table in difftest.c ("#21 menus"), with their proofs in the C sources.
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
@@ -29,8 +30,10 @@ ALL="title_mask_irq title_setup title_bats_start title_bats_first title_bats_fra
 ONLY=; [ $# -gt 0 ] && { ALL="$*"; ONLY=1; }
 mkdir -p runs/dt-menus
 # captures and checks run 4 at a time (each replays the tours from power-on)
+MODE=check; ARGS="--n $N $SCRIPTS"
+[ -n "$DT_RERUN" ] && { MODE=run; ARGS=; }
 echo $ALL | tr ' ' '\n' | grep . | xargs -P "${DT_JOBS:-4}" -I{} sh -c \
-	"$D check {} --n $N $SCRIPTS --keep-going $DT_EXTRA > runs/dt-menus/{}.log 2>&1"
+	"$D $MODE {} $ARGS --keep-going $DT_EXTRA > runs/dt-menus/{}.log 2>&1"
 # more states for the password code: patched work RAM (tools/py/menus_pokes.py)
 if [ -z "$ONLY" ]; then
 	PY=.venv/bin/python; [ -x $PY ] || PY=/opt/venv/bin/python
