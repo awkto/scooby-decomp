@@ -48,7 +48,7 @@ static void usage(const char *argv0)
 	printf("usage: %s [options]\n"
 	       "  --rom PATH              ROM (default rom/baserom.md; sha1 must match)\n"
 	       "  --scale N               initial window scale (default 3)\n"
-	       "  --renderer R            gpgx (default) | native: the C renderer draws the picture and\n"
+	       "  --renderer R            native (default) | gpgx: the C renderer draws the picture and\n"
 	       "                          the verb-bar split is a band, not a raster effect (#25)\n"
 	       "  --filter F              nearest (default, whole-number scale) | smooth | crt\n"
 	       "  --fullscreen            start fullscreen (F11 toggles)\n"
@@ -348,6 +348,10 @@ int main(int argc, char **argv)
 	}
 	sndlog_init();   /* SCOOBY_SNDLOG=file: mailbox write log (src/sndlog.c) */
 	/* before the HLE spec: the native renderer activates the "native" group (#25) */
+	/* the native renderer is the player's default (#25: pixel-identical to GPGX on every gate
+	 * route, all gates incl. both full walkthroughs pass with it); tools keep gpgx */
+	if (!a.renderer && !getenv("SCOOBY_RENDERER"))
+		a.renderer = "native";
 	if (a.renderer && !render_emu_select(a.renderer)) {
 		fprintf(stderr, "unknown --renderer %s (gpgx | native)\n", a.renderer);
 		return 2;
