@@ -259,7 +259,19 @@ static int do_run(const hle_def *target, const opts *o)
 		cap_apply(&cs);
 		sb_begin();
 		sb_record_begin();
+		uint32_t ret0 = bus_r32(gx_m68k_dar()[15]) & 0xFFFFFF;
 		hle_invoke(cdef);
+		/* a C function that ends in a tail jump into 68k code (hle_jump) is followed
+		 * until it returns like the original (ranges stop at their exit at once) */
+		if (!sb_run_68k_to(sp0, ret0, target->exits, 50000000ul)) {
+			printf("%s: C side did not return (pc $%06X)\n", files[i], gx_m68k_pc());
+			err_n++;
+			sb_snapshot(got);
+			sb_end();
+			sb_snap_free(got);
+			cap_free(&cs);
+			continue;
+		}
 		sb_snapshot(got);
 		sb_end();
 
@@ -284,7 +296,7 @@ static int do_run(const hle_def *target, const opts *o)
 		} else {
 			pass_n++;
 			if (o->verbose)
-				printf("ok   %s (frame %u, %lu insns, %lu cycles, %d port writes)\n", files[i], cs.frame, insns, cycles, ref->nev);
+				printf("ok   %s (frame %u, %lu insns, %lu cycles, %d port writes, exit $%06X)\n", files[i], cs.frame, insns, cycles, ref->nev, ref->pc);
 		}
 		sb_snap_free(ref);
 		sb_snap_free(got);

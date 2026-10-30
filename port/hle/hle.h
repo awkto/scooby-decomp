@@ -115,6 +115,8 @@ void hle_call68k_orig(hle_ctx *ctx, uint32_t addr);
 void hle_run68k_until(hle_ctx *ctx, const uint32_t *exits);
 /* resume 68k execution at addr instead of returning (tail jump / bra to shared code) */
 static inline void hle_jump(hle_ctx *ctx, uint32_t addr) { ctx->pc = addr; ctx->jumped = 1; }
+/* move An,usp (the user stack pointer is not part of hle_ctx) */
+void hle_set_usp(uint32_t usp);
 
 /* ------------------------------------------------------------------ memory */
 extern unsigned char work_ram[0x10000];   /* GPGX: 68k work RAM, 16-bit words host-endian */

@@ -34,6 +34,10 @@ void vblank_main(hle_ctx *ctx);        /* $00A65C */
 void vblank_title_fade(hle_ctx *ctx);  /* $00A38C */
 void title_anim(hle_ctx *ctx);         /* $00879E */
 void hblank_nop(hle_ctx *ctx);         /* $01006A */
+/* reset.c (#12): boot and scene flow (the HLE_RANGE pieces of Reset are not callable) */
+void factory_test(hle_ctx *ctx);       /* $00069A */
+void game_reset(hle_ctx *ctx);         /* $00A27A */
+void logo5_frame(hle_ctx *ctx);        /* $000BC8 */
 
 #define VBLANK_HOOK       0xFF0000   /* long: code pointer called by the VBlank vector */
 #define HBLANK_HOOK       0xFF0004   /* long: code pointer called by the HBlank vector */

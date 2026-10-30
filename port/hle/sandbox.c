@@ -84,6 +84,19 @@ bool sb_run_68k_until(const uint32_t *exits, unsigned long max_insns, unsigned l
 	return ok;
 }
 
+bool sb_run_68k_to(uint32_t sp0, uint32_t ret, const uint32_t *exits, unsigned long max_insns)
+{
+	uint32_t *dar = gx_m68k_dar();
+	for (unsigned long n = 0;; n++) {
+		uint32_t pc = gx_m68k_pc();
+		if (exits ? dar[15] == sp0 && at_exit(exits, pc) : pc == ret && dar[15] == sp0 + 4)
+			return true;
+		if (n >= max_insns || m68k_step_one() < 0)
+			return false;
+		post();
+	}
+}
+
 /* ------------------------------------------------------------------ recording */
 static bool is_port(unsigned a)
 {

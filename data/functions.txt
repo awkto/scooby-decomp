@@ -3,25 +3,25 @@
 # size = contiguous bytes from the entry; every traced instruction belongs to exactly one function.
 # Entry = bsr/jsr target, vector/table/indirect target, stored code pointer, or promoted shared tail/orphan.
 000200   142 Reset  # 735 insns +0002fa:262 +000690:10 +0008ce:762 +000bf4:664 +000e94:1318
-000400    54 sub_000400  # 19 insns
-00069a   502 sub_00069A  # 80 insns
+000400    54 region_print  # 19 insns
+00069a   502 factory_test  # 80 insns
 000892    24 BusError  # 4 insns
 0008aa    18 HBlank  # 5 insns
 0008bc    18 VBlank  # 5 insns
-000bc8    44 sub_000BC8  # 11 insns
-0013ba   594 sub_0013BA  # 150 insns +001624:160
+000bc8    44 logo5_frame  # 11 insns
+0013ba   594 mystery_intro  # 150 insns +001624:160
 0016c4   152 sub_0016C4  # 33 insns
 00175c    82 sub_00175C  # 21 insns
 0017ae   464 sub_0017AE  # 92 insns
 00197e    50 sub_00197E  # 15 insns
-0019b0   554 sub_0019B0  # 113 insns
+0019b0   554 run_target_script  # 113 insns
 001bda    50 sub_001BDA  # 10 insns
 001c0c  1222 sub_001C0C  # 275 insns
 0020d2     8 sub_0020D2  # 2 insns
 0020da    94 sub_0020DA  # 22 insns
-002138    94 sub_002138  # 18 insns
-002196     4 sub_002196  # 1 insns
-00219a   128 sub_00219A  # 18 insns
+002138    94 room_load  # 18 insns
+002196     4 room_reload  # 1 insns
+00219a   128 room_fade_in  # 18 insns
 00221a    94 sub_00221A  # 21 insns
 002278    94 sub_002278  # 21 insns
 0022d6    28 rng_next  # 8 insns
@@ -168,14 +168,14 @@
 005b56     8 strcpy  # 3 insns
 005b5e    52 sub_005B5E  # 17 insns
 005b92    74 sub_005B92  # 23 insns
-005bdc   126 sub_005BDC  # 36 insns
+005bdc   126 draw_verb_button  # 36 insns
 005c5a    26 sub_005C5A  # 5 insns
 005c74    26 sub_005C74  # 5 insns
-005c8e    40 sub_005C8E  # 10 insns
+005c8e    40 hud_dma  # 10 insns
 005cb6    64 sub_005CB6  # 16 insns
-005cf6    38 sub_005CF6  # 7 insns
+005cf6    38 inventory_redraw  # 7 insns
 005d1c   302 sub_005D1C  # 98 insns
-005e4a  2802 sub_005E4A  # 609 insns +006940:28 +006960:392
+005e4a  2802 input_update  # 609 insns +006940:28 +006960:392
 00693c     4 sub_00693C  # 1 insns
 00695c     4 sub_00695C  # 1 insns
 006ae8    64 sub_006AE8  # 15 insns
@@ -189,31 +189,31 @@
 007950   218 sub_007950  # 62 insns
 007a2a    98 sub_007A2A  # 35 insns
 007a8c   376 sub_007A8C  # 82 insns
-007c04   126 sub_007C04  # 30 insns
+007c04   126 object_timers  # 30 insns
 007d54   462 sub_007D54  # 200 insns +007c82:210
 007f22    68 sub_007F22  # 17 insns
-007f66   180 sub_007F66  # 45 insns
+007f66   180 mystery_load  # 45 insns
 00801a   380 sub_00801A  # 57 insns
-008196   904 sub_008196  # 176 insns
+008196   904 title_screen  # 176 insns
 00851e   190 sub_00851E  # 45 insns
 008660   174 sub_008660  # 50 insns
 00870e     2 sub_00870E  # 1 insns
 008710    14 sub_008710  # 7 insns
 00873e    46 sub_00873E  # 12 insns
 00876c    50 sub_00876C  # 14 insns
-00879e   138 sub_00879E  # 28 insns
+00879e   138 title_anim  # 28 insns
 008876    44 sub_008876  # 10 insns
 0088a2    54 sub_0088A2  # 12 insns
 0088d8   452 sub_0088D8  # 129 insns
 008ab4   396 sub_008AB4  # 112 insns
 008c40   150 sub_008C40  # 39 insns
-008cd6    96 sub_008CD6  # 15 insns
+008cd6    96 menu_start_game  # 15 insns
 008d36    52 sub_008D36  # 12 insns
 008d6a   426 sub_008D6A  # 96 insns
 008f1c    36 sub_008F1C  # 8 insns
 008f40    74 sub_008F40  # 17 insns
 008f8a    16 sub_008F8A  # 4 insns
-008f9a    30 sub_008F9A  # 6 insns
+008f9a    30 soft_reset  # 6 insns
 008fb8    10 sub_008FB8  # 2 insns
 008fc2     8 sub_008FC2  # 1 insns
 008fca   408 sub_008FCA  # 155 insns +009184:246
@@ -270,14 +270,14 @@
 00a38c   280 vblank_title_fade  # 62 insns
 00a4a4    68 vblank_light  # 12 insns
 00a65c   168 vblank_main  # 30 insns
-00a704   202 sub_00A704  # 53 insns
-00a7ce    90 sub_00A7CE  # 26 insns
-00a828   348 sub_00A828  # 76 insns
+00a704   202 meters_draw  # 53 insns
+00a7ce    90 palette_cycle  # 26 insns
+00a828   348 status_line_update  # 76 insns
 00a984   912 sub_00A984  # 214 insns
 00ad14     2 sub_00AD14  # 1 insns
 00ad16   526 sub_00AD16  # 123 insns
-00af24   182 sub_00AF24  # 51 insns
-00afda   222 sub_00AFDA  # 47 insns
+00af24   182 actor_dma  # 51 insns
+00afda   222 run_object_events  # 47 insns
 00b0b8  1288 sub_00B0B8  # 315 insns
 00d3f0    60 sub_00D3F0  # 22 insns
 00d42c    60 sub_00D42C  # 22 insns
@@ -285,7 +285,7 @@
 00da6a  2466 sub_00DA6A  # 950 insns
 00e40c  3686 sub_00E40C  # 1416 insns
 00f272  2054 sub_00F272  # 780 insns
-00fa78   450 sub_00FA78  # 90 insns
+00fa78   450 camera_update  # 90 insns
 00fc3a   292 sub_00FC3A  # 85 insns
 00fd5e   278 sub_00FD5E  # 82 insns
 00fe74   244 sub_00FE74  # 75 insns

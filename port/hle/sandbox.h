@@ -51,6 +51,11 @@ bool sb_run_68k(unsigned long max_insns, unsigned long *insns, unsigned long *cy
 bool sb_run_68k_until(const uint32_t *exits, unsigned long max_insns, unsigned long *insns, unsigned long *cycles,
                       uint32_t *min_sp);
 
+/* Continue from the current state (no instruction needed) until the return condition of
+ * a function entered with SP = sp0 and return address ret (exits == NULL), or until an
+ * exit of a range with SP = sp0. Used after a C function that tail-jumps into 68k code. */
+bool sb_run_68k_to(uint32_t sp0, uint32_t ret, const uint32_t *exits, unsigned long max_insns);
+
 /* start / stop recording port writes into snap->ev */
 void sb_record_begin(void);
 void sb_snapshot(sb_snap *s);    /* also takes ownership of the recorded event list */

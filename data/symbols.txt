@@ -185,3 +185,33 @@
 002FCC script_subop_3B
 002FAE script_subop_3C
 002FB8 script_subop_3D
+
+# ---- #12 main loop / interrupts / frame timing (docs/subsystems/mainloop.md)
+0002FA region_check      # Reset piece: console region must be in the header ("JUE")
+000400 region_print      # lockout screen: print string a0 at row d1
+00069A factory_test      # controller-port-2 test fixture -> ROM checksum screen; normally returns
+0008CE boot_init         # Reset piece: hooks, sound, game_init, VDP regs, logo 1
+000BC8 logo5_frame       # DMA animation frame d3 of logo 5 to $C410
+000CB8 game_start        # Reset piece: after the title menu started a game
+000D38 main_loop         # jsr sub_00AFDA; the C ranges start at $000D3E
+00879E title_anim        # title sprite bounce + plane A strip scroller (from vblank_title_fade)
+008196 title_screen      # title, bat animation, main/pause menu; returns when a game starts
+008CD6 menu_start_game   # restores the gameplay hooks and rts out of title_screen
+008F9A soft_reset        # "quit": SP and PC from the reset vectors
+007F66 mystery_load      # object table from the mystery header, intro card, start scripts
+0013BA mystery_intro     # intro card (vblank_light) until a button or timeout
+002138 room_load
+002196 room_reload
+00219A room_fade_in      # status line, palette fade in
+0019B0 run_target_script # script of ram_hover_target (object or zone), see ram_zone_trigger
+00AFDA run_object_events # event scripts of objects with +$18 bit 2
+00A828 status_line_update # "Walk to ..." / verb + targets / room name
+005BDC draw_verb_button  # d0 = 0 normal, 1 selected, 2 highlighted; verb = ram_verb_to_draw
+005CF6 inventory_redraw  # requests the HUD DMA (vblank flag bit 5) and waits for it
+00FA78 camera_update     # VBlank: camera -> scroll registers
+00A7CE palette_cycle     # VBlank: 5 palette cycling ranges
+005C8E hud_dma           # VBlank: inventory/HUD upload when requested and time is left
+00AF24 actor_dma         # VBlank: actor tile DMA, sprite table, actor timers
+00A704 meters_draw       # VBlank: the two status meters
+007C04 object_timers     # VBlank: object timers (+$0A)
+005E4A input_update      # VBlank: scripted path, pad -> Shaggy / pointer / verb bar slide, Scooby

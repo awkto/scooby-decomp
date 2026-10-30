@@ -18,10 +18,12 @@ port/
   src/script.[ch]       harness-compatible scripts (run/press/shot/ram/vdp/save/load/hle/capture/regs)
   src/capture.[ch]      entry-state capture (savestate + pad state when PC hits ADDR)
   src/main.c            SDL2 host
-  src/game/*.c          decompiled game code, grouped by subsystem (io.c, vdp.c, util.c, ...)
+  src/game/*.c          decompiled game code, grouped by subsystem (io.c, vdp.c, util.c,
+                        mainloop.c + reset.c (#12), ...); cc68k.h = exact-flag helpers
   src/game/game.h       prototypes of decompiled functions + named RAM variables
   tools/difftest.c      differential tester
   tools/dt              one-command build + capture + difftest
+  tools/frameprof.c     per-frame profile: hooks, VBlank/HBlank/main-loop counts, hot spots
   scripts/              lobby.txt (route to the Lobby), capture.txt (route used for captures)
 ```
 
@@ -140,9 +142,13 @@ HLE_FUNC(0x00992C, vram_write_words, 0)
   `hle_call68k_orig` bypasses an override at `addr` itself.
 - C-to-C calls: decompiled functions take `hle_ctx *` and keep the original register
   contract. Call them directly (`z80_bus_request(ctx);`) and declare them in `game.h`.
-- Interrupts never fire inside a C function. Write a function that waits for VBlank
-  (spins on a RAM flag set by the interrupt handler) as a state machine, or leave it in
-  68k for now.
+- Interrupts never fire inside a C function. Code that waits for VBlank must not run
+  inside C, not even through `hle_call68k`. Port the code around the wait as
+  `HLE_RANGE`s that stop in front of the blocking call: see "Waiting for VBlank" below.
+- `HLE_RANGE(addr, name, cycles, exit, ...)` replaces a code range that is not a
+  subroutine (Reset pieces, one main-loop pass). It must end with `hle_jump` to a
+  declared exit.
+- `hle_set_usp(v)` stands for `move An,usp`.
 
 ### Conventions
 
@@ -236,6 +242,113 @@ cycle count instead (see `gx_vdp_untimed_begin` in hle/gx.c). Code that busy-wai
 VDP status or the HV counter cannot be compared exactly. Keep those waits in 68k, or
 restructure them.
 
+## Waiting for VBlank: blocking code, HLE_RANGE and tail jumps
+
+Read this before porting anything that waits. The main loop and frame structure are
+mapped in `docs/subsystems/mainloop.md` (#12).
+
+### The problem
+
+The game has no frame-locked main loop. It waits for the VBlank interrupt in many places:
+- `wait_vblank` `$974C`: set bit 0 of `ram_vblank_flags`, spin until VBlank clears it.
+- Counters that VBlank decrements: `ram_frame_countdown` `$FF08AE`, `$FF0AB1`/`$FF0AB2`,
+  the actor timers.
+- Flags that VBlank-side code clears: bit 5 of `ram_vblank_flags`, `$FF0AB6`, `$FF0ABC`/`$FF0ABD`
+  animation states, `$FF0ACB` (verb-bar slide).
+- Raster waits on the VDP status / HV counter: `hblank_verb_bar`.
+
+A C function never sees an interrupt. While it runs, the emulator's frame loop is
+suspended, the VDP line counter does not advance, and `hle_call68k` steps the CPU without
+polling interrupts. So:
+- a C function that reaches a waiting function through `hle_call68k` **hangs the game**
+  (`hle_call68k` aborts after 200 M instructions);
+- difftest of a function that waits never finishes on the original side ("original did
+  not return"), because the sandbox holds interrupts.
+
+`tools/py/blocking.py` finds the spin loops. It also finds every function that reaches one
+through the call graph, including script opcodes called through the opcode tables:
+
+    tools/py/blocking.py sub_00B0B8 palette_fade vdp_dma_vram
+    sub_00B0B8               BLOCKS: spins at loc_00B5A4
+    palette_fade             BLOCKS: calls wait_vblank
+    vdp_dma_vram             ok
+    tools/py/blocking.py --all            # all 91, with the reason
+
+DMA-busy polls (VDP status bit 1) don't count: the sandbox finishes DMA at once and GPGX
+stalls the CPU during DMA. It's a heuristic. If a difftest original "did not return",
+look for a wait it missed.
+
+### The rule: stop in front of the blocking call
+
+1. Keep the wait primitives in 68k: `wait_vblank`, `wait_vblanks`, the spin loops,
+   `hblank_verb_bar`. In the native port each becomes "yield until the host has run the
+   next VBlank". The host loop then is: run VBlank hook, run game code until it yields.
+2. Never call a blocking function with `hle_call68k`. Split the caller at the call
+   instead:
+   - Port the code **between** blocking calls as `HLE_RANGE(start, name, cycles, exits...)`.
+   - A range ends with `hle_jump(ctx, exit)`, where the exit is the address of the
+     `jsr`/`bsr` instruction of the blocking call. The 68k executes that call and returns
+     to the next instruction.
+   - Register that next instruction as the start of the next range. The main loop
+     (`mainloop.c`) and Reset (`reset.c`) are built like this. Loops whose body contains
+     a blocking call are a range that ends at the call, plus a range after the call that
+     either jumps back into the loop body (in C) or leaves the loop.
+3. A range may have several exits (one per path) and may exit to its own start (a loop
+   head). The stack pointer at the exit must equal the one at the entry. The layer aborts
+   when a range leaves through an address it did not declare.
+4. `difftest`/`dt` treat ranges automatically. The original runs from the start until it
+   first reaches one of the declared exits at the entry SP, after at least one
+   instruction. `difftest capture ADDR` works for any instruction address, so captures
+   need nothing special. `-v` prints the exit each state took. Check that the interesting
+   exits occur, and write a route script if they don't (`port/scripts/pointer_play.txt`
+   and `inventory_play.txt` exist for this reason).
+5. Registers and flags at an exit are compared like a function's return values. Code in
+   the middle of a function leaves working values in registers, so reproduce them all.
+   `port/src/game/cc68k.h` has helpers for the exact condition codes: `cc_sub`,
+   `cc_add`, `cmpw`, `cc_btst`, `lslw`, `lsrw`.
+
+### Tail jumps into 68k (HLE_FUNC + hle_jump)
+
+A C function may do the deterministic part of a routine and `hle_jump` into the original
+code for the rest, for example a rare path that can't be verified (`factory_test` jumps to
+the test screen). difftest follows such a jump: after the C function it keeps running the
+68k until the function returns (or the range exits), and then compares.
+
+### Timing-dependent reads
+
+- **HV counter / VDP status reads** (not waits): in the sandbox the V counter stays at
+  the entry line and the H counter moves with the CPU clock. C code reads at the CPU time
+  of the function's entry (C takes no time until it returns).
+  - If only V matters (`sub_005C8E`: "is the raster still in lines `$E1`–`$F6`?"), C and 68k
+    agree in difftest.
+  - If the exact value flows into state, keep the function in 68k. `game_init` is the
+    example: HV → `rng_next` → X flag. A tail jump to the read doesn't help either: the C
+    prefix took no time, so the 68k still reads earlier than the original did. Tried and
+    measured in #12.
+  - In real play the earlier read just shifts a DMA by a frame.
+- **Interrupt mask**: never lower the mask in `ctx->sr` before a nested `hle_call68k`. A
+  pending HBlank would run `hblank_verb_bar` inside the nested call, and its raster wait
+  never ends. Reproduce only the final SR the original leaves behind (see `vblank_main`).
+  Lowering it at the exit of a range or function is fine, and needed (Reset's
+  `move.w #$2000,sr` before `palette_fade`). The interrupt is then taken right after the C
+  code, at the same instruction boundary as in the original.
+
+### Interrupt handlers
+
+The VBlank and HBlank vectors are 5-instruction trampolines (`movem`, `jsr (hook)`,
+`movem`, `rte`) through the RAM hooks `$FF0000`/`$FF0004`. They stay in 68k. The hook
+targets (`vblank_main`, `vblank_light`, `vblank_title_fade`, `hblank_nop`) are ordinary
+functions and are ported as `HLE_FUNC`. Code called from VBlank must not wait for VBlank.
+It may call anything non-blocking through `hle_call68k`.
+
+### Tools
+
+- `build/port/frameprof [--script F]... [--watch ADDR=name]... [--frames] [--hist A B]`
+  prints, per frame or as segments, which hooks are active, the VBlank/HBlank/main-loop
+  counts, first/last hits of watched addresses, and the hottest instructions. Use it to
+  see where code runs and how often.
+- `tools/py/blocking.py`: see above.
+
 ## Functions replaced so far
 
 | Address | Name | File | difftest result |
@@ -250,3 +363,19 @@ restructure them.
 
 The "pad read $9D3A" in older notes is the body of $9D34. The function is entered at
 $9D34 with `jsr $1F6D7A` (Z80 bus request) and is called from $A4A4 and $A6C0.
+
+#12 (main loop, interrupts, Reset), files `mainloop.c` and `reset.c`. Details and
+per-function results are in `docs/subsystems/mainloop.md`:
+
+| Address | Name | File | difftest result |
+| --- | --- | --- | --- |
+| $00A65C | vblank_main | mainloop.c | 200/200 |
+| $00A4A4 | vblank_light | mainloop.c | 200/200 |
+| $00A38C | vblank_title_fade | mainloop.c | 200/200 |
+| $00879E | title_anim | mainloop.c | 200/200 |
+| $01006A | hblank_nop | mainloop.c | 200/200 |
+| $000D3E (range) | main_loop_pass + 9 small ranges after blocking calls | mainloop.c | 200/200 (+ pointer and inventory routes); the inventory-arrow ranges have no states |
+| $000200… (ranges) | boot_hw_init, region_check, boot_init, logo1–5 pieces, logos_done, game_start… (21 ranges) | reset.c | all calls on the route (2–200 each) |
+| $00069A | factory_test | reset.c | 3/3 |
+| $00A27A | game_reset | reset.c | 5/5 |
+| $000BC8 | logo5_frame | reset.c | 183/183 |
