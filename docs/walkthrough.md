@@ -1,9 +1,8 @@
 # Story walkthrough routes (issue #29)
 
-Status: **Blake's Hotel is solved end to end** (power-on -> credits, twelve verified segments, `hotel_1`..`hotel_12` in
-`tools/py/story_full.py`, route `w0_full`). **Ha Ha Carnival is solved up to the Dart and the Ball** (five segments, route `w1_part`,
-including the Crane Game and the Bumper Car duel minigames); the remaining chain to the ending (roller-coaster Paint Brush, painted Sign,
-Application + Rubber Stamp, Clown in the Back Lot) is mapped from the scripts below but not yet driven. Everything is closed-loop: each
+Status: **both mysteries are solved end to end, closed loop, from power-on to the credits**: Blake's Hotel (`hotel_1`..`hotel_12`, route
+`w0_full`) and Ha Ha Carnival (`carnival_1`..`carnival_13`, route `w1_full`; `w1_part` is its first five segments, up to the Dart and the
+Ball). Everything is closed-loop: each
 input is decided from RAM read back from the running game (hit-test target, room, inventory, story bytes), never from frame counts, so
 the same driver runs on the harness and on the native port (`port/tools/storytest.sh`, `--hle none` vs `--hle all`). The flat harness
 scripts the driver records replay from power-on with the plain batch harness and end in the state in their header (`verify.py`).
@@ -19,7 +18,7 @@ scripts the driver records replay from power-on with the plain batch harness and
 | `tools/py/collect_points.py`, `tools/scripts/story/points_w{0,1}.json` | cache of crosshair hit points per object (world coordinates) so strict routes need no scans |
 | `tools/py/objects.py`, `scriptdump.py`, `combos.py` | static dump of the object table / scripts / the (verb, second object) handlers |
 | `tools/py/verify.py` | replay a flat route in the batch harness and print room / inventory / story bytes |
-| `tools/py/story_full.py` | the long walkthroughs: `hotel_1..12`, `carnival_1..5`, minigame drivers `crane_game`, `bumper_tug` |
+| `tools/py/story_full.py` | the long walkthroughs: `hotel_1..12`, `carnival_1..13`, minigame / timed drivers `crane_game`, `bumper_tug`, `roller_coaster` |
 | `tools/py/walkplan.py` | walk planner over the game's collision map (distance field, D-pad geometry, exit avoidance) |
 | `tools/py/hotspots.py` | static hotspot rectangle of every object (ROM object record +2 -> overlay table) |
 | `tools/py/blk.py`, `objrooms.py`, `storybytes.py` | puzzle-logic readers: disassembled script of an object without animation noise; initial room of every object; the 29-byte story table |
@@ -62,6 +61,7 @@ generator and re-checked with `verify.py` (batch replay) - all eight matched.
 | `w1_boathouse` | warp Boathouse (14) | take the message **Bottle** and the **Boat** | inventory `[108,110]` |
 | `w0_full` | natural | **the whole of Blake's Hotel**, power-on to the credits (12 segments, see below) | room 0 (game reset after the credits), same 29 story bytes as the header |
 | `w1_part` | natural | Carnival: pole cheat, Magnet, Tokens, Crane Game, Tickets, Dart Game, Teddy Bear, Ball, Fun House, Bumper Car duel, Dart | room 7, inventory has Dart + Ball |
+| `w1_full` | natural | **the whole of Ha Ha Carnival**, power-on to the credits (13 segments, see below) | room 0 (game reset after the credits), same 29 story bytes as the header |
 
 The six short routes start from password warps (isolated puzzles); `w0_full` and `w1_part` are the natural ones. Generate a route with
 `tools/dev/genroute.sh ROUTE` on a VM (strict mode: no savestates, every probe recorded; it writes `runs/routes/ROUTE.txt`; pull it
@@ -413,10 +413,11 @@ Gotchas found on the way (all handled in `story.py` / `story_full.py`):
   D moves the highlight (6-frame presses), B picks.
 * **Ending**: `sys ending_credits` runs the credits and the game resets to the Sega logo (`$FF06AC` = 0).
 
-## Ha Ha Carnival: what is driven (`carnival_1` .. `carnival_5`, route `w1_part`) and the rest of the chain
+## Ha Ha Carnival: the complete walkthrough (`carnival_1` .. `carnival_13`, route `w1_full`; `w1_part` = the first five)
 
-`w1_part` plays the first five segments closed-loop from power-on and ends with the **Dart and the Ball** in the inventory (104 s on the
-harness; `tools/scripts/story/w1_part.txt` replays to the same end state):
+`w1_full` plays all thirteen segments closed-loop from power-on to the credits (about 8 min of game time on the harness; the strict generator
+run takes ~6 min wall clock; `tools/scripts/story/w1_full.txt` replays to the same end state, verified with `verify.py`). The first five
+segments (`w1_part`, 104 s) end with the **Dart and the Ball** in the inventory, the rest is the long chain to the ending:
 
 | seg | what | end condition |
 |---|---|---|
@@ -424,7 +425,15 @@ harness; `tools/scripts/story/w1_part.txt` replays to the same end state):
 | `carnival_2` | Back Lot: Balloons USE with Scooby (he has to be on screen and still: `probe_actor` waits) -> Ferris wheel -> Magnet; Diving Bell: Valve down, Magnet USE Treasure -> Tokens, Valve up | Magnet, Tokens |
 | `carnival_3` | Game Tent: Tokens in the Crane Game (**claw minigame**: `crane_game()` reads the pistol's path offset `$FF0610` and drops the claw so the offset at the bottom is in `$FC..$110`), Water Pistol -> Kid (Front Lot) for the Tickets, Tickets -> Dart Attendant, Darts x3 -> Teddy Bear | Teddy Bear |
 | `carnival_4` | Back Lot: Teddy Bear GIVE Balancing Bear -> Ball | Ball |
-| `carnival_5` | Boardwalk -> Fun House (the script op `wait_dpad_choice` waits for a direction: D = Bumper Cars, L = Haunted House, R = back) -> Bumper Cars: **Taffy on the Engine with the Switch off**, Switch on, the **car duel** (`bumper_tug()`: steer at the Clown's car, hold the gas; it wins on the first try), Dart on the floor | Dart |
+| `carnival_5` | Boardwalk -> Fun House (the script op `wait_dpad_choice` waits for a direction: D = Bumper Cars, L = Haunted House, R = Hall of Mirrors) -> Bumper Cars: **Taffy on the Engine with the Switch off**, Switch on, the **car duel** (`bumper_tug()`: steer at the Clown's car, hold the gas; it wins on the first try), Dart on the floor | Dart |
+| `carnival_6` | Bumper Cars -> Boardwalk: Trash Can OPEN, **Mummy Bandages**; **Tokens on Madame Zelda** (they are not consumed), TALK "What's the meaning of life?": she blows up (F06.2); take her **Head** | Head |
+| `carnival_7` | Boathouse: Bottle TAKE, then OPEN it from the inventory (`act_inv`): the **Note**; Boat TAKE. Note + Bandages together set F06.6 | F06.6 |
+| `carnival_8` | Fun House, prompt **R = Hall of Mirrors** (room 9): Mirror PUSH, the Clown drops the **Spark Plug**; Boat + Spark Plug; Front Lot -> Pond: Boat with Spark Plug USE Pond rescues the gang (F07.3; the cutscene ends in the Front Lot); Help Wanted **Sign** TAKE | F07.3, Sign |
+| `carnival_9` | Fun House, **L = Haunted House** (room 21): **Boots**, Coffin OPEN, Bandage PULL (needs F06.6): the carnival manager is freed, F09.4 (the staff-only Tent Flap opens), cutscene back to the Front Lot | F09.4 |
+| `carnival_10` | Front Office: **Rubber Stamp**; Game Tent -> Tent Flap -> Dressing Room (17): **Application**, Trunk OPEN, **Wrench**; Stamp USE Application = accepted Application | accepted Application |
+| `carnival_11` | Haunted House: Wrench USE Bolts (**Bolts**); Back Lot -> Ladder -> Bungee Jump platform -> Harness -> room 15: **TAKE the Bucket while the jump script runs** (sets F06.3; the script then hands it over), Ladder back; Boardwalk Faucet: Bucket of Water; Diving Bell (Valve down): Bucket of Water USE Inky = **Bucket with Inky**; Valve up | Bucket with Inky |
+| `carnival_12` | Front Lot: Kid TALK ("How come you're just standing around", then "Wanna ride the roller coaster": he walks to the Boardwalk, the Attendant says he is too short); **Boots GIVE Kid** with the Head in the inventory sets F05.6 and F06.7 and the party rides: `roller_coaster()` (below) -> **Paint Brush**; Paint Brush USE Bucket with Inky = Inky Brush; Inky Brush USE Sign = painted Sign | painted Sign |
+| `carnival_13` | Back Lot: painted Sign USE (hangs on the board, needs the Balancing Bear gone, F04.2); Dressing Room: accepted Application USE Bulletin Board: the Clown appears in the Back Lot (F05.5, the script moves Shaggy back); **Dart USE Ball** (room 13, Clown present): unmasking of Charlie the Dart Attendant, Orbit, credits, reset | room 0 |
 
 Minigame notes (decoded from `script_subop_27_minigame_throw` `$3F58` and `script_subop_32_minigame_tug` `$3142`): the Crane Game
 claw is x `$FF04E8` (100..148), A/B drops it (2 px/frame down to y `$4A`), and it catches iff the pistol's path offset at the bottom is in
@@ -434,37 +443,57 @@ vectors in `dat_003D96`), two 63-point meters `$FF0A98` (ours) / `$FF0A9A` (the 
 returns to room 7 and the car can be driven again. The duel needs input from its first frame, so `start_bumper()` clicks USE without the
 usual wait for the script to finish.
 
-**Not driven** (the chain for the ending, from the scripts; Fxx.b = story bit):
+
+**The roller coaster (`roller_coaster()`, room 8; the only timed puzzle).** Object #17 is the ride's state machine: its stage `+0E` advances
+with Shaggy's path (about 100 frames from the room entry to stage 1, 30 more for the camera pan, 110 from stage 3 to stage 4). The track is broken
+(F08.2 = 1, "I think this is going to be a short ride!"); at stage 1 the car **crashes** (-> Ferris Wheel -> Back Lot, F05.4) unless **Brake #18**
+(F08.3) is on, which stops it (F08.0, "stopped", stage 6). While stopped: Bolts USE Track with the Wrench in hand clears F08.2 ("It looks okay to
+me"); Brake #18 USE again releases it, the camera pans right (256 px). At stage 4 the ride ends at the Boardwalk unless **Brake #19** (F08.4) is on,
+which stops the car again (F08.0, stage 7) beside the **Shed** (#21, world x 432..472, only on screen with the camera panned): OPEN it
+(F07.7) and the Paint Brush is inside; Brake #19 USE again lets the ride finish at the Boardwalk. The driver clicks Brake #18 the moment
+the room is entered (`quick_use`: pointer already placed by the hit-test probe, no waiting for scripts), waits for F08.0, fixes the track, releases,
+waits for camera x = 256 and clicks Brake #19 (long before stage 4), waits for F08.0 and takes the brush. Every wait polls RAM.
+
+**What the chain needs** (the documented dependency graph, as played; Fxx.b = story bit):
 
 ```
-END   Dart USE Ball in the Back Lot (room 13) while the Clown is there -> unmasking, Charlie the Dart Attendant, Orbit, credits
- Clown in room 13 (F05.5) <- Application #70 (accepted) USE Bulletin Board (Dressing Room) with the painted Sign #88 already in room 13,
-                              or the painted Sign USE in the Back Lot after the application was posted
-   painted Sign #88  <- Inky Brush USE Sign #87 (Front Lot, the Help Wanted board)
+END   Dart USE Ball in the Back Lot (room 13) while the Clown is there (F05.5) -> unmasking, Charlie the Dart Attendant, Orbit, credits
+ Clown in room 13 (F05.5) <- Application #70 (accepted) USE Bulletin Board (Dressing Room) with the painted Sign #88 already in room 13
+                              (or, if the application was posted first, painted Sign USE in the Back Lot)
+   painted Sign #88  <- Inky Brush USE Sign #87 (Help Wanted board, taken in the Front Lot; Back Lot needs the Balancing Bear gone)
      Inky Brush     <- Paint Brush #22 USE Bucket with Inky #131
-       Paint Brush  <- Shed #21 in the Roller Coaster (room 8): OPEN after F08.0 (the runaway-coaster scene: brakes #18/#19 USE in the
-                       right order, Bolts #154 USE Track with the Wrench in hand)   [needs the Kid + Boots: see below]
-       Bucket with Inky <- Bucket of Water USE Inky (Diving Bell, hatch open: F08.7 is already set by the Magnet step)
-         Bucket of Water <- Bucket #128 USE Faucet #96 (Boardwalk);   Bucket <- Bungee Jump (Back Lot ladder -> platform -> Harness)
-   Application #70 <- Rubber Stamp #79 USE Application #69 (rejected, Dressing Room pile: Take)
-     Rubber Stamp #79 / Manager are placed in the Front Office when the gang is rescued: Boat with Spark Plug USE Pond (F07.3)
+       Paint Brush  <- Shed #21 in the Roller Coaster (room 8): OPEN while the car is stopped at Brake #19 (see above)
+                       needs F05.6 (Kid + Boots + Head), the Wrench + Bolts in hand (brake 1 -> fix Track)
+       Bucket with Inky <- Bucket of Water USE Inky (Diving Bell, hatch already open: F08.7 from the Magnet step)
+         Bucket of Water <- Bucket #128 USE Faucet #96 (Boardwalk);   Bucket <- TAKE it during the Bungee jump (Back Lot ladder -> Harness)
+   Application #70 <- Rubber Stamp #79 USE Application #69 (rejected, Dressing Room: Take)
+     Rubber Stamp #79 / Manager: placed in the Front Office when the gang is rescued AND the manager freed (either order: Boat with Spark Plug
+                       USE Pond checks F09.4, Bandage PULL checks F07.3)
        Boat #113 (Boathouse) + Spark Plug #29 (Hall of Mirrors: Mirror PUSH, F07.6)
-     Dressing Room (room 17): Game Tent flap #66 (walk-on conditions F09.4 / F09.1)
- Kid + Boots: Kid TALK "Wanna ride the roller coaster with me and Scoob?" (Front Lot) walks him to the Boardwalk; Boots #153 (Haunted House,
-              room 21, Fun House choice L) GIVE Kid sets F05.6 (he is tall enough) and the Attendant #99 lets the party on (room 8)
- Haunted House: Coffin #155 OPEN, Bandage #157 PULL (F09.4; needs the Mummy Bandages from the Boardwalk trash can + the Note from the Boathouse bottle, F06.6)
+     Dressing Room (room 17): Game Tent flap #66, walk-on needs F09.4 (manager freed; "Employees only." before)
+ Kid + Boots + Head: Kid TALK "Wanna ride the roller coaster..." (Front Lot; Kid moves to the Boardwalk), Boots #153 (Haunted House) GIVE Kid on the
+              Boardwalk: **only with Madame Zelda's Head #95 in the inventory** (Zelda explodes after "What's the meaning of life?", F06.2, then the
+              glass is gone) does it set F06.7/F05.6 and the Attendant #99 let the party ride; without the Head the Boots come back ("Lemme just
+              hold onto these")
+ Haunted House (Fun House, L): Coffin #155 OPEN (F09.5), Bandage #157 PULL needs F06.6 (Mummy Bandages from the Trash Can AND the Note from the
+              Boathouse Bottle, both in the inventory) -> manager freed, F09.4; Wrench #72 (Trunk, Dressing Room) USE Bolts #154 -> Bolts
 ```
 
-Things that are *not* needed: Hammer, Coupon, Madame Zelda, the Ferris-wheel peek windows, Bungee ride itself (only the Bucket).
+Corrections to the notes above: Madame Zelda **is** needed (the Head, for the Kid's boots); the Fun House prompt's R is the Hall of Mirrors
+(room 9, the Clown / Spark Plug), not "back". The Wrench / Dressing Room / Haunted House dependency is circular looking but resolves in the order the
+segments run: Haunted House (Bandage pull) -> Dressing Room (Wrench) -> Haunted House again (Bolts).
+
+Things that are *not* needed: Hammer, Coupon, the Ferris-wheel peek windows, the Bungee ride itself (only the Bucket), the second roller-coaster
+stop if the Paint Brush could be had otherwise (it cannot: the Shed is only reachable at the second stop).
 
 ## Verification
 
     tools/py/verify.py tools/scripts/story/w0_full.txt runs/x     # on a VM (needs build/harness); ~80 s
 
-prints `room`, `inv`, `story`; all eight routes reproduce the header's end state (`w0_full`: room 0 after the credits, 18 items, the
-29 story bytes of the header; `w1_part`: room 7, Dart + Ball). The closed-loop drivers pass on the port (below). `make` still prints
-`build/scooby.md: OK`; the merged coverage went from 83.6 % to 91.3 % with the two long routes (+1121 instruction starts, see
-`docs/coverage.md`).
+prints `room`, `inv`, `story`; all nine routes reproduce the header's end state (`w0_full`: room 0 after the credits, 18 items, the
+29 story bytes of the header; `w1_part`: room 7, Dart + Ball; `w1_full`: room 0 after the credits, 15 items, the 29 story bytes of the header). The closed-loop drivers pass on the port (below). `make` still prints
+`build/scooby.md: OK`; the merged coverage went from 83.6 % to 92.0 % with the two long routes (+1121 instruction starts with `w0_full` + `w1_part`, +105 with the
+rest of the Carnival chain in `w1_full`; see `docs/coverage.md`).
 
 ## Disassembler note: "14 traced instructions overlap ROM data reads"
 
