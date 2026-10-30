@@ -1,0 +1,314 @@
+# Title -> menu -> SOUND TEST (plane clears, draw_text_centered) and a few cursor moves
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press D 5
+run 20
+press D 5
+run 20
+press S 5
+run 150
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press B 3
+run 50
+press A 3
+run 50
+press D 3
+run 60
+press B 3
+run 50
+press C 3
+run 200

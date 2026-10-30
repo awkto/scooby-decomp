@@ -365,3 +365,7 @@
 0022F2 talk_bar_blank        # 6 rows x 32 blank tiles at VRAM d4 (the TALK menu area)
 0020DA talk_gesture          # random talking gesture for Shaggy (animation 36 + facing*4 + 0..3)
 0FC740 shaggy_face_anims     # w[4][4] Shaggy's turn-on-the-spot animation [old facing][new facing] (op $1E, say pose)
+
+# ---- #22 sound API glue (C in port/src/game/sound.c; docs/subsystems/sound.md)
+# C names: sound_cmd_play/stop/pause/unpause/stop_all keep their symbols; $009762 = sound_play_wrapper,
+# $009776 = sound_stop_wrapper, $1F6EA8 = sound_init_wrapper (C API: sound_driver_init), $1F6DDE = z80_reset_driver.

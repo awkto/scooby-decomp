@@ -632,3 +632,16 @@ whole menu system waits for VBlank, so it is mostly HLE_RANGEs); test driver `po
 captures there, plus 150 poked variants each for the password routines (`tools/py/menus_pokes.py`); the codec test
 is `port/tools/password_test.sh`. Register exemptions are in `difftest.c` ("#21 menus"). `difftest` now also prints
 "C charged avg" (the cycles the C side charges without its nested 68k calls) next to the original's cost.
+
+### Sound glue (#22, `sound.c`, docs/subsystems/sound.md)
+
+| Address | C | Result |
+|---|---|---|
+| $1F6EF8 / $1F6F16 | sound_cmd_play / sound_cmd_stop | 109/109 and 7/7 (all calls on the capture + `scripts/sound_spam.txt` routes) |
+| $1F6F52 | sound_cmd_stop_all | 123/123 |
+| $1F6F2A / $1F6F3E | sound_cmd_pause / sound_cmd_unpause | **no states**: no scriptable route reaches the in-game pause (cutscene loop at $003372); same code shape as stop_all |
+| $009762 / $009776 | sound_play_wrapper / sound_stop_wrapper | 436/436 and 28/28 (109 / 7 route states x 4 `--poke D0=` ids) |
+| $1F6D98 / $1F6DDE / $1F6EA8 | z80_load_driver / z80_reset_driver / sound_init_wrapper | 3/3 each (boot is the only caller; all calls on the route) |
+
+`port/tools/soundtest.sh` compares the Z80 mailbox byte stream (`SCOOBY_SNDLOG`) of `--hle all`, `--hle none` and
+`--hle all` minus the sound functions on the Sound Test route, an in-game route and a rapid-press route.
