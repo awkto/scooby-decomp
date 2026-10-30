@@ -32,22 +32,51 @@
 	.equ ram_484a, 0xff048a
 	.equ ram_484c, 0xff048c
 	.equ ram_shaggy_x, 0xff04dc
-	.equ ram_shaggy_x_prev, 0xff04e0
+	.equ ram_scooby_x, 0xff04e0
+	.equ ram_actor_x2, 0xff04e4
 	.equ ram_shaggy_y, 0xff04f4
-	.equ ram_shaggy_y_prev, 0xff04f8
-	.equ ram_5b8, 0xff05b8
+	.equ ram_scooby_y, 0xff04f8
+	.equ ram_actor_y2, 0xff04fc
+	.equ ram_actor_step_x, 0xff0514
+	.equ ram_actor_step_y, 0xff052c
+	.equ ram_actor_depth_x, 0xff05a0
+	.equ ram_actor_depth_y, 0xff05ac
+	.equ ram_shaggy_facing, 0xff05b8
+	.equ ram_scooby_facing, 0xff05ba
+	.equ ram_actor_target_x, 0xff05dc
+	.equ ram_actor_target_y, 0xff05e8
+	.equ ram_actor_path_ptr, 0xff05f4
+	.equ ram_actor_path_pos, 0xff060c
 	.equ ram_618, 0xff0618
-	.equ ram_cursor_x, 0xff0642
-	.equ ram_cursor_y, 0xff0646
-	.equ ram_view_x0, 0xff0652
-	.equ ram_view_x1, 0xff0654
-	.equ ram_view_y0, 0xff0656
-	.equ ram_view_y1, 0xff0658
+	.equ ram_scooby_anim_lock, 0xff061a
+	.equ ram_shaggy_speed, 0xff062a
+	.equ ram_shaggy_dir_x, 0xff062e
+	.equ ram_shaggy_dir_y, 0xff0630
+	.equ ram_shaggy_speed_x, 0xff0632
+	.equ ram_shaggy_speed_y, 0xff0636
+	.equ ram_scooby_dir_x, 0xff063a
+	.equ ram_scooby_dir_y, 0xff063c
+	.equ ram_scooby_pose_anim, 0xff063e
+	.equ ram_scooby_pose_facing, 0xff0640
+	.equ ram_walk_probe_x, 0xff0642
+	.equ ram_walk_probe_y, 0xff0646
+	.equ ram_line_probe_x, 0xff064a
+	.equ ram_line_probe_y, 0xff064e
+	.equ ram_line_from_x, 0xff0652
+	.equ ram_line_from_y, 0xff0656
+	.equ ram_shaggy_wp_count, 0xff065a
+	.equ ram_shaggy_wp, 0xff065c
+	.equ ram_scooby_wp_count, 0xff0670
+	.equ ram_scooby_wp, 0xff0672
+	.equ ram_shaggy_idle_timer, 0xff0686
+	.equ ram_scooby_wander_timer, 0xff0688
 	.equ ram_ui_tile_base_a, 0xff068a
 	.equ ram_font_base, 0xff068c
 	.equ ram_mystery_hdr, 0xff068e
-	.equ ram_room_data_ptr, 0xff0692
-	.equ ram_room_ptr_69a, 0xff069a
+	.equ ram_room_depth_rows, 0xff0692
+	.equ ram_room_spawns, 0xff0696
+	.equ ram_room_idle_spots, 0xff069a
+	.equ ram_room_idle_count, 0xff06a0
 	.equ ram_cur_music, 0xff06a6
 	.equ ram_mystery_idx, 0xff06aa
 	.equ ram_room_index, 0xff06ac
@@ -55,8 +84,8 @@
 	.equ ram_6c2, 0xff06c2
 	.equ ram_map_width, 0xff06c6
 	.equ ram_map_height, 0xff06c8
-	.equ ram_6ca, 0xff06ca
-	.equ ram_6ce, 0xff06ce
+	.equ ram_camera_x, 0xff06ca
+	.equ ram_camera_y, 0xff06ce
 	.equ ram_room_name_ptr, 0xff06d2
 	.equ ram_6dc, 0xff06dc
 	.equ ram_6de, 0xff06de
@@ -89,9 +118,24 @@
 	.equ ram_09ea, 0xff09ea
 	.equ ram_09eb, 0xff09eb
 	.equ ram_09ed, 0xff09ed
+	.equ ram_actor_path_delay, 0xff0aa5
+	.equ ram_actor_path_reload, 0xff0aab
+	.equ ram_camera_scroll_req, 0xff0ab3
+	.equ ram_actors_active, 0xff0ab4
 	.equ ram_0ab5, 0xff0ab5
+	.equ ram_actors_moving, 0xff0ab7
+	.equ ram_actors_depth_on, 0xff0ab8
+	.equ ram_actors_behind, 0xff0abb
+	.equ ram_actors_anim_done, 0xff0abc
+	.equ ram_actors_anim_looped, 0xff0abd
+	.equ ram_actors_depth_new, 0xff0abe
+	.equ ram_actors_on_path, 0xff0ac0
+	.equ ram_actors_no_zone, 0xff0ac2
+	.equ ram_actors_path_once, 0xff0ac3
 	.equ ram_script_flags, 0xff0ac9
 	.equ ram_script_flags2, 0xff0aca
+	.equ ram_verb_bar_slide, 0xff0acb
+	.equ ram_shaggy_turning, 0xff0acc
 	.equ ram_objects, 0xff1200
 	.equ ram_game_state, 0xff2a00
 	.equ ram_lzss_ring, 0xff3000
@@ -702,20 +746,20 @@ loc_000DA8:
 	move.w (0xff06b6).l,(0xff06bc).l
 	btst.b #0x7,(ram_09de).l
 	bne.w loc_000E94
-	btst.b #0x1,(0xff0ab7).l
+	btst.b #0x1,(ram_actors_moving).l
 	bne.w loc_000E94
 	btst.b #0x2,(ram_09eb).l
 	bne.w loc_000E94
-	tst.w (0xff0688).l
+	tst.w (ram_scooby_wander_timer).l
 	bpl.w loc_000E94
-	btst.b #0x1,(0xff0abc).l
+	btst.b #0x1,(ram_actors_anim_done).l
 	beq.w loc_000E94
-	move.w #0x64,(0xff0688).l
-	move.w (0xff06a0).l,d0
+	move.w #0x64,(ram_scooby_wander_timer).l
+	move.w (ram_room_idle_count).l,d0
 	beq.w loc_000E94
 	bsr.w rng_next
 	lsl.w #0x2,d0
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x0,a0,d0.w),a0
 	move.w (a0),d0
 	rol.w #0x4,d0
@@ -724,9 +768,9 @@ loc_000DA8:
 	andi.w #0xc,d0
 	lsr.w #0x2,d0
 	add.w d0,d0
-	move.w (dat_000E8C,pc,d0.w),d0
-	move.w d1,(0xff0640).l
-	move.w d0,(0xff063e).l
+	move.w (dat_scooby_pose_anims,pc,d0.w),d0
+	move.w d1,(ram_scooby_pose_facing).l
+	move.w d0,(ram_scooby_pose_anim).l
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	andi.w #0xfff,d0
@@ -734,10 +778,10 @@ loc_000DA8:
 	lsl.w #0x3,d1
 	move.w #0x0,d7
 	moveq #0x1,d2
-	bsr.w sub_0056B0
+	bsr.w scooby_walk_to
 	bra.s loc_000E94
 | data 0x000E8C-0x000E94
-dat_000E8C:
+dat_scooby_pose_anims:
 	.incbin "baserom.md",0xE8C,0x8
 loc_000E94:
 	btst.b #0x3,(ram_vblank_flags).l
@@ -749,8 +793,8 @@ loc_000E94:
 	subi.w #0x8,d1
 	bmi.w loc_00108E
 	addi.w #0x8,d0
-	add.w (ram_6ca).l,d0
-	add.w (ram_6ce).l,d1
+	add.w (ram_camera_x).l,d0
+	add.w (ram_camera_y).l,d1
 	lsr.w #0x3,d0
 	lsr.w #0x3,d1
 	lea.l (ram_objects).l,a0
@@ -762,25 +806,25 @@ loc_000E94:
 	moveq #0x0,d7
 	btst.b #0x1,(0xff0abf).l
 	bne.w loc_000F72
-	btst.b #0x1,(0xff0ab4).l
+	btst.b #0x1,(ram_actors_active).l
 	beq.w loc_000F72
 	move.w (ram_6dc).l,d4
-	add.w (ram_6ca).l,d4
-	move.w (ram_shaggy_x_prev).l,d5
+	add.w (ram_camera_x).l,d4
+	move.w (ram_scooby_x).l,d5
 	add.w (dat_03259A).l,d5
 	cmp.w d5,d4
 	bgt.w loc_000F72
-	move.w (ram_shaggy_x_prev).l,d5
+	move.w (ram_scooby_x).l,d5
 	sub.w (dat_032552).l,d5
 	cmp.w d5,d4
 	blt.w loc_000F72
 	move.w (ram_6de).l,d4
-	add.w (ram_6ce).l,d4
-	move.w (ram_shaggy_y_prev).l,d5
+	add.w (ram_camera_y).l,d4
+	move.w (ram_scooby_y).l,d5
 	add.w (dat_03250A).l,d5
 	cmp.w d5,d4
 	bgt.w loc_000F72
-	move.w (ram_shaggy_y_prev).l,d5
+	move.w (ram_scooby_y).l,d5
 	sub.w (dat_0324C2).l,d5
 	cmp.w d5,d4
 	blt.w loc_000F72
@@ -793,7 +837,7 @@ loc_000F72:
 	beq.w loc_001018
 	move.w d2,-(sp)
 	lea.l (dat_032670).l,a2
-	lea.l (0xff04e4).l,a5
+	lea.l (ram_actor_x2).l,a5
 	move.b (0x19,a0),d4
 	andi.w #0xff,d4
 	lsl.w #0x2,d4
@@ -804,7 +848,7 @@ loc_000F72:
 	lea.l (dat_032550).l,a4
 	sub.w (0x0,a4,d2.w),d5
 	move.w (ram_6dc).l,d6
-	add.w (ram_6ca).l,d6
+	add.w (ram_camera_x).l,d6
 	cmp.w d6,d5
 	bgt.w loc_001012
 	lea.l (dat_032598).l,a4
@@ -815,7 +859,7 @@ loc_000F72:
 	move.w (0x18,a5,d4.w),d5
 	lea.l (dat_0324C0).l,a4
 	sub.w (0x0,a4,d2.w),d5
-	move.w (ram_6ce).l,d6
+	move.w (ram_camera_y).l,d6
 	add.w (ram_6de).l,d6
 	cmp.w d6,d5
 	bgt.w loc_001012
@@ -1607,7 +1651,7 @@ loc_001C1C:
 	move.w #0xffff,(0xff06ee).l
 	bset.b #0x2,(ram_09de).l
 loc_001C40:
-	tst.b (0xff0acb).l
+	tst.b (ram_verb_bar_slide).l
 	bpl.w loc_001C40
 	bclr.b #0x3,(ram_vblank_flags).l
 	moveq #0x0,d0
@@ -1629,10 +1673,10 @@ loc_001C78:
 	addi.w #0x40,d0
 	dbra d3,loc_001C74
 	bsr.w sub_0022F2
-	move.b #0x10,(0xff0acb).l
+	move.b #0x10,(ram_verb_bar_slide).l
 loc_001C98:
 	jsr (sub_00B0B8).l
-	tst.b (0xff0acb).l
+	tst.b (ram_verb_bar_slide).l
 	bpl.w loc_001C98
 	move.l a5,(0xff0812).l
 	move.l a6,(0xff0816).l
@@ -1785,7 +1829,7 @@ loc_001E72:
 	bset.b #0x4,(ram_09de).l
 	jsr (sub_00A18C).l
 	bclr.b #0x4,(ram_09de).l
-	move.w (ram_5b8).l,d0
+	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
 	move.w d0,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
@@ -1877,10 +1921,10 @@ loc_00204A:
 loc_00206A:
 	move.w #0xffff,(0xff06ee).l
 	bsr.w sub_0022F2
-	move.b #0x10,(0xff0acb).l
+	move.b #0x10,(ram_verb_bar_slide).l
 loc_00207E:
 	jsr (sub_00B0B8).l
-	tst.b (0xff0acb).l
+	tst.b (ram_verb_bar_slide).l
 	bpl.w loc_00207E
 	move.w d4,d0
 	lea.l (ram_game_state+512).l,a0
@@ -1914,11 +1958,11 @@ sub_0020DA:
 	bpl.w loc_0020FC
 	clr.w d0
 loc_0020FC:
-	cmpi.w #0x2,(ram_5b8).l
+	cmpi.w #0x2,(ram_shaggy_facing).l
 	bne.w loc_002110
-	move.w #0x0,(ram_5b8).l
+	move.w #0x0,(ram_shaggy_facing).l
 loc_002110:
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_facing).l,d1
 	cmpi.w #0x3,d1
 	bne.w loc_002120
 	moveq #0x2,d1
@@ -2196,7 +2240,7 @@ loc_002530:
 	andi.w #0xff,d1
 	addq.w #0x2,d1
 loc_002546:
-	btst.l d1,(0xff0abc).l
+	btst.l d1,(ram_actors_anim_done).l
 	beq.w loc_002558
 	bset.b #0x3,(ram_game_state).l
 loc_002558:
@@ -2223,7 +2267,7 @@ loc_00257E:
 	andi.w #0xff,d1
 	addq.w #0x2,d1
 loc_002594:
-	btst.l d1,(0xff0ab7).l
+	btst.l d1,(ram_actors_moving).l
 	beq.w loc_0025A6
 	bset.b #0x2,(ram_game_state).l
 loc_0025A6:
@@ -2294,12 +2338,12 @@ script_op_1E:
 	move.w (0x4,a5),d0
 	cmpi.w #0x1,d3
 	bne.s loc_0026E6
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
 	move.w d0,d2
 	add.w d2,d2
 	add.w d2,d1
-	move.w d0,(ram_5b8).l
+	move.w d0,(ram_shaggy_facing).l
 	lea.l (dat_0FC740).l,a0
 	move.w (0x0,a0,d1.w),(ram_cur_index).l
 	tst.w (0x2,a5)
@@ -2307,26 +2351,26 @@ script_op_1E:
 	bpl.s loc_00272C
 loc_0026D4:
 	jsr (sub_00B0B8).l
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.s loc_0026D4
 	bra.s loc_00272C
 loc_0026E6:
-	move.w (0xff05ba).l,d1
+	move.w (ram_scooby_facing).l,d1
 	lsl.w #0x3,d1
 	move.w d0,d2
 	add.w d2,d2
 	add.w d2,d1
-	move.w d0,(0xff05ba).l
-	lea.l (dat_0FC700).l,a0
+	move.w d0,(ram_scooby_facing).l
+	lea.l (scooby_pose_table).l,a0
 	move.w (0x0,a0,d1.w),(ram_484a).l
 	tst.w (0x2,a5)
 	bpl.s loc_00272C
 	bset.b #0x1,(ram_0ab5).l
 loc_002716:
 	jsr (sub_00B0B8).l
-	btst.b #0x1,(0xff0abc).l
+	btst.b #0x1,(ram_actors_anim_done).l
 	beq.s loc_002716
-	move.w d0,(0xff05ba).l
+	move.w d0,(ram_scooby_facing).l
 loc_00272C:
 	lea.l (0x6,a5),a5
 	rts
@@ -2472,7 +2516,7 @@ loc_0028C4:
 	move.b (0x19,a0),d1
 	andi.w #0xff,d1
 	addq.w #0x2,d1
-	bclr.b d1,(0xff0ab4).l
+	bclr.b d1,(ram_actors_active).l
 	bclr.b d1,(0xff0ab6).l
 	move.b #0xff,(0x19,a0)
 loc_002908:
@@ -2481,7 +2525,7 @@ loc_002908:
 	bne.w loc_002ACA
 	moveq #0x2,d0
 loc_002918:
-	btst.l d0,(0xff0ab4).l
+	btst.l d0,(ram_actors_active).l
 	beq.w loc_002930
 	addq.w #0x1,d0
 	cmpi.w #0x6,d0
@@ -2502,7 +2546,7 @@ loc_00294C:
 	move.w d0,d2
 	lsl.w #0x1,d2
 	lsl.w #0x2,d1
-	lea.l (0xff0514).l,a3
+	lea.l (ram_actor_step_x).l,a3
 	move.l (-0x94,a1),d3
 	move.l d3,(0x0,a3,d1.w)
 	lsr.l #0x1,d3
@@ -2515,25 +2559,25 @@ loc_00294C:
 	move.w (0x14,a0),(0x6c,a1,d1.w)
 	lea.l (ram_618).l,a1
 	move.w #0xffff,(0x0,a1,d1.w)
-	lea.l (0xff05dc).l,a1
+	lea.l (ram_actor_target_x).l,a1
 	move.w (0x12,a0),(0x0,a1,d2.w)
 	move.w (0x14,a0),(0xc,a1,d2.w)
 	move.w d0,d1
 	subq.w #0x2,d1
 	move.b d1,(0x19,a0)
-	bclr.b d0,(0xff0ab8).l
+	bclr.b d0,(ram_actors_depth_on).l
 	btst.b #0x3,(0x18,a0)
 	beq.w loc_0029C6
-	bset.b d0,(0xff0ab8).l
+	bset.b d0,(ram_actors_depth_on).l
 loc_0029C6:
 	bclr.b d0,(0xff0ab6).l
 	bclr.b d0,(0xff0ab9).l
-	bclr.b d0,(0xff0abd).l
+	bclr.b d0,(ram_actors_anim_looped).l
 	bset.b d0,(ram_0ab5).l
-	bset.b d0,(0xff0ab4).l
+	bset.b d0,(ram_actors_active).l
 loc_0029E4:
 	jsr (sub_00B0B8).l
-	btst.l d0,(0xff0abd).l
+	btst.l d0,(ram_actors_anim_looped).l
 	beq.w loc_0029E4
 	move.w (0x4,a5),(0x6,a0)
 	bra.w loc_002ACA
@@ -2644,10 +2688,10 @@ loc_002B26:
 	move.b (0x19,a0,d0.w),d0
 	addq.w #0x2,d0
 loc_002B38:
-	bset.b d0,(0xff0abe).l
+	bset.b d0,(ram_actors_depth_new).l
 loc_002B3E:
 	jsr (sub_00B0B8).l
-	btst.l d0,(0xff0abd).l
+	btst.l d0,(ram_actors_anim_looped).l
 	beq.w loc_002B3E
 	bclr.b d0,(0xff0abf).l
 loc_002B54:
@@ -2690,7 +2734,7 @@ loc_002BA0:
 	bset.b d1,(ram_0ab5).l
 loc_002BDC:
 	jsr (sub_00B0B8).l
-	btst.l d1,(0xff0abd).l
+	btst.l d1,(ram_actors_anim_looped).l
 	beq.w loc_002BDC
 loc_002BEC:
 	dc.w 0x316d,0x0004,0x0000	| move.w $4(a5), $0(a0)
@@ -3001,7 +3045,7 @@ script_subop_39:
 loc_002FFA:
 	rts
 script_subop_0B:
-	move.w (0xff05ba).l,d0
+	move.w (ram_scooby_facing).l,d0
 	addq.w #0x4,d0
 	move.w d0,(ram_484a).l
 	bset.b #0x2,(ram_09eb).l
@@ -3020,11 +3064,11 @@ loc_003026:
 	move.w #0x40,(ram_shaggy_y).l
 loc_00304E:
 	jsr (sub_00B0B8).l
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.s loc_00304E
 	btst.b #0x7,(ram_09de).l
 	bne.s loc_003072
-	btst.b #0x1,(0xff0ac0).l
+	btst.b #0x1,(ram_actors_on_path).l
 	bne.s loc_00304E
 loc_003072:
 	btst.b #0x7,(ram_09de).l
@@ -3049,11 +3093,11 @@ loc_0030AE:
 	move.w #0x50,(ram_shaggy_y).l
 loc_0030D6:
 	jsr (sub_00B0B8).l
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.s loc_0030D6
 	btst.b #0x7,(ram_09de).l
 	bne.s loc_0030FA
-	btst.b #0x1,(0xff0ac0).l
+	btst.b #0x1,(ram_actors_on_path).l
 	bne.s loc_0030D6
 loc_0030FA:
 	btst.b #0x7,(ram_09de).l
@@ -3075,7 +3119,7 @@ script_subop_34:
 	rts
 script_subop_32:
 	move.w #0x8a94,(vdp_ctrl).l
-	move.w (ram_5b8).l,-(sp)
+	move.w (ram_shaggy_facing).l,-(sp)
 	lea.l (ram_08bc).l,a0
 	dc.w 0x223c,0xffff,0xffff	| move.l #$ffffffff, d1
 	move.l #0xff,(a0)+
@@ -3157,7 +3201,7 @@ loc_00324A:
 	bset.b #0x0,(ram_09ea).l
 	bset.b #0x2,(ram_09e8).l
 	bset.b #0x6,(ram_09de).l
-	move.w #0x0,(ram_5b8).l
+	move.w #0x0,(ram_shaggy_facing).l
 	move.l #0x0,(0xff0a90).l
 	move.l #0x0,(0xff0a94).l
 	move.l #0x0,(0xff0aa0).l
@@ -3174,13 +3218,13 @@ loc_00324A:
 	move.w #0xa400,d0
 	bsr.w vdp_copy_to_vram
 	move.l #0xf88dc,(0xff0470).l
-	bclr.b #0x0,(0xff0ab8).l
+	bclr.b #0x0,(ram_actors_depth_on).l
 	move.w #0x2,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
 	move.w #0xffff,(ram_618).l
 loc_00331A:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abd).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.s loc_00331A
 	dc.w 0x203c,0x0000,0x0058	| move.l #$58, d0
 	bsr.w sound_stop
@@ -3326,7 +3370,7 @@ loc_003562:
 	tst.w (0xff0a92).l
 	bne.w loc_00362E
 loc_003574:
-	btst.b #0x2,(0xff0abc).l
+	btst.b #0x2,(ram_actors_anim_done).l
 	beq.w loc_00362E
 	move.w (ram_484c).l,d0
 	btst.b #0x3,(ram_09ea).l
@@ -3380,7 +3424,7 @@ loc_00362E:
 	tst.w (0xff0a90).l
 	beq.w loc_0036AA
 loc_003640:
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.s loc_0036AA
 	move.w (ram_cur_index).l,d0
 	btst.b #0x1,(ram_09ea).l
@@ -3420,19 +3464,19 @@ loc_0036AA:
 	lsl.w #0x5,d1
 	add.w d2,d1
 	andi.b #0xfc,(0xff09ec).l
-	move.w (0xff04e4).l,d2
-	move.w (0xff04fc).l,d3
+	move.w (ram_actor_x2).l,d2
+	move.w (ram_actor_y2).l,d3
 	lea.l (dat_003D96).l,a0
 	add.w (0x0,a0,d0.w),d2
 	add.w (0x0,a0,d1.w),d2
 	add.w (0x10,a0,d0.w),d3
 	add.w (0x10,a0,d1.w),d3
-	move.w d2,(0xff04e4).l
-	move.w d3,(0xff04fc).l
-	move.w d2,(0xff064a).l
-	move.w d3,(0xff064e).l
+	move.w d2,(ram_actor_x2).l
+	move.w d3,(ram_actor_y2).l
+	move.w d2,(ram_line_probe_x).l
+	move.w d3,(ram_line_probe_y).l
 	move.l a0,-(sp)
-	bsr.w sub_007476
+	bsr.w walk_blocked_line_probe
 	beq.s loc_003724
 	bsr.w sub_003CFE
 	bset.b #0x1,(0xff09ec).l
@@ -3444,7 +3488,7 @@ loc_003724:
 	lsl.w #0x5,d1
 	add.w d1,d0
 	move.w (0xff0a94).l,d2
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_facing).l,d1
 	add.w d2,d2
 	lsl.w #0x5,d1
 	add.w d2,d1
@@ -3456,9 +3500,9 @@ loc_003724:
 	add.w (0x10,a0,d1.w),d3
 	move.w d2,(ram_shaggy_x).l
 	move.w d3,(ram_shaggy_y).l
-	move.w d2,(0xff064a).l
-	move.w d3,(0xff064e).l
-	bsr.w sub_007476
+	move.w d2,(ram_line_probe_x).l
+	move.w d3,(ram_line_probe_y).l
+	bsr.w walk_blocked_line_probe
 	beq.s loc_003790
 	bsr.w sub_003C70
 	bset.b #0x0,(0xff09ec).l
@@ -3468,8 +3512,8 @@ loc_003790:
 	bsr.w sub_003AF0
 	move.w (0xff0a84).l,(ram_shaggy_x).l
 	move.w (0xff0a86).l,(ram_shaggy_y).l
-	move.w (0xff0a88).l,(0xff04e4).l
-	move.w (0xff0a8a).l,(0xff04fc).l
+	move.w (0xff0a88).l,(ram_actor_x2).l
+	move.w (0xff0a8a).l,(ram_actor_y2).l
 	move.w (0xff0a8c).l,(ram_cur_index).l
 	move.w (0xff0a8e).l,(ram_484c).l
 	ori.b #0x5,(ram_0ab5).l
@@ -3487,8 +3531,8 @@ loc_0037F0:
 loc_003828:
 	btst.b #0x1,(0xff09ec).l
 	beq.s loc_003860
-	move.w (0xff0a88).l,(0xff04e4).l
-	move.w (0xff0a8a).l,(0xff04fc).l
+	move.w (0xff0a88).l,(ram_actor_x2).l
+	move.w (0xff0a8a).l,(ram_actor_y2).l
 	move.w (0xff0a8e).l,(ram_484c).l
 	move.w #0xffff,(0xff061c).l
 	bset.b #0x2,(ram_0ab5).l
@@ -3497,8 +3541,8 @@ loc_003860:
 	move.w (ram_cur_index).l,(0xff0a8c).l
 	move.w (ram_shaggy_x).l,(0xff0a84).l
 	move.w (ram_shaggy_y).l,(0xff0a86).l
-	move.w (0xff04e4).l,(0xff0a88).l
-	move.w (0xff04fc).l,(0xff0a8a).l
+	move.w (ram_actor_x2).l,(0xff0a88).l
+	move.w (ram_actor_y2).l,(0xff0a8a).l
 	bsr.w sub_00393A
 	bra.w sub_003372
 loc_0038A4:
@@ -3514,7 +3558,7 @@ loc_0038C2:
 	moveq #0x0,d0
 loc_0038DC:
 	bsr.w sub_00B0B8
-	btst.l d0,(0xff0abc).l
+	btst.l d0,(ram_actors_anim_done).l
 	beq.s loc_0038DC
 	bsr.w script_subop_03
 	move.w #0x8aa3,(vdp_ctrl).l
@@ -3522,10 +3566,10 @@ loc_0038DC:
 	bsr.w sound_stop
 	dc.w 0x203c,0x0000,0x0071	| move.l #$71, d0
 	bsr.w sound_play
-	move.w (sp)+,(ram_5b8).l
+	move.w (sp)+,(ram_shaggy_facing).l
 	bclr.b #0x6,(ram_09de).l
 	move.l #0x32700,(0xff0470).l
-	bset.b #0x0,(0xff0ab8).l
+	bset.b #0x0,(ram_actors_depth_on).l
 	bclr.b #0x0,(ram_09ea).l
 	bclr.b #0x2,(ram_09e8).l
 	rts
@@ -3600,9 +3644,9 @@ sub_0039D4:
 	add.w (0x4,a0),d4
 	move.w (0x0,a0,d4.w),d4
 	lea.l (0xe,a0,d4.w),a0
-	move.w (0xff04e4).l,d4
+	move.w (ram_actor_x2).l,d4
 	move.w d4,d6
-	move.w (0xff04fc).l,d5
+	move.w (ram_actor_y2).l,d5
 	move.w d5,d7
 	sub.w (a0),d4
 	sub.w (0x2,a0),d5
@@ -3639,14 +3683,14 @@ sub_003A68:
 	rts
 sub_003A7A:
 	moveq #0x0,d4
-	move.w (0xff04e4).l,d0
+	move.w (ram_actor_x2).l,d0
 	sub.w (ram_shaggy_x).l,d0
 	move.w d0,d2
 	bpl.s loc_003A90
 	neg.w d2
 	moveq #0x2,d4
 loc_003A90:
-	move.w (0xff04fc).l,d1
+	move.w (ram_actor_y2).l,d1
 	sub.w (ram_shaggy_y).l,d1
 	move.w d1,d3
 	bpl.s loc_003AA4
@@ -3785,7 +3829,7 @@ loc_003C18:
 loc_003C54:
 	bset.b #0x1,(ram_09ea).l
 loc_003C5C:
-	move.w d4,(ram_5b8).l
+	move.w d4,(ram_shaggy_facing).l
 	lea.l (dat_003D86).l,a0
 	add.w d4,d4
 	move.w (0x0,a0,d4.w),d0
@@ -3818,7 +3862,7 @@ loc_003CE6:
 	move.w (ram_cur_index).l,d6
 	add.w d6,d6
 	lea.l (dat_003D86).l,a0
-	move.w (0x0,a0,d6.w),(ram_5b8).l
+	move.w (0x0,a0,d6.w),(ram_shaggy_facing).l
 	rts
 sub_003CFE:
 	dc.w 0x203c,0x0000,0x0060	| move.l #$60, d0
@@ -3872,18 +3916,18 @@ script_subop_2E:
 	rts
 script_subop_2B:
 	bset.b #0x4,(ram_09e9).l
-	bclr.b #0x0,(0xff0ab8).l
+	bclr.b #0x0,(ram_actors_depth_on).l
 	move.l #0xb5d02,(0xff0470).l
 	move.w #0x1e,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
 loc_003EFC:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abd).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_003EFC
 	bclr.b #0x7,(ram_vblank_flags).l
 	rts
 script_subop_2C:
-	bset.b #0x0,(0xff0ab8).l
+	bset.b #0x0,(ram_actors_depth_on).l
 	move.l #0x32700,(0xff0470).l
 	bclr.b #0x4,(ram_09e9).l
 	bclr.b #0x7,(ram_vblank_flags).l
@@ -3901,9 +3945,9 @@ script_subop_27:
 	bset.b #0x2,(ram_09e9).l
 	moveq #0x0,d1
 	move.b #0xff,(ram_pad1).l
-	btst.b #0x2,(0xff0ac0).l
+	btst.b #0x2,(ram_actors_on_path).l
 	bne.s loc_003F7A
-	clr.w (0xff0610).l
+	clr.w (ram_actor_path_pos+4).l
 loc_003F7A:
 	move.w #0x0,(ram_08ae).l
 	bsr.w sub_00B0B8
@@ -3916,13 +3960,13 @@ loc_003F92:
 	moveq #0x2,d1
 loc_003F9E:
 	move.w d1,d0
-	add.w (0xff04e8).l,d0
+	add.w (ram_actor_x2+4).l,d0
 	cmpi.w #0x64,d0
 	blt.s loc_003FBE
 	cmpi.w #0x94,d0
 	bgt.s loc_003FBE
-	move.w d0,(0xff04e8).l
-	move.w d0,(0xff04ec).l
+	move.w d0,(ram_actor_x2+4).l
+	move.w d0,(ram_actor_x2+8).l
 loc_003FBE:
 	btst.b #0x6,(ram_pad1).l
 	beq.s sub_003FE0
@@ -3939,25 +3983,25 @@ sub_003FE0:
 loc_003FE2:
 	move.w d1,d0
 	bsr.w wait_vblank
-	add.w (0xff04e8).l,d0
+	add.w (ram_actor_x2+4).l,d0
 	cmpi.w #0x64,d0
 	blt.s loc_004008
 	cmpi.w #0x94,d0
 	bgt.s loc_004008
-	move.w d0,(0xff04e8).l
-	move.w d0,(0xff04ec).l
+	move.w d0,(ram_actor_x2+4).l
+	move.w d0,(ram_actor_x2+8).l
 	bra.s loc_003FE2
 loc_004008:
-	move.w (0xff0500).l,d0
+	move.w (ram_actor_y2+4).l,d0
 loc_00400E:
-	move.w d0,(0xff0500).l
+	move.w d0,(ram_actor_y2+4).l
 	bsr.w wait_vblank
 	addq.w #0x2,d0
 	cmpi.w #0x4a,d0
 	blt.s loc_00400E
-	move.w #0x4a,(0xff0500).l
-	move.w (0xff0610).l,d0
-	cmpi.w #0x94,(0xff04e8).l
+	move.w #0x4a,(ram_actor_y2+4).l
+	move.w (ram_actor_path_pos+4).l,d0
+	cmpi.w #0x94,(ram_actor_x2+4).l
 	bne.s loc_004046
 	cmpi.w #0x5c,d0
 	blt.s loc_00406E
@@ -3982,7 +4026,7 @@ loc_00407E:
 	bset.b #0x3,(ram_0ab5).l
 loc_004086:
 	bsr.w sub_00B0B8
-	btst.b #0x3,(0xff0abc).l
+	btst.b #0x3,(ram_actors_anim_done).l
 	beq.s loc_004086
 	dc.w 0x203c,0x0000,0x0062	| move.l #$62, d0
 	bsr.w sound_play
@@ -3991,7 +4035,7 @@ loc_004086:
 	bset.b #0x2,(0xff0abf).l
 loc_0040AE:
 	bsr.w wait_vblank
-	subq.w #0x1,(0xff0500).l
+	subq.w #0x1,(ram_actor_y2+4).l
 	bne.s loc_0040AE
 	bclr.b #0x2,(ram_09e9).l
 	bclr.b #0x6,(ram_vblank_flags).l
@@ -4001,14 +4045,14 @@ loc_0040AE:
 	rts
 script_subop_26:
 	move.w #0x0,(ram_objects+12).l
-	btst.b #0x0,(0xff0ac0).l
+	btst.b #0x0,(ram_actors_on_path).l
 	bne.s loc_0040FA
 	move.w #0x1,(ram_objects+12).l
 loc_0040FA:
 	rts
 script_subop_25:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0ac0).l
+	btst.b #0x0,(ram_actors_on_path).l
 	bne.s script_subop_25
 	rts
 script_subop_23:
@@ -4029,7 +4073,7 @@ loc_004132:
 	bset.b #0x0,(ram_0ab5).l
 loc_004148:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abd).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_004148
 	rts
 script_subop_21:
@@ -4048,7 +4092,7 @@ loc_004186:
 	bne.s script_subop_21
 	move.w #0x2,(ram_objects+12).l
 loc_004198:
-	bset.b #0x0,(0xff0ac3).l
+	bset.b #0x0,(ram_actors_path_once).l
 	rts
 script_subop_1F:
 	bset.b #0x0,(ram_09e9).l
@@ -4150,11 +4194,11 @@ script_subop_19:
 	rts
 script_subop_15:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w script_subop_15
 	moveq #0x2,d0
 loc_00433E:
-	btst.l d0,(0xff0ab4).l
+	btst.l d0,(ram_actors_active).l
 	beq.w loc_004350
 	addq.w #0x1,d0
 	cmpi.w #0x6,d0
@@ -4196,8 +4240,8 @@ script_subop_12:
 	rts
 script_subop_0F:
 	bset.b #0x1,(ram_09e8).l
-	bclr.b #0x0,(ram_6ca+1).l
-	move.w (ram_6ca).l,d0
+	bclr.b #0x0,(ram_camera_x+1).l
+	move.w (ram_camera_x).l,d0
 	addi.w #0x8,d0
 	andi.w #0xfff8,d0
 	move.w (ram_map_width).l,d1
@@ -4220,8 +4264,8 @@ loc_004426:
 	rts
 script_subop_10:
 	bset.b #0x1,(ram_09e8).l
-	bclr.b #0x0,(ram_6ca+1).l
-	move.w (ram_6ca).l,d0
+	bclr.b #0x0,(ram_camera_x+1).l
+	move.w (ram_camera_x).l,d0
 	andi.w #0xfffe,d0
 	beq.w loc_004480
 	move.w #0x0,(0xff08b6).l
@@ -4344,10 +4388,10 @@ loc_004600:
 	moveq #0x0,d0
 	move.w #0x1e1f,d1
 	bsr.w vdp_copy_to_vram
-	move.w (ram_6ca).l,-(sp)
-	move.w (ram_6ce).l,-(sp)
-	move.w #0x0,(ram_6ca).l
-	move.w #0x0,(ram_6ce).l
+	move.w (ram_camera_x).l,-(sp)
+	move.w (ram_camera_y).l,-(sp)
+	move.w #0x0,(ram_camera_x).l
+	move.w #0x0,(ram_camera_y).l
 	bsr.w sub_009716
 	bsr.w sub_009722
 	lea.l (dat_02EF7A).l,a0
@@ -4383,7 +4427,7 @@ loc_0046BE:
 	subq.w #0x1,d2
 	bpl.w loc_0046E6
 	moveq #0x3,d2
-	bchg.b #0x0,(ram_6ca).l
+	bchg.b #0x0,(ram_camera_x).l
 loc_0046E6:
 	move.w d0,-(sp)
 	lea.l (ram_08bc).l,a0
@@ -4405,8 +4449,8 @@ loc_004716:
 	move.w #0x40,d1
 	bsr.w vdp_clear_cram
 	move.w #0x2700,sr
-	move.w (sp)+,(ram_6ce).l
-	move.w (sp)+,(ram_6ca).l
+	move.w (sp)+,(ram_camera_y).l
+	move.w (sp)+,(ram_camera_x).l
 	move.w #0x9202,(vdp_ctrl).l
 	move.b #0x2,(0xff0ad1).l
 	lea.l (ram_game_state+512).l,a0
@@ -4477,22 +4521,22 @@ loc_004828:
 script_subop_1D:
 	bset.b #0x1,(ram_game_state).l
 loc_004836:
-	tst.b (0xff0acb).l
+	tst.b (ram_verb_bar_slide).l
 	bpl.w loc_004836
 	bsr.w sub_0047AC
-	move.b #0x10,(0xff0acb).l
+	move.b #0x10,(ram_verb_bar_slide).l
 loc_00484C:
 	bsr.w sub_00B0B8
-	tst.b (0xff0acb).l
+	tst.b (ram_verb_bar_slide).l
 	bpl.w loc_00484C
 	move.w d4,(0xff0876).l
 	rts
 script_subop_1C:
 	move.w (0xff0876).l,d4
-	move.b #0x10,(0xff0acb).l
+	move.b #0x10,(ram_verb_bar_slide).l
 loc_004870:
 	bsr.w sub_00B0B8
-	tst.b (0xff0acb).l
+	tst.b (ram_verb_bar_slide).l
 	bpl.w loc_004870
 	move.w d4,d0
 	lea.l (ram_game_state+512).l,a0
@@ -4550,12 +4594,12 @@ loc_004912:
 	andi.w #0xff,d0
 	addq.w #0x2,d0
 loc_004928:
-	btst.l d0,(0xff0ab7).l
+	btst.l d0,(ram_actors_moving).l
 	beq.s loc_004938
-	bclr.b d0,(0xff0ab7).l
+	bclr.b d0,(ram_actors_moving).l
 	bra.s loc_00493E
 loc_004938:
-	bset.b d0,(0xff0ac3).l
+	bset.b d0,(ram_actors_path_once).l
 loc_00493E:
 	lea.l (0x4,a5),a5
 	rts
@@ -4577,18 +4621,18 @@ loc_00496E:
 	add.w d1,d1
 	move.w d1,d2
 	add.w d2,d2
-	lea.l (0xff05f4).l,a0
+	lea.l (ram_actor_path_ptr).l,a0
 	lea.l (0x8,a5),a1
 	move.l a1,d3
 	move.l d3,(0x0,a0,d2.w)
 	move.w (0x6,a5),d3
-	lea.l (0xff0aa5).l,a0
+	lea.l (ram_actor_path_delay).l,a0
 	move.b d3,(0x0,a0,d0.w)
 	move.b d3,(0x6,a0,d0.w)
-	lea.l (0xff060c).l,a0
+	lea.l (ram_actor_path_pos).l,a0
 	move.w #0x0,(0x0,a0,d1.w)
-	bclr.b d0,(0xff0ac3).l
-	bset.b d0,(0xff0ac0).l
+	bclr.b d0,(ram_actors_path_once).l
+	bset.b d0,(ram_actors_on_path).l
 loc_0049B0:
 	move.w (0x2,a5),d0
 	lea.l (0x8,a5,d0.w),a5
@@ -4599,7 +4643,7 @@ script_op_0E:
 	move.w (0x2,a5),d0
 	andi.w #0x7fff,d0
 	beq.w loc_004B0E
-	movea.l (0xff0696).l,a0
+	movea.l (ram_room_spawns).l,a0
 	subq.w #0x1,d0
 	bne.w loc_004A50
 	move.w (a5),d0
@@ -4628,12 +4672,12 @@ loc_0049FC:
 	bset.b #0x0,(ram_0ab5).l
 loc_004A30:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abd).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_004A30
 	bra.w loc_004B0E
 loc_004A44:
 	move.w (0x4,a5),d2
-	bsr.w sub_005002
+	bsr.w shaggy_walk_to
 	bra.w loc_004B0E
 loc_004A50:
 	subq.w #0x1,d0
@@ -4655,16 +4699,16 @@ loc_004A7A:
 	move.w (0x6,a5),d7
 	tst.w (0x4,a5)
 	bpl.w loc_004AC2
-	move.w d0,(ram_shaggy_x_prev).l
-	move.w d1,(ram_shaggy_y_prev).l
+	move.w d0,(ram_scooby_x).l
+	move.w d1,(ram_scooby_y).l
 	tst.w d7
 	bmi.w loc_004B0E
 	move.w d7,(ram_484a).l
-	move.w #0x1,(0xff061a).l
+	move.w #0x1,(ram_scooby_anim_lock).l
 	bset.b #0x1,(ram_0ab5).l
 loc_004AAE:
 	bsr.w sub_00B0B8
-	btst.b #0x1,(0xff0abd).l
+	btst.b #0x1,(ram_actors_anim_looped).l
 	beq.w loc_004AAE
 	bra.w loc_004B0E
 loc_004AC2:
@@ -4724,12 +4768,12 @@ loc_004B4C:
 	add.w d1,d1
 	move.w d1,d2
 	add.w d2,d2
-	lea.l (0xff051c).l,a1
+	lea.l (ram_actor_step_x+8).l,a1
 	move.l (0x0,a1,d2.w),d4
 	move.l d4,d5
 	tst.w d3
 	bpl.w loc_004BAC
-	lea.l (0xff04e4).l,a0
+	lea.l (ram_actor_x2).l,a0
 	move.w (sp)+,(0x0,a0,d2.w)
 	move.w (sp)+,(0x18,a0,d2.w)
 	move.w (sp)+,d3
@@ -4741,7 +4785,7 @@ loc_004B4C:
 	bset.b d7,(ram_0ab5).l
 loc_004B9C:
 	bsr.w sub_00B0B8
-	btst.l d7,(0xff0abd).l
+	btst.l d7,(ram_actors_anim_looped).l
 	beq.w loc_004B9C
 loc_004BAA:
 	rts
@@ -4755,7 +4799,7 @@ loc_004BB8:
 	move.l d4,(0x0,a1,d2.w)
 	lsr.l #0x1,d4
 	move.l d4,(0x14,a1,d2.w)
-	lea.l (0xff05e0).l,a3
+	lea.l (ram_actor_target_x+4).l,a3
 	move.w (sp)+,d3
 	move.w d3,(0x0,a3,d1.w)
 	move.w (sp)+,d4
@@ -4771,13 +4815,13 @@ loc_004BE6:
 	move.w #0xffff,(0x0,a0,d1.w)
 	bset.b d7,(ram_0ab5).l
 loc_004BFC:
-	bset.b d7,(0xff0ab7).l
-	lea.l (0xff04e4).l,a3
+	bset.b d7,(ram_actors_moving).l
+	lea.l (ram_actor_x2).l,a3
 	tst.w (0x2,a5)
 	bmi.w loc_004C1E
 loc_004C10:
 	bsr.w sub_00B0B8
-	btst.l d7,(0xff0ab7).l
+	btst.l d7,(ram_actors_moving).l
 	bne.w loc_004C10
 loc_004C1E:
 	rts
@@ -4821,8 +4865,8 @@ loc_004C7A:
 loc_004C98:
 	subq.w #0x1,d1
 	bne.w loc_004CAE
-	add.w (ram_shaggy_x_prev).l,d0
-	add.w (ram_shaggy_y_prev).l,d1
+	add.w (ram_scooby_x).l,d0
+	add.w (ram_scooby_y).l,d1
 	bra.w loc_004D00
 loc_004CAE:
 	subq.w #0x1,d1
@@ -4854,23 +4898,23 @@ loc_004D00:
 	cmpi.w #0x1,d3
 	bne.w loc_004D38
 	move.w (0xa,a5),d2
-	bsr.w sub_005002
+	bsr.w shaggy_walk_to
 	lea.l (ram_objects).l,a0
 	move.w (0x4,a5),d3
 	subq.w #0x3,d3
 	mulu.w #0x1a,d3
-	move.w (0x8,a0,d3.w),(ram_5b8).l
+	move.w (0x8,a0,d3.w),(ram_shaggy_facing).l
 	bra.w sub_004D78
 loc_004D38:
 	cmpi.w #0x2,d3
 	bne.w loc_004D64
 	move.w (0xa,a5),d2
-	bsr.w sub_005AD8
+	bsr.w scooby_walk_direct
 	lea.l (ram_objects).l,a0
 	move.w (0x4,a5),d3
 	subq.w #0x3,d3
 	mulu.w #0x1a,d3
-	move.w (0x8,a0,d3.w),(0xff05ba).l
+	move.w (0x8,a0,d3.w),(ram_scooby_facing).l
 	bra.w sub_004D78
 loc_004D64:
 	move.w d1,d2
@@ -4890,15 +4934,15 @@ script_op_10:
 	move.w (0x2,a5),d0
 	btst.b #0xc,d0
 	beq.w loc_004DA2
-	bset.b #0x0,(0xff0abc).l
+	bset.b #0x0,(ram_actors_anim_done).l
 	bset.b #0x4,(ram_09de).l
 loc_004DA2:
 	btst.b #0xd,d0
 	beq.w loc_004E12
 	rol.w #0x2,d0
 	andi.w #0x3,d0
-	move.w (ram_5b8).l,d1
-	move.w d0,(ram_5b8).l
+	move.w (ram_shaggy_facing).l,d1
+	move.w d0,(ram_shaggy_facing).l
 	add.w d0,d0
 	move.w d1,-(sp)
 	lsl.w #0x3,d1
@@ -4908,13 +4952,13 @@ loc_004DA2:
 	bset.b #0x0,(ram_0ab5).l
 loc_004DDA:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	bne.w loc_004DDA
 loc_004DEA:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w loc_004DEA
-	move.w (ram_5b8).l,d0
+	move.w (ram_shaggy_facing).l,d0
 	addi.w #0x4,d0
 	move.w d0,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
@@ -4946,9 +4990,9 @@ loc_004E12:
 	move.w (0x2,a5),d0
 	btst.b #0xd,d0
 	beq.w loc_004EDC
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_facing).l,d1
 	move.w (sp)+,d0
-	move.w d0,(ram_5b8).l
+	move.w d0,(ram_shaggy_facing).l
 	add.w d0,d0
 	lsl.w #0x3,d1
 	add.w d1,d0
@@ -4957,13 +5001,13 @@ loc_004E12:
 	bset.b #0x0,(ram_0ab5).l
 loc_004EA4:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	bne.w loc_004EA4
 loc_004EB4:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w loc_004EB4
-	move.w (ram_5b8).l,d0
+	move.w (ram_shaggy_facing).l,d0
 	addi.w #0x4,d0
 	move.w d0,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
@@ -4975,7 +5019,7 @@ loc_004EDE:
 script_op_18:
 	beq.w loc_004F08
 	move.w (0x2,a5),(ram_room_index).l
-	move.w (0x6,a5),(ram_5b8).l
+	move.w (0x6,a5),(ram_shaggy_facing).l
 	move.w (0x4,a5),d0
 	lsl.w #0x2,d0
 	move.w d0,(0xff069e).l
@@ -4986,7 +5030,7 @@ loc_004F08:
 script_op_11:
 	beq.w loc_004F4A
 	move.w (0x2,a5),(ram_room_index).l
-	move.w (0x6,a5),(ram_5b8).l
+	move.w (0x6,a5),(ram_shaggy_facing).l
 	move.b (ram_vblank_flags).l,d5
 	bclr.b #0x6,(ram_vblank_flags).l
 	bsr.w palette_read_cram
@@ -5026,9 +5070,9 @@ loc_004F8A:
 	addq.w #0x2,d0
 loc_004FA0:
 	bsr.w sub_00B0B8
-	btst.l d0,(0xff0ab7).l
+	btst.l d0,(ram_actors_moving).l
 	bne.w loc_004FA0
-	btst.l d0,(0xff0ac0).l
+	btst.l d0,(ram_actors_on_path).l
 	bne.w loc_004FA0
 loc_004FB8:
 	lea.l (0x4,a5),a5
@@ -5051,13 +5095,13 @@ loc_004FD8:
 	addq.w #0x2,d0
 loc_004FEE:
 	bsr.w sub_00B0B8
-	btst.l d0,(0xff0abc).l
+	btst.l d0,(ram_actors_anim_done).l
 	beq.w loc_004FEE
 loc_004FFC:
 	lea.l (0x4,a5),a5
 	rts
-sub_005002:
-	bclr.b #0x0,(0xff0ab7).l
+shaggy_walk_to:
+	bclr.b #0x0,(ram_actors_moving).l
 	cmp.w (ram_shaggy_x).l,d0
 	bne.s loc_00501C
 	cmp.w (ram_shaggy_y).l,d1
@@ -5066,10 +5110,10 @@ sub_005002:
 loc_00501C:
 	btst.b #0x4,(ram_game_state).l
 	bne.w loc_00558A
-	bsr.w sub_005364
+	bsr.w shaggy_line_clear
 	beq.w loc_00558A
 	movem.l d0-d2/d7,-(sp)
-	bsr.w sub_00532A
+	bsr.w shaggy_waypoints_reachable
 	tst.w d0
 	bne.s loc_005044
 	movem.l (sp)+,d0-d2/d7
@@ -5078,7 +5122,7 @@ loc_005044:
 	cmpi.w #0x3,d0
 	bne.w loc_0050EC
 	movem.l (sp)+,d0-d2/d7
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
 	move.w (0x2,a0),d4
@@ -5095,31 +5139,31 @@ loc_005044:
 	bsr.w sub_0052F4
 	bne.w loc_00558A
 loc_005082:
-	move.w d0,(0xff065c).l
-	move.w d1,(0xff0660).l
+	move.w d0,(ram_shaggy_wp).l
+	move.w d1,(ram_shaggy_wp+4).l
 	bsr.w sub_0051E4
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w #0x1,(0xff065a).l
+	move.w #0x1,(ram_shaggy_wp_count).l
 	bra.w loc_005592
 loc_0050B4:
 	bsr.w sub_0052C0
 	bne.w loc_00558A
 loc_0050BC:
-	move.w d0,(0xff065c).l
-	move.w d1,(0xff0660).l
+	move.w d0,(ram_shaggy_wp).l
+	move.w d1,(ram_shaggy_wp+4).l
 	bsr.w sub_00519C
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w #0x1,(0xff065a).l
+	move.w #0x1,(ram_shaggy_wp_count).l
 	bra.w loc_005592
 loc_0050EC:
 	cmpi.w #0x1,d0
@@ -5129,21 +5173,21 @@ loc_0050EC:
 	beq.s loc_0050BC
 	bsr.w sub_0052F4
 	bne.w loc_00558A
-	move.w d0,(0xff065c).l
-	move.w d1,(0xff0660).l
+	move.w d0,(ram_shaggy_wp).l
+	move.w d1,(ram_shaggy_wp+4).l
 	bsr.w sub_0051E4
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w d0,(0xff065e).l
-	move.w d1,(0xff0662).l
+	move.w d0,(ram_shaggy_wp+2).l
+	move.w d1,(ram_shaggy_wp+6).l
 	bsr.w sub_00522E
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w #0x2,(0xff065a).l
+	move.w #0x2,(ram_shaggy_wp_count).l
 	bra.w loc_005592
 loc_005146:
 	movem.l (sp)+,d0-d2/d7
@@ -5151,115 +5195,115 @@ loc_005146:
 	beq.w loc_005082
 	bsr.w sub_0052C0
 	bne.w loc_00558A
-	move.w d0,(0xff065c).l
-	move.w d1,(0xff0660).l
+	move.w d0,(ram_shaggy_wp).l
+	move.w d1,(ram_shaggy_wp+4).l
 	bsr.w sub_00519C
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w d0,(0xff065e).l
-	move.w d1,(0xff0662).l
+	move.w d0,(ram_shaggy_wp+2).l
+	move.w d1,(ram_shaggy_wp+6).l
 	bsr.w sub_005276
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w #0x2,(0xff065a).l
+	move.w #0x2,(ram_shaggy_wp_count).l
 	bra.w loc_005592
 sub_00519C:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_x0).l
-	move.w #0x0,(ram_view_x1).l
+	move.w d3,(ram_line_from_x).l
+	move.w #0x0,(ram_line_from_x+2).l
 	move.w (0x2,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_y0).l
-	move.w #0x0,(ram_view_y1).l
-	bsr.w sub_00548E
-	move.w d4,(0xff0664).l
-	move.w d5,(0xff0668).l
-	move.w d6,(0xff066c).l
+	move.w d3,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bsr.w shaggy_set_dir
+	move.w d4,(ram_shaggy_wp+8).l
+	move.w d5,(ram_shaggy_wp+12).l
+	move.w d6,(ram_shaggy_wp+16).l
 	rts
 sub_0051E4:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_x0).l
-	move.w #0x0,(ram_view_x1).l
+	move.w d3,(ram_line_from_x).l
+	move.w #0x0,(ram_line_from_x+2).l
 	move.w (0x6,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_y0).l
-	move.w #0x0,(ram_view_y1).l
-	bsr.w sub_00548E
-	move.w d4,(0xff0664).l
-	move.w d5,(0xff0668).l
-	move.w d6,(0xff066c).l
+	move.w d3,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bsr.w shaggy_set_dir
+	move.w d4,(ram_shaggy_wp+8).l
+	move.w d5,(ram_shaggy_wp+12).l
+	move.w d6,(ram_shaggy_wp+16).l
 	rts
 sub_00522E:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_x0).l
-	move.w #0x0,(ram_view_x1).l
+	move.w d3,(ram_line_from_x).l
+	move.w #0x0,(ram_line_from_x+2).l
 	move.w (0x2,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_y0).l
-	move.w #0x0,(ram_view_y1).l
-	bsr.w sub_00548E
-	move.w d4,(0xff0666).l
-	move.w d5,(0xff066a).l
-	move.w d6,(0xff066e).l
+	move.w d3,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bsr.w shaggy_set_dir
+	move.w d4,(ram_shaggy_wp+10).l
+	move.w d5,(ram_shaggy_wp+14).l
+	move.w d6,(ram_shaggy_wp+18).l
 	rts
 sub_005276:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_x0).l
-	move.w #0x0,(ram_view_x1).l
+	move.w d3,(ram_line_from_x).l
+	move.w #0x0,(ram_line_from_x+2).l
 	move.w (0x6,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_y0).l
-	move.w #0x0,(ram_view_y1).l
-	bsr.w sub_00548E
-	move.w d4,(0xff0666).l
-	move.w d5,(0xff066a).l
-	move.w d6,(0xff066e).l
+	move.w d3,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bsr.w shaggy_set_dir
+	move.w d4,(ram_shaggy_wp+10).l
+	move.w d5,(ram_shaggy_wp+14).l
+	move.w d6,(ram_shaggy_wp+18).l
 	rts
 sub_0052C0:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
 	move.w (0x2,a0),d4
 	lsl.w #0x3,d3
 	lsl.w #0x3,d4
-	move.w d3,(ram_view_x0).l
-	move.w d4,(ram_view_y0).l
-	move.w #0x0,(ram_view_x1).l
-	move.w #0x0,(ram_view_y1).l
-	bra.w sub_005378
+	move.w d3,(ram_line_from_x).l
+	move.w d4,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_x+2).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bra.w walk_line_clear
 sub_0052F4:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
 	move.w (0x6,a0),d4
 	lsl.w #0x3,d3
 	lsl.w #0x3,d4
-	move.w d3,(ram_view_x0).l
-	move.w d4,(ram_view_y0).l
-	move.w #0x0,(ram_view_x1).l
-	move.w #0x0,(ram_view_y1).l
-	bra.w sub_005378
-sub_00532A:
+	move.w d3,(ram_line_from_x).l
+	move.w d4,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_x+2).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bra.w walk_line_clear
+shaggy_waypoints_reachable:
 	moveq #0x0,d0
 	moveq #0x0,d1
 	moveq #0x1,d2
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 loc_00533A:
 	movem.l d0-d1/a0,-(sp)
@@ -5267,7 +5311,7 @@ loc_00533A:
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	bsr.w sub_005364
+	bsr.w shaggy_line_clear
 	bne.s loc_005356
 	movem.l (sp)+,d0-d1/a0
 	bset.b d1,d0
@@ -5279,13 +5323,13 @@ loc_00535A:
 	addq.w #0x1,d1
 	dbra d2,loc_00533A
 	rts
-sub_005364:
-	move.l (ram_shaggy_x).l,(ram_view_x0).l
-	move.l (ram_shaggy_y).l,(ram_view_y0).l
-sub_005378:
+shaggy_line_clear:
+	move.l (ram_shaggy_x).l,(ram_line_from_x).l
+	move.l (ram_shaggy_y).l,(ram_line_from_y).l
+walk_line_clear:
 	move.w d2,-(sp)
-	move.w (ram_view_x0).l,d2
-	move.w (ram_view_y0).l,d3
+	move.w (ram_line_from_x).l,d2
+	move.w (ram_line_from_y).l,d3
 	sub.w d0,d2
 	sub.w d1,d3
 	neg.w d2
@@ -5348,31 +5392,31 @@ loc_0053FC:
 loc_00540A:
 	move.l #0x10000,d2
 loc_005410:
-	move.l (ram_view_x0).l,(0xff064a).l
-	move.l (ram_view_y0).l,(0xff064e).l
+	move.l (ram_line_from_x).l,(ram_line_probe_x).l
+	move.l (ram_line_from_y).l,(ram_line_probe_y).l
 loc_005424:
 	movem.l d0-d1/d7,-(sp)
-	bsr.w sub_007476
+	bsr.w walk_blocked_line_probe
 	bne.s loc_005470
 	movem.l (sp)+,d0-d1/d7
-	add.l d2,(0xff064a).l
-	add.l d3,(0xff064e).l
+	add.l d2,(ram_line_probe_x).l
+	add.l d3,(ram_line_probe_y).l
 	tst.l d2
 	bpl.s loc_00544C
-	cmp.w (0xff064a).l,d0
+	cmp.w (ram_line_probe_x).l,d0
 	blt.s loc_005424
 	bra.s loc_005454
 loc_00544C:
-	cmp.w (0xff064a).l,d0
+	cmp.w (ram_line_probe_x).l,d0
 	bgt.s loc_005424
 loc_005454:
 	tst.l d3
 	bpl.s loc_005462
-	cmp.w (0xff064e).l,d1
+	cmp.w (ram_line_probe_y).l,d1
 	blt.s loc_005424
 	bra.s loc_00546A
 loc_005462:
-	cmp.w (0xff064e).l,d1
+	cmp.w (ram_line_probe_y).l,d1
 	bgt.s loc_005424
 loc_00546A:
 	move.w (sp)+,d2
@@ -5383,13 +5427,13 @@ loc_005470:
 	move.w (sp)+,d2
 	moveq #0x1,d3
 	rts
-sub_00547A:
-	move.l (ram_shaggy_x).l,(ram_view_x0).l
-	move.l (ram_shaggy_y).l,(ram_view_y0).l
-sub_00548E:
+shaggy_dir_to:
+	move.l (ram_shaggy_x).l,(ram_line_from_x).l
+	move.l (ram_shaggy_y).l,(ram_line_from_y).l
+shaggy_set_dir:
 	movem.l d0-d2/d7,-(sp)
-	sub.w (ram_view_x0).l,d0
-	sub.w (ram_view_y0).l,d1
+	sub.w (ram_line_from_x).l,d0
+	sub.w (ram_line_from_y).l,d1
 	lsl.w #0x1,d1
 	move.w d0,d4
 	bpl.s loc_0054A6
@@ -5439,8 +5483,8 @@ loc_0054FC:
 	bpl.s loc_005502
 	neg.w d3
 loc_005502:
-	move.w d2,(0xff062e).l
-	move.w d3,(0xff0630).l
+	move.w d2,(ram_shaggy_dir_x).l
+	move.w d3,(ram_shaggy_dir_y).l
 	bra.s loc_005564
 loc_005510:
 	move.l (0x4,sp),d2
@@ -5454,72 +5498,72 @@ loc_005522:
 	bpl.s loc_005528
 	neg.w d3
 loc_005528:
-	move.w d2,(0xff062e).l
-	move.w d3,(0xff0630).l
+	move.w d2,(ram_shaggy_dir_x).l
+	move.w d3,(ram_shaggy_dir_y).l
 	bra.s loc_005564
 loc_005536:
-	clr.w (0xff062e).l
+	clr.w (ram_shaggy_dir_x).l
 	move.w #0x100,d3
 	tst.w d1
 	bpl.s loc_005546
 	neg.w d3
 loc_005546:
-	move.w d3,(0xff0630).l
+	move.w d3,(ram_shaggy_dir_y).l
 	bra.s loc_005564
 loc_00554E:
-	clr.w (0xff0630).l
+	clr.w (ram_shaggy_dir_y).l
 	move.w #0x100,d2
 	tst.w d0
 	bpl.s loc_00555E
 	neg.w d2
 loc_00555E:
-	move.w d2,(0xff062e).l
+	move.w d2,(ram_shaggy_dir_x).l
 loc_005564:
 	lea.l (0x8,sp),sp
-	move.w (0xff062e).l,d4
-	move.w (0xff0630).l,d5
+	move.w (ram_shaggy_dir_x).l,d4
+	move.w (ram_shaggy_dir_y).l,d5
 	movem.l (sp)+,d0-d2/d7
 	muls.w d2,d4
 	muls.w d2,d5
-	move.w d4,(0xff062e).l
-	move.w d5,(0xff0630).l
+	move.w d4,(ram_shaggy_dir_x).l
+	move.w d5,(ram_shaggy_dir_y).l
 	rts
 loc_00558A:
-	move.w #0x0,(0xff065a).l
+	move.w #0x0,(ram_shaggy_wp_count).l
 loc_005592:
-	move.w d0,(0xff05dc).l
-	move.w d1,(0xff05e8).l
+	move.w d0,(ram_actor_target_x).l
+	move.w d1,(ram_actor_target_y).l
 	move.b (ram_vblank_flags).l,-(sp)
 	bclr.b #0x3,(ram_vblank_flags).l
-	bsr.w sub_00547A
+	bsr.w shaggy_dir_to
 	cmpi.w #0x0,d7
 	bne.s loc_0055D2
-	move.w (ram_5b8).l,d0
+	move.w (ram_shaggy_facing).l,d0
 	lsl.w #0x3,d0
 	add.w d6,d0
 	add.w d6,d0
-	lea.l (dat_0FC720).l,a0
+	lea.l (shaggy_turn_anims).l,a0
 	move.w (0x0,a0,d0.w),(ram_cur_index).l
 	bra.s loc_0055DA
 loc_0055D2:
 	add.w d6,d7
 	move.w d7,(ram_cur_index).l
 loc_0055DA:
-	move.w d6,(ram_5b8).l
+	move.w d6,(ram_shaggy_facing).l
 	move.w #0xffff,(ram_618).l
 	bset.b #0x0,(ram_0ab5).l
 loc_0055F0:
 	bsr.w sub_00B0B8
 	btst.b #0x0,(ram_0ab5).l
 	bne.w loc_0055F0
-	btst.b #0x0,(0xff0abd).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_0055F0
-	bset.b #0x0,(0xff0ab7).l
+	bset.b #0x0,(ram_actors_moving).l
 	tst.w (0x2,a5)
 	bmi.s loc_005654
 loc_00561A:
 	bsr.w sub_00B0B8
-	btst.b #0x0,(0xff0ab7).l
+	btst.b #0x0,(ram_actors_moving).l
 	bne.w loc_00561A
 	addi.w #0x4,d6
 	move.w d6,(ram_cur_index).l
@@ -5536,16 +5580,16 @@ loc_005654:
 	or.b d0,(ram_vblank_flags).l
 	rts
 sub_00566A:
-	bsr.w sub_0056B0
+	bsr.w scooby_walk_to
 	tst.w (0x2,a5)
 	bmi.s loc_0056AE
 loc_005674:
 	bsr.w sub_00B0B8
-	btst.b #0x1,(0xff0ab7).l
+	btst.b #0x1,(ram_actors_moving).l
 	bne.w loc_005674
 	addi.w #0x4,d6
 	move.w d6,(ram_484a).l
-	move.w #0xffff,(0xff061a).l
+	move.w #0xffff,(ram_scooby_anim_lock).l
 	bset.b #0x1,(ram_0ab5).l
 loc_00569E:
 	bsr.w sub_00B0B8
@@ -5553,30 +5597,30 @@ loc_00569E:
 	bne.w loc_00569E
 loc_0056AE:
 	rts
-sub_0056B0:
-	bclr.b #0x1,(0xff0ab7).l
+scooby_walk_to:
+	bclr.b #0x1,(ram_actors_moving).l
 	bclr.b #0x5,(ram_09de).l
-	cmp.w (ram_shaggy_x_prev).l,d0
+	cmp.w (ram_scooby_x).l,d0
 	bne.s loc_0056D2
-	cmp.w (ram_shaggy_y_prev).l,d1
+	cmp.w (ram_scooby_y).l,d1
 	bne.s loc_0056D2
 	rts
 loc_0056D2:
 	btst.b #0x4,(ram_game_state).l
-	bne.w sub_005AD8
-	bsr.w sub_0059B0
-	beq.w sub_005AD8
+	bne.w scooby_walk_direct
+	bsr.w scooby_line_clear
+	beq.w scooby_walk_direct
 	movem.l d0-d2/d7,-(sp)
-	bsr.w sub_005976
+	bsr.w scooby_waypoints_reachable
 	tst.w d0
 	bne.s loc_0056FA
 	movem.l (sp)+,d0-d2/d7
-	bra.w sub_005AD8
+	bra.w scooby_walk_direct
 loc_0056FA:
 	cmpi.w #0x3,d0
 	bne.w loc_0057A2
 	movem.l (sp)+,d0-d2/d7
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
 	move.w (0x2,a0),d4
@@ -5591,34 +5635,34 @@ loc_0056FA:
 	cmp.l d5,d3
 	bge.w loc_00576A
 	bsr.w sub_0052F4
-	bne.w sub_005AD8
+	bne.w scooby_walk_direct
 loc_005738:
-	move.w d0,(0xff0672).l
-	move.w d1,(0xff0676).l
+	move.w d0,(ram_scooby_wp).l
+	move.w d1,(ram_scooby_wp+4).l
 	bsr.w sub_00589A
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w #0x1,(0xff0670).l
-	bra.w sub_005AE0
+	move.w #0x1,(ram_scooby_wp_count).l
+	bra.w scooby_walk_start
 loc_00576A:
 	bsr.w sub_0052C0
-	bne.w sub_005AD8
+	bne.w scooby_walk_direct
 loc_005772:
-	move.w d0,(0xff0672).l
-	move.w d1,(0xff0676).l
+	move.w d0,(ram_scooby_wp).l
+	move.w d1,(ram_scooby_wp+4).l
 	bsr.w sub_005852
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w #0x1,(0xff0670).l
-	bra.w sub_005AE0
+	move.w #0x1,(ram_scooby_wp_count).l
+	bra.w scooby_walk_start
 loc_0057A2:
 	cmpi.w #0x1,d0
 	bne.s loc_0057FC
@@ -5626,114 +5670,114 @@ loc_0057A2:
 	bsr.w sub_0052C0
 	beq.s loc_005772
 	bsr.w sub_0052F4
-	bne.w sub_005AD8
-	move.w d0,(0xff0672).l
-	move.w d1,(0xff0676).l
+	bne.w scooby_walk_direct
+	move.w d0,(ram_scooby_wp).l
+	move.w d1,(ram_scooby_wp+4).l
 	bsr.w sub_00589A
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w d0,(0xff0674).l
-	move.w d1,(0xff0678).l
+	move.w d0,(ram_scooby_wp+2).l
+	move.w d1,(ram_scooby_wp+6).l
 	bsr.w sub_0058E4
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w #0x2,(0xff0670).l
-	bra.w sub_005AE0
+	move.w #0x2,(ram_scooby_wp_count).l
+	bra.w scooby_walk_start
 loc_0057FC:
 	movem.l (sp)+,d0-d2/d7
 	bsr.w sub_0052F4
 	beq.w loc_005738
 	bsr.w sub_0052C0
-	bne.w sub_005AD8
-	move.w d0,(0xff0672).l
-	move.w d1,(0xff0676).l
+	bne.w scooby_walk_direct
+	move.w d0,(ram_scooby_wp).l
+	move.w d1,(ram_scooby_wp+4).l
 	bsr.w sub_005852
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w d0,(0xff0674).l
-	move.w d1,(0xff0678).l
+	move.w d0,(ram_scooby_wp+2).l
+	move.w d1,(ram_scooby_wp+6).l
 	bsr.w sub_00592C
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	move.w #0x2,(0xff0670).l
-	bra.w sub_005AE0
+	move.w #0x2,(ram_scooby_wp_count).l
+	bra.w scooby_walk_start
 sub_005852:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_x0).l
-	move.w #0x0,(ram_view_x1).l
+	move.w d3,(ram_line_from_x).l
+	move.w #0x0,(ram_line_from_x+2).l
 	move.w (0x2,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_y0).l
-	move.w #0x0,(ram_view_y1).l
-	bsr.w sub_0059DC
-	move.w d4,(0xff067a).l
-	move.w d5,(0xff067e).l
-	move.w d6,(0xff0682).l
+	move.w d3,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bsr.w scooby_set_dir
+	move.w d4,(ram_scooby_wp+8).l
+	move.w d5,(ram_scooby_wp+12).l
+	move.w d6,(ram_scooby_wp+16).l
 	rts
 sub_00589A:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_x0).l
-	move.w #0x0,(ram_view_x1).l
+	move.w d3,(ram_line_from_x).l
+	move.w #0x0,(ram_line_from_x+2).l
 	move.w (0x6,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_y0).l
-	move.w #0x0,(ram_view_y1).l
-	bsr.w sub_0059DC
-	move.w d4,(0xff067a).l
-	move.w d5,(0xff067e).l
-	move.w d6,(0xff0682).l
+	move.w d3,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bsr.w scooby_set_dir
+	move.w d4,(ram_scooby_wp+8).l
+	move.w d5,(ram_scooby_wp+12).l
+	move.w d6,(ram_scooby_wp+16).l
 	rts
 sub_0058E4:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_x0).l
-	move.w #0x0,(ram_view_x1).l
+	move.w d3,(ram_line_from_x).l
+	move.w #0x0,(ram_line_from_x+2).l
 	move.w (0x2,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_y0).l
-	move.w #0x0,(ram_view_y1).l
-	bsr.w sub_0059DC
-	move.w d4,(0xff067c).l
-	move.w d5,(0xff0680).l
-	move.w d6,(0xff0684).l
+	move.w d3,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bsr.w scooby_set_dir
+	move.w d4,(ram_scooby_wp+10).l
+	move.w d5,(ram_scooby_wp+14).l
+	move.w d6,(ram_scooby_wp+18).l
 	rts
 sub_00592C:
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_x0).l
-	move.w #0x0,(ram_view_x1).l
+	move.w d3,(ram_line_from_x).l
+	move.w #0x0,(ram_line_from_x+2).l
 	move.w (0x6,a0),d3
 	lsl.w #0x3,d3
-	move.w d3,(ram_view_y0).l
-	move.w #0x0,(ram_view_y1).l
-	bsr.w sub_0059DC
-	move.w d4,(0xff067c).l
-	move.w d5,(0xff0680).l
-	move.w d6,(0xff0684).l
+	move.w d3,(ram_line_from_y).l
+	move.w #0x0,(ram_line_from_y+2).l
+	bsr.w scooby_set_dir
+	move.w d4,(ram_scooby_wp+10).l
+	move.w d5,(ram_scooby_wp+14).l
+	move.w d6,(ram_scooby_wp+18).l
 	rts
-sub_005976:
+scooby_waypoints_reachable:
 	moveq #0x0,d0
 	moveq #0x0,d1
 	moveq #0x1,d2
-	movea.l (ram_room_ptr_69a).l,a0
+	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 loc_005986:
 	movem.l d0-d1/a0,-(sp)
@@ -5741,7 +5785,7 @@ loc_005986:
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
-	bsr.w sub_0059B0
+	bsr.w scooby_line_clear
 	bne.s loc_0059A2
 	movem.l (sp)+,d0-d1/a0
 	bset.b d1,d0
@@ -5753,17 +5797,17 @@ loc_0059A6:
 	addq.w #0x1,d1
 	dbra d2,loc_005986
 	rts
-sub_0059B0:
-	move.l (ram_shaggy_x_prev).l,(ram_view_x0).l
-	move.l (ram_shaggy_y_prev).l,(ram_view_y0).l
-	bra.w sub_005378
+scooby_line_clear:
+	move.l (ram_scooby_x).l,(ram_line_from_x).l
+	move.l (ram_scooby_y).l,(ram_line_from_y).l
+	bra.w walk_line_clear
 sub_0059C8:
-	move.l (ram_shaggy_x_prev).l,(ram_view_x0).l
-	move.l (ram_shaggy_y_prev).l,(ram_view_y0).l
-sub_0059DC:
+	move.l (ram_scooby_x).l,(ram_line_from_x).l
+	move.l (ram_scooby_y).l,(ram_line_from_y).l
+scooby_set_dir:
 	movem.l d0-d2/d7,-(sp)
-	sub.w (ram_view_x0).l,d0
-	sub.w (ram_view_y0).l,d1
+	sub.w (ram_line_from_x).l,d0
+	sub.w (ram_line_from_y).l,d1
 	lsl.w #0x1,d1
 	move.w d0,d4
 	bpl.s loc_0059F4
@@ -5813,8 +5857,8 @@ loc_005A4A:
 	bpl.s loc_005A50
 	neg.w d3
 loc_005A50:
-	move.w d2,(0xff063a).l
-	move.w d3,(0xff063c).l
+	move.w d2,(ram_scooby_dir_x).l
+	move.w d3,(ram_scooby_dir_y).l
 	bra.s loc_005AB2
 loc_005A5E:
 	move.l (0x4,sp),d2
@@ -5828,65 +5872,65 @@ loc_005A70:
 	bpl.s loc_005A76
 	neg.w d3
 loc_005A76:
-	move.w d2,(0xff063a).l
-	move.w d3,(0xff063c).l
+	move.w d2,(ram_scooby_dir_x).l
+	move.w d3,(ram_scooby_dir_y).l
 	bra.s loc_005AB2
 loc_005A84:
-	clr.w (0xff063a).l
+	clr.w (ram_scooby_dir_x).l
 	move.w #0x100,d3
 	tst.w d1
 	bpl.s loc_005A94
 	neg.w d3
 loc_005A94:
-	move.w d3,(0xff063c).l
+	move.w d3,(ram_scooby_dir_y).l
 	bra.s loc_005AB2
 loc_005A9C:
-	clr.w (0xff063c).l
+	clr.w (ram_scooby_dir_y).l
 	move.w #0x100,d2
 	tst.w d0
 	bpl.s loc_005AAC
 	neg.w d2
 loc_005AAC:
-	move.w d2,(0xff063a).l
+	move.w d2,(ram_scooby_dir_x).l
 loc_005AB2:
 	lea.l (0x8,sp),sp
-	move.w (0xff063a).l,d4
-	move.w (0xff063c).l,d5
+	move.w (ram_scooby_dir_x).l,d4
+	move.w (ram_scooby_dir_y).l,d5
 	movem.l (sp)+,d0-d2/d7
 	muls.w d2,d4
 	muls.w d2,d5
-	move.w d4,(0xff063a).l
-	move.w d5,(0xff063c).l
+	move.w d4,(ram_scooby_dir_x).l
+	move.w d5,(ram_scooby_dir_y).l
 	rts
-sub_005AD8:
-	move.w #0x0,(0xff0670).l
-sub_005AE0:
-	move.w d0,(0xff05de).l
-	move.w d1,(0xff05ea).l
+scooby_walk_direct:
+	move.w #0x0,(ram_scooby_wp_count).l
+scooby_walk_start:
+	move.w d0,(ram_actor_target_x+2).l
+	move.w d1,(ram_actor_target_y+2).l
 	bsr.w sub_0059C8
 	cmpi.w #0x0,d7
 	bne.s loc_005B12
-	move.w (0xff05ba).l,d0
+	move.w (ram_scooby_facing).l,d0
 	lsl.w #0x3,d0
 	add.w d6,d0
 	add.w d6,d0
-	lea.l (dat_0FC6E0).l,a0
+	lea.l (scooby_turn_anims).l,a0
 	move.w (0x0,a0,d0.w),(ram_484a).l
 	bra.s loc_005B1A
 loc_005B12:
 	add.w d6,d7
 	move.w d7,(ram_484a).l
 loc_005B1A:
-	move.w d6,(0xff05ba).l
-	move.w #0xffff,(0xff061a).l
+	move.w d6,(ram_scooby_facing).l
+	move.w #0xffff,(ram_scooby_anim_lock).l
 	bset.b #0x1,(ram_0ab5).l
 loc_005B30:
 	bsr.w sub_00B0B8
 	btst.b #0x1,(ram_0ab5).l
 	bne.w loc_005B30
-	btst.b #0x1,(0xff0abd).l
+	btst.b #0x1,(ram_actors_anim_looped).l
 	beq.w loc_005B30
-	bset.b #0x1,(0xff0ab7).l
+	bset.b #0x1,(ram_actors_moving).l
 	rts
 strcpy:
 	move.b (a0)+,(a1)+
@@ -6151,16 +6195,16 @@ loc_005E2C:
 loc_005E44:
 	movem.l (sp)+,a5-a6
 	rts
-sub_005E4A:
-	btst.b #0x0,(0xff0ac0).l
+player_update:
+	btst.b #0x0,(ram_actors_on_path).l
 	beq.w loc_005EEA
-	subq.b #0x1,(0xff0aa5).l
+	subq.b #0x1,(ram_actor_path_delay).l
 	bpl.w loc_005EEA
-	move.b (0xff0aab).l,(0xff0aa5).l
-	movea.l (0xff05f4).l,a0
+	move.b (ram_actor_path_reload).l,(ram_actor_path_delay).l
+	movea.l (ram_actor_path_ptr).l,a0
 loc_005E70:
-	move.w (0xff060c).l,d0
-	addq.w #0x4,(0xff060c).l
+	move.w (ram_actor_path_pos).l,d0
+	addq.w #0x4,(ram_actor_path_pos).l
 	move.w (0x2,a0,d0.w),d2
 	move.w (0x0,a0,d0.w),d1
 	bpl.s loc_005EDE
@@ -6175,11 +6219,11 @@ loc_005E9C:
 	cmpi.w #0xfffb,d1
 	bne.w loc_005ECE
 loc_005EAA:
-	cmp.w (0xff05a0).l,d2
+	cmp.w (ram_actor_depth_x).l,d2
 	beq.s loc_005EC6
-	move.w d2,(0xff05a0).l
-	move.w d2,(0xff05ac).l
-	bset.b #0x0,(0xff0abe).l
+	move.w d2,(ram_actor_depth_x).l
+	move.w d2,(ram_actor_depth_y).l
+	bset.b #0x0,(ram_actors_depth_new).l
 loc_005EC6:
 	cmpi.w #0xfffb,d1
 	beq.s loc_005E70
@@ -6187,13 +6231,13 @@ loc_005EC6:
 loc_005ECE:
 	cmpi.w #0xfffe,d1
 	beq.s loc_005EEA
-	move.w #0x0,(0xff060c).l
+	move.w #0x0,(ram_actor_path_pos).l
 	bra.s loc_005E70
 loc_005EDE:
 	move.w d1,(ram_shaggy_x).l
 	move.w d2,(ram_shaggy_y).l
 loc_005EEA:
-	tst.b (0xff0acb).l
+	tst.b (ram_verb_bar_slide).l
 	bpl.w loc_005F88
 	btst.b #0x2,(ram_09de).l
 	bne.w loc_005F10
@@ -6201,9 +6245,9 @@ loc_005EEA:
 	beq.w loc_005F20
 	bra.w loc_00632C
 loc_005F10:
-	btst.b #0x0,(0xff0ab7).l
+	btst.b #0x0,(ram_actors_moving).l
 	bne.w loc_00632C
-	bra.w sub_006D24
+	bra.w actors_update
 loc_005F20:
 	btst.b #0x5,(ram_pad1).l
 	bne.w loc_00600C
@@ -6229,7 +6273,7 @@ loc_005F66:
 	lea.l (0x6c,a0),a0
 	dbra d2,loc_005F62
 loc_005F80:
-	move.b #0x10,(0xff0acb).l
+	move.b #0x10,(ram_verb_bar_slide).l
 loc_005F88:
 	btst.b #0x4,(ram_vblank_flags).l
 	beq.w loc_005FA0
@@ -6238,7 +6282,7 @@ loc_005F88:
 loc_005FA0:
 	subi.w #0x10,(ram_hscroll_verb).l
 loc_005FA8:
-	subi.b #0x1,(0xff0acb).l
+	subi.b #0x1,(ram_verb_bar_slide).l
 	bne.w loc_00600C
 	btst.b #0x2,(ram_09de).l
 	bne.w loc_005FFC
@@ -6260,24 +6304,24 @@ loc_005FE2:
 	lea.l (0x6c,a0),a0
 	dbra d2,loc_005FDE
 loc_005FFC:
-	move.b #0xff,(0xff0acb).l
+	move.b #0xff,(ram_verb_bar_slide).l
 	bchg.b #0x4,(ram_vblank_flags).l
 loc_00600C:
 	btst.b #0x3,(ram_vblank_flags).l
 	beq.w loc_00632C
-	btst.b #0x0,(0xff0ac0).l
+	btst.b #0x0,(ram_actors_on_path).l
 	beq.w loc_00605C
-	movea.l (0xff05f4).l,a0
-	move.w (0xff060c).l,d0
+	movea.l (ram_actor_path_ptr).l,a0
+	move.w (ram_actor_path_pos).l,d0
 	cmpi.w #0xfffe,(-0x4,a0,d0.w)
 	beq.w loc_00604C
 	cmpi.w #0xffff,(-0x4,a0,d0.w)
 	bne.s loc_00605C
-	btst.b #0x0,(0xff0ac3).l
+	btst.b #0x0,(ram_actors_path_once).l
 	beq.s loc_00605C
 loc_00604C:
-	bclr.b #0x0,(0xff0ac0).l
-	bclr.b #0x0,(0xff0ac3).l
+	bclr.b #0x0,(ram_actors_on_path).l
+	bclr.b #0x0,(ram_actors_path_once).l
 loc_00605C:
 	btst.b #0x6,(ram_pad1).l
 	bne.w loc_006074
@@ -6313,7 +6357,7 @@ loc_0060CA:
 	bne.s loc_006114
 	btst.b #0x6,(ram_09e9).l
 	bne.s loc_006114
-	move.w (ram_5b8).l,d0
+	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
 	move.w d0,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
@@ -6401,35 +6445,35 @@ loc_00626E:
 loc_006270:
 	move.w d1,(0xff06ea).l
 	btst.b #0x4,(ram_vblank_flags).l
-	beq.w sub_006D24
+	beq.w actors_update
 	cmpi.w #0x5,d1
-	beq.w sub_006D24
+	beq.w actors_update
 	cmpi.w #0xa,d1
-	beq.w sub_006D24
+	beq.w actors_update
 loc_006292:
 	btst.b #0x4,(ram_pad1).l
-	bne.w sub_006D24
+	bne.w actors_update
 	btst.b #0x4,(ram_pad_last).l
-	beq.w sub_006D24
+	beq.w actors_update
 	move.w (ram_6c0).l,(0xff06be).l
 	bne.w loc_0062C6
 	move.w (0xff06c4).l,(0xff06be).l
-	beq.w sub_006D24
+	beq.w actors_update
 loc_0062C6:
 	tst.w (0xff06ae).l
 	beq.w loc_0062DC
 	bset.b #0x7,(ram_vblank_flags).l
-	bra.w sub_006D24
+	bra.w actors_update
 loc_0062DC:
 	btst.b #0x7,(ram_vblank_flags).l
-	bne.w sub_006D24
+	bne.w actors_update
 loc_0062E8:
 	bclr.b #0x3,(ram_vblank_flags).l
 	moveq #0x0,d0
 	move.w (ram_6c0).l,(ram_6c2).l
 	bsr.w sub_005BDC
 	move.w (0xff06ae).l,d0
-	beq.w sub_006D24
+	beq.w actors_update
 	subq.w #0x3,d0
 	mulu.w #0x1a,d0
 	lea.l (ram_objects).l,a0
@@ -6438,9 +6482,9 @@ loc_0062E8:
 	move.w d0,(ram_6c2).l
 	moveq #0x0,d0
 	bsr.w sub_005BDC
-	bra.w sub_006D24
+	bra.w actors_update
 loc_00632C:
-	btst.b #0x0,(0xff0ac0).l
+	btst.b #0x0,(ram_actors_on_path).l
 	beq.w loc_00638C
 	moveq #0x0,d1
 	move.w (ram_map_width).l,d2
@@ -6449,57 +6493,57 @@ loc_00632C:
 	move.w (ram_map_height).l,d3
 	lsl.w #0x3,d3
 	subq.w #0x1,d3
-	movea.l (0xff05f4).l,a0
-	move.w (0xff060c).l,d0
+	movea.l (ram_actor_path_ptr).l,a0
+	move.w (ram_actor_path_pos).l,d0
 	cmpi.w #0xfffe,(-0x4,a0,d0.w)
 	beq.s loc_006378
 	cmpi.w #0xffff,(-0x4,a0,d0.w)
-	bne.w sub_006B28
-	btst.b #0x0,(0xff0ac3).l
-	beq.w sub_006B28
+	bne.w camera_follow
+	btst.b #0x0,(ram_actors_path_once).l
+	beq.w camera_follow
 loc_006378:
-	bclr.b #0x0,(0xff0ac0).l
-	bclr.b #0x0,(0xff0ac3).l
-	bra.w sub_006B28
+	bclr.b #0x0,(ram_actors_on_path).l
+	bclr.b #0x0,(ram_actors_path_once).l
+	bra.w camera_follow
 loc_00638C:
 	btst.b #0x2,(ram_09e8).l
 	beq.s loc_0063BA
 	btst.b #0x0,(ram_09ea).l
-	beq.w sub_006C28
+	beq.w verb_menu_open_check
 	move.w (ram_map_width).l,d2
 	lsl.w #0x3,d2
 	subq.w #0x1,d2
 	move.w (ram_map_height).l,d3
 	lsl.w #0x3,d3
 	subq.w #0x1,d3
-	bra.w sub_006B28
+	bra.w camera_follow
 loc_0063BA:
 	btst.b #0x0,(0xff0abf).l
-	bne.w sub_006D24
+	bne.w actors_update
 	btst.b #0x4,(ram_09e9).l
-	bne.w sub_006C28
+	bne.w verb_menu_open_check
 	btst.b #0x7,(ram_vblank_flags).l
 	beq.w loc_0063EA
-	btst.b #0x0,(0xff0ab7).l
-	beq.w sub_006D24
+	btst.b #0x0,(ram_actors_moving).l
+	beq.w actors_update
 loc_0063EA:
-	move.l (ram_shaggy_x).l,(ram_cursor_x).l
-	move.l (ram_shaggy_y).l,(ram_cursor_y).l
+	move.l (ram_shaggy_x).l,(ram_walk_probe_x).l
+	move.l (ram_shaggy_y).l,(ram_walk_probe_y).l
 	move.w #0x100,d0
-	sub.w (0xff05a0).l,d0
+	sub.w (ram_actor_depth_x).l,d0
 	mulu.w #0x155,d0
-	move.l d0,(0xff062a).l
+	move.l d0,(ram_shaggy_speed).l
 	asr.l #0x8,d0
 	move.w d0,d1
-	btst.b #0x0,(0xff0ab7).l
+	btst.b #0x0,(ram_actors_moving).l
 	bne.s loc_006430
-	move.w #0x100,(0xff062e).l
-	move.w #0x100,(0xff0630).l
+	move.w #0x100,(ram_shaggy_dir_x).l
+	move.w #0x100,(ram_shaggy_dir_y).l
 loc_006430:
-	muls.w (0xff062e).l,d0
-	muls.w (0xff0630).l,d1
-	move.l d0,(0xff0632).l
-	move.l d1,(0xff0636).l
+	muls.w (ram_shaggy_dir_x).l,d0
+	muls.w (ram_shaggy_dir_y).l,d1
+	move.l d0,(ram_shaggy_speed_x).l
+	move.l d1,(ram_shaggy_speed_y).l
 	moveq #0x0,d1
 	move.w (ram_map_width).l,d2
 	lsl.w #0x3,d2
@@ -6509,31 +6553,31 @@ loc_006430:
 	subq.w #0x1,d3
 	btst.b #0x7,(ram_vblank_flags).l
 	beq.s loc_006478
-	btst.b #0x0,(0xff0ab7).l
+	btst.b #0x0,(ram_actors_moving).l
 	bne.w loc_006960
-	bra.w sub_006AE8
+	bra.w player_zone_flags
 loc_006478:
 	move.b (ram_pad1).l,d0
 	andi.w #0xf,d0
 	cmpi.w #0xf,d0
 	bne.w loc_006552
-	move.l (0xff062a).l,d0
-	btst.b #0x1,(0xff0acc).l
+	move.l (ram_shaggy_speed).l,d0
+	btst.b #0x1,(ram_shaggy_turning).l
 	bne.w loc_00656C
-	btst.b #0x0,(0xff0acc).l
+	btst.b #0x0,(ram_shaggy_turning).l
 	bne.w loc_00660C
 	lsr.l #0x1,d0
-	btst.b #0x2,(0xff0acc).l
+	btst.b #0x2,(ram_shaggy_turning).l
 	bne.w loc_0066E2
-	btst.b #0x3,(0xff0acc).l
+	btst.b #0x3,(ram_shaggy_turning).l
 	bne.w loc_006790
-	btst.b #0x0,(0xff0ab7).l
+	btst.b #0x0,(ram_actors_moving).l
 	bne.w loc_006960
-	subi.w #0x1,(0xff0686).l
+	subi.w #0x1,(ram_shaggy_idle_timer).l
 	bpl.w loc_0064FE
-	move.w #0x12c,(0xff0686).l
+	move.w #0x12c,(ram_shaggy_idle_timer).l
 	move.w #0x20,d0
-	add.w (ram_5b8).l,d0
+	add.w (ram_shaggy_facing).l,d0
 	move.w d0,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
 	bra.w loc_00681A
@@ -6542,10 +6586,10 @@ loc_0064FE:
 	blt.w loc_006522
 	cmpi.w #0x24,(ram_cur_index).l
 	bge.w loc_006522
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w loc_00681A
 loc_006522:
-	move.w (ram_5b8).l,d0
+	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
 	cmp.w (ram_cur_index).l,d0
 	beq.w loc_00681A
@@ -6555,79 +6599,79 @@ loc_006522:
 	bset.b #0x0,(ram_0ab5).l
 	bra.w loc_00681A
 loc_006552:
-	move.l (0xff062a).l,d0
-	move.w #0x12c,(0xff0686).l
+	move.l (ram_shaggy_speed).l,d0
+	move.w #0x12c,(ram_shaggy_idle_timer).l
 	btst.b #0x2,(ram_pad1).l
 	bne.w loc_0065E4
 loc_00656C:
 	cmpi.w #0x1,(ram_cur_index).l
 	beq.w loc_0065B0
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
-	lea.l (dat_0FC720).l,a0
+	lea.l (shaggy_turn_anims).l,a0
 	lsr.l #0x1,d0
 	move.w (0x2,a0,d1.w),d1
 	cmp.w (ram_cur_index).l,d1
 	beq.w loc_0065CC
 	move.w d1,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
-	bset.b #0x1,(0xff0acc).l
+	bset.b #0x1,(ram_shaggy_turning).l
 	bra.w loc_006682
 loc_0065B0:
-	move.w #0x1,(ram_5b8).l
-	btst.b #0x0,(0xff0abd).l
+	move.w #0x1,(ram_shaggy_facing).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_006682
-	bclr.b #0x1,(0xff0acc).l
+	bclr.b #0x1,(ram_shaggy_turning).l
 loc_0065CC:
-	sub.l d0,(ram_cursor_x).l
+	sub.l d0,(ram_walk_probe_x).l
 	bpl.w loc_006682
-	move.l #0x0,(ram_cursor_x).l
+	move.l #0x0,(ram_walk_probe_x).l
 	bra.w loc_006682
 loc_0065E4:
-	btst.b #0x1,(0xff0acc).l
+	btst.b #0x1,(ram_shaggy_turning).l
 	beq.s loc_006600
 	cmpi.w #0x3,(ram_cur_index).l
 	bgt.s loc_006600
-	bclr.b #0x1,(0xff0acc).l
+	bclr.b #0x1,(ram_shaggy_turning).l
 loc_006600:
 	btst.b #0x3,(ram_pad1).l
 	bne.w loc_006682
 loc_00660C:
 	tst.w (ram_cur_index).l
 	beq.w loc_00664E
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
-	lea.l (dat_0FC720).l,a0
+	lea.l (shaggy_turn_anims).l,a0
 	move.w (0x0,a0,d1.w),d1
 	lsr.l #0x1,d0
 	cmp.w (ram_cur_index).l,d1
 	beq.w loc_00666A
 	move.w d1,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
-	bset.b #0x0,(0xff0acc).l
+	bset.b #0x0,(ram_shaggy_turning).l
 	bra.w loc_00669E
 loc_00664E:
-	move.w #0x0,(ram_5b8).l
-	btst.b #0x0,(0xff0abd).l
+	move.w #0x0,(ram_shaggy_facing).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_00669E
-	bclr.b #0x0,(0xff0acc).l
+	bclr.b #0x0,(ram_shaggy_turning).l
 loc_00666A:
-	add.l d0,(ram_cursor_x).l
-	cmp.w (ram_cursor_x).l,d2
+	add.l d0,(ram_walk_probe_x).l
+	cmp.w (ram_walk_probe_x).l,d2
 	bge.w loc_00669E
-	move.w d2,(ram_cursor_x).l
+	move.w d2,(ram_walk_probe_x).l
 	bra.s loc_00669E
 loc_006682:
-	btst.b #0x0,(0xff0acc).l
+	btst.b #0x0,(ram_shaggy_turning).l
 	beq.s loc_00669E
 	cmpi.w #0x3,(ram_cur_index).l
 	bgt.s loc_00669E
-	bclr.b #0x0,(0xff0acc).l
+	bclr.b #0x0,(ram_shaggy_turning).l
 loc_00669E:
-	move.l (0xff062a).l,d0
-	btst.b #0x1,(0xff0acc).l
+	move.l (ram_shaggy_speed).l,d0
+	btst.b #0x1,(ram_shaggy_turning).l
 	bne.w loc_00681A
-	btst.b #0x0,(0xff0acc).l
+	btst.b #0x0,(ram_shaggy_turning).l
 	bne.w loc_00681A
 	lsr.l #0x1,d0
 	btst.b #0x0,(ram_pad1).l
@@ -6639,30 +6683,30 @@ loc_00669E:
 loc_0066E2:
 	cmpi.w #0x2,(ram_cur_index).l
 	beq.w loc_006726
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
-	lea.l (dat_0FC720).l,a0
+	lea.l (shaggy_turn_anims).l,a0
 	move.w (0x4,a0,d1.w),d1
 	lsr.l #0x1,d0
 	cmp.w (ram_cur_index).l,d1
 	beq.w loc_00674A
 	move.w d1,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
-	bset.b #0x2,(0xff0acc).l
+	bset.b #0x2,(ram_shaggy_turning).l
 	bra.w loc_00681A
 loc_006726:
-	move.w #0x2,(ram_5b8).l
-	btst.b #0x0,(0xff0abd).l
+	move.w #0x2,(ram_shaggy_facing).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_00676C
-	bclr.b #0x2,(0xff0acc).l
-	bclr.b #0x3,(0xff0acc).l
+	bclr.b #0x2,(ram_shaggy_turning).l
+	bclr.b #0x3,(ram_shaggy_turning).l
 loc_00674A:
 	btst.b #0x0,(ram_09e9).l
 	bne.w loc_006804
 loc_006756:
-	sub.l d0,(ram_cursor_y).l
+	sub.l d0,(ram_walk_probe_y).l
 	bpl.w loc_00681A
-	move.w #0x0,(ram_cursor_y).l
+	move.w #0x0,(ram_walk_probe_y).l
 	bra.w loc_00681A
 loc_00676C:
 	btst.b #0x1,(ram_pad1).l
@@ -6674,36 +6718,36 @@ loc_00676C:
 loc_006790:
 	cmpi.w #0x3,(ram_cur_index).l
 	beq.w loc_0067D4
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_facing).l,d1
 	lsl.w #0x3,d1
-	lea.l (dat_0FC720).l,a0
+	lea.l (shaggy_turn_anims).l,a0
 	move.w (0x6,a0,d1.w),d1
 	lsr.l #0x1,d0
 	cmp.w (ram_cur_index).l,d1
 	beq.w loc_0067F8
 	move.w d1,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
-	bset.b #0x3,(0xff0acc).l
+	bset.b #0x3,(ram_shaggy_turning).l
 	bra.w loc_00681A
 loc_0067D4:
-	move.w #0x3,(ram_5b8).l
-	btst.b #0x0,(0xff0abd).l
+	move.w #0x3,(ram_shaggy_facing).l
+	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_00681A
-	bclr.b #0x3,(0xff0acc).l
-	bclr.b #0x2,(0xff0acc).l
+	bclr.b #0x3,(ram_shaggy_turning).l
+	bclr.b #0x2,(ram_shaggy_turning).l
 loc_0067F8:
 	btst.b #0x0,(ram_09e9).l
 	bne.w loc_006756
 loc_006804:
-	add.l d0,(ram_cursor_y).l
-	cmp.w (ram_cursor_y).l,d3
+	add.l d0,(ram_walk_probe_y).l
+	cmp.w (ram_walk_probe_y).l,d3
 	bge.w loc_00681A
-	move.w d3,(ram_cursor_y).l
+	move.w d3,(ram_walk_probe_y).l
 loc_00681A:
-	bclr.b #0x0,(0xff0ab7).l
-	bsr.w sub_0073D6
+	bclr.b #0x0,(ram_actors_moving).l
+	bsr.w walk_blocked_probe
 	beq.w loc_006948
-	bsr.w sub_00750A
+	bsr.w pad_dir8
 	cmpi.w #0x1,d0
 	ble.w loc_006940
 	cmpi.w #0x3,d0
@@ -6713,54 +6757,54 @@ loc_00681A:
 	moveq #0x2,d6
 	move.w #0xff00,d7
 loc_00684C:
-	subi.w #0x1,(ram_cursor_x).l
-	bsr.w sub_0073D6
+	subi.w #0x1,(ram_walk_probe_x).l
+	bsr.w walk_blocked_probe
 	beq.w loc_006882
 	dbra d6,loc_00684C
-	addq.w #0x3,(ram_cursor_x).l
+	addq.w #0x3,(ram_walk_probe_x).l
 	moveq #0x2,d6
 	neg.w d7
 loc_00686A:
-	addi.w #0x1,(ram_cursor_x).l
-	bsr.w sub_0073D6
+	addi.w #0x1,(ram_walk_probe_x).l
+	bsr.w walk_blocked_probe
 	beq.w loc_006882
 	dbra d6,loc_00686A
 	bra.w sub_00695C
 loc_006882:
-	move.w d7,(0xff062e).l
-	clr.w (0xff0630).l
-	move.w (ram_cursor_x).l,(0xff05dc).l
-	bset.b #0x0,(0xff0ab7).l
-	move.l (ram_cursor_y).l,(ram_shaggy_y).l
-	move.w (ram_cursor_y).l,(0xff05e8).l
+	move.w d7,(ram_shaggy_dir_x).l
+	clr.w (ram_shaggy_dir_y).l
+	move.w (ram_walk_probe_x).l,(ram_actor_target_x).l
+	bset.b #0x0,(ram_actors_moving).l
+	move.l (ram_walk_probe_y).l,(ram_shaggy_y).l
+	move.w (ram_walk_probe_y).l,(ram_actor_target_y).l
 	bra.w loc_006960
 loc_0068B8:
 	moveq #0x3,d6
 	move.w #0xff00,d7
 loc_0068BE:
-	subi.w #0x1,(ram_cursor_y).l
-	bsr.w sub_0073D6
+	subi.w #0x1,(ram_walk_probe_y).l
+	bsr.w walk_blocked_probe
 	beq.w loc_006906
 	dbra d6,loc_0068BE
-	addq.w #0x4,(ram_cursor_y).l
+	addq.w #0x4,(ram_walk_probe_y).l
 	neg.w d7
 	moveq #0x3,d6
 loc_0068DC:
-	addi.w #0x1,(ram_cursor_y).l
-	bsr.w sub_0073D6
+	addi.w #0x1,(ram_walk_probe_y).l
+	bsr.w walk_blocked_probe
 	beq.w loc_006906
 	dbra d6,loc_0068DC
-	addq.w #0x1,(ram_cursor_x).l
-	move.w (ram_cursor_x).l,d6
+	addq.w #0x1,(ram_walk_probe_x).l
+	move.w (ram_walk_probe_x).l,d6
 	cmp.w (ram_shaggy_x).l,d6
 	bra.w sub_00695C
 loc_006906:
-	move.w d7,(0xff0630).l
-	clr.w (0xff062e).l
-	move.l (ram_cursor_x).l,(ram_shaggy_x).l
-	move.w (ram_cursor_x).l,(0xff05dc).l
-	bset.b #0x0,(0xff0ab7).l
-	move.w (ram_cursor_y).l,(0xff05e8).l
+	move.w d7,(ram_shaggy_dir_y).l
+	clr.w (ram_shaggy_dir_x).l
+	move.l (ram_walk_probe_x).l,(ram_shaggy_x).l
+	move.w (ram_walk_probe_x).l,(ram_actor_target_x).l
+	bset.b #0x0,(ram_actors_moving).l
+	move.w (ram_walk_probe_y).l,(ram_actor_target_y).l
 	bra.w loc_006960
 sub_00693C:
 	bra.w sub_00695C
@@ -6769,75 +6813,75 @@ loc_006940:
 loc_006944:
 	bra.w sub_00695C
 loc_006948:
-	move.l (ram_cursor_x).l,(ram_shaggy_x).l
-	move.l (ram_cursor_y).l,(ram_shaggy_y).l
+	move.l (ram_walk_probe_x).l,(ram_shaggy_x).l
+	move.l (ram_walk_probe_y).l,(ram_shaggy_y).l
 sub_00695C:
-	bra.w sub_006AE8
+	bra.w player_zone_flags
 loc_006960:
-	move.w #0x12c,(0xff0686).l
+	move.w #0x12c,(ram_shaggy_idle_timer).l
 	move.w #0x100,d0
-	sub.w (0xff05a0).l,d0
+	sub.w (ram_actor_depth_x).l,d0
 	mulu.w #0x155,d0
 	asr.l #0x8,d0
-	muls.w (0xff062e).l,d0
+	muls.w (ram_shaggy_dir_x).l,d0
 	add.l d0,(ram_shaggy_x).l
 	move.w #0x100,d0
-	sub.w (0xff05ac).l,d0
+	sub.w (ram_actor_depth_y).l,d0
 	mulu.w #0xaa,d0
 	asr.l #0x8,d0
-	muls.w (0xff0630).l,d0
+	muls.w (ram_shaggy_dir_y).l,d0
 	add.l d0,(ram_shaggy_y).l
 	move.w (ram_shaggy_x).l,d0
-	move.w (0xff05dc).l,d1
-	tst.w (0xff062e).l
+	move.w (ram_actor_target_x).l,d1
+	tst.w (ram_shaggy_dir_x).l
 	bmi.w loc_0069D0
 	cmp.w d1,d0
 	blt.w loc_0069DC
-	move.w (0xff05dc).l,(ram_shaggy_x).l
-	clr.w (0xff062e).l
+	move.w (ram_actor_target_x).l,(ram_shaggy_x).l
+	clr.w (ram_shaggy_dir_x).l
 	bra.w loc_0069DC
 loc_0069D0:
 	cmp.w d1,d0
 	bgt.w loc_0069DC
-	clr.w (0xff062e).l
+	clr.w (ram_shaggy_dir_x).l
 loc_0069DC:
 	move.w (ram_shaggy_y).l,d0
-	move.w (0xff05e8).l,d1
-	tst.w (0xff0630).l
+	move.w (ram_actor_target_y).l,d1
+	tst.w (ram_shaggy_dir_y).l
 	bmi.w loc_006A0C
 	cmp.w d1,d0
-	blt.w sub_006AE8
-	move.w (0xff05e8).l,(ram_shaggy_y).l
-	clr.w (0xff0630).l
+	blt.w player_zone_flags
+	move.w (ram_actor_target_y).l,(ram_shaggy_y).l
+	clr.w (ram_shaggy_dir_y).l
 	bra.w loc_006A22
 loc_006A0C:
 	cmp.w d1,d0
 	bgt.w loc_006A22
-	move.w (0xff05e8).l,(ram_shaggy_y).l
-	clr.w (0xff0630).l
+	move.w (ram_actor_target_y).l,(ram_shaggy_y).l
+	clr.w (ram_shaggy_dir_y).l
 loc_006A22:
-	tst.w (0xff062e).l
-	bne.w sub_006AE8
-	tst.w (0xff0630).l
-	bne.w sub_006AE8
-	tst.w (0xff065a).l
+	tst.w (ram_shaggy_dir_x).l
+	bne.w player_zone_flags
+	tst.w (ram_shaggy_dir_y).l
+	bne.w player_zone_flags
+	tst.w (ram_shaggy_wp_count).l
 	bmi.w loc_006AC0
-	subq.w #0x1,(0xff065a).l
+	subq.w #0x1,(ram_shaggy_wp_count).l
 	bmi.s loc_006AC0
-	move.w (0xff065a).l,d0
+	move.w (ram_shaggy_wp_count).l,d0
 	add.w d0,d0
-	lea.l (0xff065c).l,a0
-	move.w (0x0,a0,d0.w),(0xff05dc).l
-	move.w (0x4,a0,d0.w),(0xff05e8).l
-	move.w (0x8,a0,d0.w),(0xff062e).l
-	move.w (0xc,a0,d0.w),(0xff0630).l
+	lea.l (ram_shaggy_wp).l,a0
+	move.w (0x0,a0,d0.w),(ram_actor_target_x).l
+	move.w (0x4,a0,d0.w),(ram_actor_target_y).l
+	move.w (0x8,a0,d0.w),(ram_shaggy_dir_x).l
+	move.w (0xc,a0,d0.w),(ram_shaggy_dir_y).l
 	move.w (0x10,a0,d0.w),d0
 	move.w (ram_cur_index).l,d1
-	sub.w (ram_5b8).l,d1
+	sub.w (ram_shaggy_facing).l,d1
 	cmpi.w #0x0,d1
 	bne.s loc_006AA8
-	lea.l (dat_0FC720).l,a0
-	move.w (ram_5b8).l,d7
+	lea.l (shaggy_turn_anims).l,a0
+	move.w (ram_shaggy_facing).l,d7
 	lsl.w #0x3,d7
 	add.w d0,d7
 	add.w d0,d7
@@ -6847,18 +6891,18 @@ loc_006AA8:
 	add.w d0,d1
 	move.w d1,(ram_cur_index).l
 loc_006AB0:
-	move.w d0,(ram_5b8).l
+	move.w d0,(ram_shaggy_facing).l
 	bset.b #0x0,(ram_0ab5).l
-	bra.s sub_006AE8
+	bra.s player_zone_flags
 loc_006AC0:
-	bclr.b #0x0,(0xff0ab7).l
+	bclr.b #0x0,(ram_actors_moving).l
 	btst.b #0x7,(ram_vblank_flags).l
-	beq.s sub_006AE8
-	move.w (ram_5b8).l,d0
+	beq.s player_zone_flags
+	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
 	move.w d0,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
-sub_006AE8:
+player_zone_flags:
 	move.w (ram_shaggy_x).l,d0
 	move.w (ram_shaggy_y).l,d1
 	lsr.w #0x3,d0
@@ -6871,16 +6915,16 @@ sub_006AE8:
 	lea.l (ram_zone_map).l,a0
 	move.w (0x0,a0,d0.w),d0
 	bpl.w loc_006B20
-	bset.b #0x0,(0xff0abb).l
-	bra.w sub_006B28
+	bset.b #0x0,(ram_actors_behind).l
+	bra.w camera_follow
 loc_006B20:
-	bclr.b #0x0,(0xff0abb).l
-sub_006B28:
+	bclr.b #0x0,(ram_actors_behind).l
+camera_follow:
 	btst.b #0x1,(ram_09e8).l
-	bne.w sub_006C28
+	bne.w verb_menu_open_check
 	subi.w #0xff,d2
 	move.w (ram_shaggy_x).l,d0
-	sub.w (ram_6ca).l,d0
+	sub.w (ram_camera_x).l,d0
 	cmpi.w #0x4b,d0
 	ble.w loc_006B58
 	cmpi.w #0xb5,d0
@@ -6902,26 +6946,26 @@ loc_006B6C:
 loc_006B7E:
 	move.w d0,d1
 	lsr.w #0x3,d1
-	move.w (ram_6ca).l,d2
+	move.w (ram_camera_x).l,d2
 	lsr.w #0x3,d2
 	cmp.w d1,d2
 	beq.w loc_006BA8
 	blt.w loc_006BA0
-	bset.b #0x1,(0xff0ab3).l
+	bset.b #0x1,(ram_camera_scroll_req).l
 	bra.w loc_006BA8
 loc_006BA0:
-	bset.b #0x0,(0xff0ab3).l
+	bset.b #0x0,(ram_camera_scroll_req).l
 loc_006BA8:
-	move.w d0,(ram_6ca).l
+	move.w d0,(ram_camera_x).l
 loc_006BAE:
 	subi.w #0x97,d3
 	move.w (ram_shaggy_y).l,d0
-	sub.w (ram_6ce).l,d0
+	sub.w (ram_camera_y).l,d0
 	cmpi.w #0x32,d0
 	ble.w loc_006BD2
 	cmpi.w #0x66,d0
 	bge.w loc_006BE6
-	bra.w sub_006C28
+	bra.w verb_menu_open_check
 loc_006BD2:
 	move.w (ram_shaggy_y).l,d0
 	subi.w #0x32,d0
@@ -6938,31 +6982,31 @@ loc_006BE6:
 loc_006BF8:
 	move.w d0,d1
 	lsr.w #0x3,d1
-	move.w (ram_6ce).l,d3
+	move.w (ram_camera_y).l,d3
 	lsr.w #0x3,d3
 	cmp.w d1,d3
 	beq.w loc_006C22
 	blt.w loc_006C1A
-	bset.b #0x2,(0xff0ab3).l
+	bset.b #0x2,(ram_camera_scroll_req).l
 	bra.w loc_006C22
 loc_006C1A:
-	bset.b #0x3,(0xff0ab3).l
+	bset.b #0x3,(ram_camera_scroll_req).l
 loc_006C22:
-	move.w d0,(ram_6ce).l
-sub_006C28:
+	move.w d0,(ram_camera_y).l
+verb_menu_open_check:
 	btst.b #0x7,(ram_vblank_flags).l
-	bne.w sub_006D24
+	bne.w actors_update
 	btst.b #0x1,(ram_game_state).l
-	bne.w sub_006D24
+	bne.w actors_update
 	btst.b #0x6,(ram_pad1).l
 	bne.w loc_006C58
 	btst.b #0x6,(ram_pad_last).l
 	bne.w loc_006C70
 loc_006C58:
 	btst.b #0x4,(ram_pad1).l
-	bne.w sub_006D24
+	bne.w actors_update
 	btst.b #0x4,(ram_pad_last).l
-	beq.w sub_006D24
+	beq.w actors_update
 loc_006C70:
 	bset.b #0x3,(ram_vblank_flags).l
 	bclr.b #0x0,(ram_09de).l
@@ -6980,31 +7024,31 @@ loc_006C70:
 loc_006CC6:
 	move.w #0x80,(ram_6dc).l
 	move.w #0x50,(ram_6de).l
-	bra.s sub_006D24
+	bra.s actors_update
 loc_006CD8:
 	btst.b #0x2,(ram_09e8).l
 	bne.s loc_006CF8
-	move.w (ram_5b8).l,d0
+	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
 	move.w d0,(ram_cur_index).l
 	bset.b #0x0,(ram_0ab5).l
 loc_006CF8:
 	move.w (ram_shaggy_x).l,d0
-	sub.w (ram_6ca).l,d0
+	sub.w (ram_camera_x).l,d0
 	move.w d0,(ram_6dc).l
 	move.w (ram_shaggy_y).l,d0
-	sub.w (ram_6ce).l,d0
+	sub.w (ram_camera_y).l,d0
 	addi.w #0x10,d0
 	subi.w #0x3c,d0
 	move.w d0,(ram_6de).l
-sub_006D24:
+actors_update:
 	btst.b #0x2,(ram_09eb).l
 	bne.w loc_00707E
 	btst.b #0x6,(ram_09eb).l
 	beq.s loc_006DAE
-	move.w (ram_shaggy_x).l,(ram_shaggy_x_prev).l
-	move.w (ram_shaggy_y).l,(ram_shaggy_y_prev).l
-	move.w (ram_5b8).l,d1
+	move.w (ram_shaggy_x).l,(ram_scooby_x).l
+	move.w (ram_shaggy_y).l,(ram_scooby_y).l
+	move.w (ram_shaggy_facing).l,d1
 	move.b (ram_pad1).l,d0
 	andi.b #0xf,d0
 	cmpi.b #0xf,d0
@@ -7025,15 +7069,15 @@ loc_006D8E:
 	bset.b #0x1,(ram_0ab5).l
 	bra.w loc_00707E
 loc_006DAE:
-	btst.b #0x1,(0xff0ac0).l
+	btst.b #0x1,(ram_actors_on_path).l
 	beq.w loc_006E40
-	subq.b #0x1,(0xff0aa6).l
+	subq.b #0x1,(ram_actor_path_delay+1).l
 	bpl.w loc_00707E
-	move.b (0xff0aac).l,(0xff0aa6).l
-	movea.l (0xff05f8).l,a0
+	move.b (ram_actor_path_reload+1).l,(ram_actor_path_delay+1).l
+	movea.l (ram_actor_path_ptr+4).l,a0
 loc_006DD4:
-	move.w (0xff060e).l,d4
-	addq.w #0x4,(0xff060e).l
+	move.w (ram_actor_path_pos+2).l,d4
+	addq.w #0x4,(ram_actor_path_pos+2).l
 	move.w (0x2,a0,d4.w),d6
 	move.w (0x0,a0,d4.w),d5
 	bpl.w loc_006E30
@@ -7043,106 +7087,106 @@ loc_006DD4:
 	bset.b #0x1,(ram_0ab5).l
 	bra.s loc_006DD4
 loc_006E04:
-	move.w #0x0,(0xff060e).l
+	move.w #0x0,(ram_actor_path_pos+2).l
 	cmpi.w #0xfffe,d5
 	beq.s loc_006E1C
-	btst.b #0x1,(0xff0ac3).l
+	btst.b #0x1,(ram_actors_path_once).l
 	beq.s loc_006DD4
 loc_006E1C:
-	bclr.b #0x1,(0xff0ac0).l
-	bclr.b #0x1,(0xff0ac3).l
+	bclr.b #0x1,(ram_actors_on_path).l
+	bclr.b #0x1,(ram_actors_path_once).l
 	bra.w loc_00707E
 loc_006E30:
-	move.w d5,(ram_shaggy_x_prev).l
-	move.w d6,(ram_shaggy_y_prev).l
+	move.w d5,(ram_scooby_x).l
+	move.w d6,(ram_scooby_y).l
 	bra.w loc_00707E
 loc_006E40:
-	btst.b #0x1,(0xff0ab7).l
+	btst.b #0x1,(ram_actors_moving).l
 	bne.s loc_006E5E
-	tst.w (0xff0688).l
+	tst.w (ram_scooby_wander_timer).l
 	bmi.w loc_00707E
-	subq.w #0x1,(0xff0688).l
+	subq.w #0x1,(ram_scooby_wander_timer).l
 	bra.w loc_00707E
 loc_006E5E:
 	btst.b #0x5,(ram_09de).l
 	beq.s loc_006EC0
 	btst.b #0x1,(ram_0ab5).l
 	bne.w loc_00707E
-	btst.b #0x1,(0xff0abc).l
+	btst.b #0x1,(ram_actors_anim_done).l
 	beq.w loc_00707E
-	move.w (0xff063e).l,d0
-	add.w (0xff0640).l,d0
+	move.w (ram_scooby_pose_anim).l,d0
+	add.w (ram_scooby_pose_facing).l,d0
 	move.w d0,(ram_484a).l
-	move.w (0xff0640).l,(0xff05ba).l
-	move.w #0xffff,(0xff061a).l
+	move.w (ram_scooby_pose_facing).l,(ram_scooby_facing).l
+	move.w #0xffff,(ram_scooby_anim_lock).l
 	bset.b #0x1,(ram_0ab5).l
-	bclr.b #0x1,(0xff0ab7).l
+	bclr.b #0x1,(ram_actors_moving).l
 	bclr.b #0x5,(ram_09de).l
 	bra.w loc_00707E
 loc_006EC0:
 	move.w #0x100,d0
-	sub.w (0xff05a2).l,d0
+	sub.w (ram_actor_depth_x+2).l,d0
 	mulu.w #0x12a,d0
 	asr.l #0x8,d0
-	muls.w (0xff063a).l,d0
-	add.l d0,(ram_shaggy_x_prev).l
+	muls.w (ram_scooby_dir_x).l,d0
+	add.l d0,(ram_scooby_x).l
 	move.w #0x100,d0
-	sub.w (0xff05ae).l,d0
+	sub.w (ram_actor_depth_y+2).l,d0
 	mulu.w #0x95,d0
 	asr.l #0x8,d0
-	muls.w (0xff063c).l,d0
-	add.l d0,(ram_shaggy_y_prev).l
-	move.w (ram_shaggy_x_prev).l,d0
-	move.w (0xff05de).l,d1
-	tst.w (0xff063a).l
+	muls.w (ram_scooby_dir_y).l,d0
+	add.l d0,(ram_scooby_y).l
+	move.w (ram_scooby_x).l,d0
+	move.w (ram_actor_target_x+2).l,d1
+	tst.w (ram_scooby_dir_x).l
 	bmi.w loc_006F28
 	cmp.w d1,d0
 	blt.w loc_006F34
-	move.w (0xff05de).l,(ram_shaggy_x_prev).l
-	clr.w (0xff063a).l
+	move.w (ram_actor_target_x+2).l,(ram_scooby_x).l
+	clr.w (ram_scooby_dir_x).l
 	bra.w loc_006F34
 loc_006F28:
 	cmp.w d1,d0
 	bgt.w loc_006F34
-	clr.w (0xff063a).l
+	clr.w (ram_scooby_dir_x).l
 loc_006F34:
-	move.w (ram_shaggy_y_prev).l,d0
-	move.w (0xff05ea).l,d1
-	tst.w (0xff063c).l
+	move.w (ram_scooby_y).l,d0
+	move.w (ram_actor_target_y+2).l,d1
+	tst.w (ram_scooby_dir_y).l
 	bmi.w loc_006F64
 	cmp.w d1,d0
 	blt.w loc_00707E
-	move.w (0xff05ea).l,(ram_shaggy_y_prev).l
-	clr.w (0xff063c).l
+	move.w (ram_actor_target_y+2).l,(ram_scooby_y).l
+	clr.w (ram_scooby_dir_y).l
 	bra.w loc_006F7A
 loc_006F64:
 	cmp.w d1,d0
 	bgt.w loc_006F7A
-	move.w (0xff05ea).l,(ram_shaggy_y_prev).l
-	clr.w (0xff063c).l
+	move.w (ram_actor_target_y+2).l,(ram_scooby_y).l
+	clr.w (ram_scooby_dir_y).l
 loc_006F7A:
-	tst.w (0xff063a).l
+	tst.w (ram_scooby_dir_x).l
 	bne.w loc_00707E
-	tst.w (0xff063c).l
+	tst.w (ram_scooby_dir_y).l
 	bne.w loc_00707E
-	tst.w (0xff0670).l
+	tst.w (ram_scooby_wp_count).l
 	bmi.w loc_007022
-	subq.w #0x1,(0xff0670).l
+	subq.w #0x1,(ram_scooby_wp_count).l
 	bmi.w loc_007022
-	move.w (0xff0670).l,d0
+	move.w (ram_scooby_wp_count).l,d0
 	add.w d0,d0
-	lea.l (0xff0672).l,a0
-	move.w (0x0,a0,d0.w),(0xff05de).l
-	move.w (0x4,a0,d0.w),(0xff05ea).l
-	move.w (0x8,a0,d0.w),(0xff063a).l
-	move.w (0xc,a0,d0.w),(0xff063c).l
+	lea.l (ram_scooby_wp).l,a0
+	move.w (0x0,a0,d0.w),(ram_actor_target_x+2).l
+	move.w (0x4,a0,d0.w),(ram_actor_target_y+2).l
+	move.w (0x8,a0,d0.w),(ram_scooby_dir_x).l
+	move.w (0xc,a0,d0.w),(ram_scooby_dir_y).l
 	move.w (0x10,a0,d0.w),d0
 	move.w (ram_484a).l,d1
-	sub.w (0xff05ba).l,d1
+	sub.w (ram_scooby_facing).l,d1
 	cmpi.w #0x0,d1
 	bne.s loc_007002
-	lea.l (dat_0FC6E0).l,a0
-	move.w (0xff05ba).l,d2
+	lea.l (scooby_turn_anims).l,a0
+	move.w (ram_scooby_facing).l,d2
 	lsl.w #0x3,d2
 	add.w d0,d2
 	add.w d0,d2
@@ -7152,32 +7196,32 @@ loc_007002:
 	add.w d0,d1
 	move.w d1,(ram_484a).l
 loc_00700A:
-	move.w d0,(0xff05ba).l
+	move.w d0,(ram_scooby_facing).l
 	bset.b #0x1,(ram_0ab5).l
-	move.w #0xffff,(0xff061a).l
+	move.w #0xffff,(ram_scooby_anim_lock).l
 	bra.s loc_00707E
 loc_007022:
-	move.w (0xff05ba).l,d0
+	move.w (ram_scooby_facing).l,d0
 	btst.b #0x7,(ram_vblank_flags).l
 	beq.s loc_00704C
 	addq.w #0x4,d0
 	move.w d0,(ram_484a).l
 	bset.b #0x1,(ram_0ab5).l
-	bclr.b #0x1,(0xff0ab7).l
+	bclr.b #0x1,(ram_actors_moving).l
 	bra.s loc_00707E
 loc_00704C:
 	bset.b #0x5,(ram_09de).l
 	lsl.w #0x3,d0
-	lea.l (dat_0FC700).l,a0
-	move.w (0xff0640).l,d1
+	lea.l (scooby_pose_table).l,a0
+	move.w (ram_scooby_pose_facing).l,d1
 	add.w d1,d1
 	add.w d1,d0
 	move.w (0x0,a0,d0.w),(ram_484a).l
-	move.w #0xffff,(0xff061a).l
+	move.w #0xffff,(ram_scooby_anim_lock).l
 	bset.b #0x1,(ram_0ab5).l
 loc_00707E:
-	move.w (ram_shaggy_x_prev).l,d2
-	move.w (ram_shaggy_y_prev).l,d3
+	move.w (ram_scooby_x).l,d2
+	move.w (ram_scooby_y).l,d3
 	lea.l (ram_zone_map).l,a2
 	lsr.w #0x3,d2
 	add.w d2,d2
@@ -7188,50 +7232,50 @@ loc_00707E:
 	add.w d3,d2
 	tst.w (0x0,a2,d2.w)
 	bpl.s loc_0070B2
-	bset.b #0x1,(0xff0abb).l
+	bset.b #0x1,(ram_actors_behind).l
 	bra.s loc_0070BA
 loc_0070B2:
-	bclr.b #0x1,(0xff0abb).l
+	bclr.b #0x1,(ram_actors_behind).l
 loc_0070BA:
 	btst.b #0x3,(ram_09e9).l
 	beq.w loc_00715A
-	andi.b #0xf0,(0xff0abb).l
-	ori.b #0x3,(0xff0abb).l
-	move.l (ram_shaggy_x).l,(0xff04e4).l
-	move.l (ram_shaggy_y).l,(0xff04fc).l
+	andi.b #0xf0,(ram_actors_behind).l
+	ori.b #0x3,(ram_actors_behind).l
+	move.l (ram_shaggy_x).l,(ram_actor_x2).l
+	move.l (ram_shaggy_y).l,(ram_actor_y2).l
 	cmpi.w #0xf3,(ram_shaggy_x).l
 	blt.s loc_007116
-	move.w #0x0,(0xff05b0).l
-	move.w #0x80,(0xff05a4).l
-	subi.w #0x14,(0xff04fc).l
-	addi.w #0x14,(0xff04e4).l
+	move.w #0x0,(ram_actor_depth_y+4).l
+	move.w #0x80,(ram_actor_depth_x+4).l
+	subi.w #0x14,(ram_actor_y2).l
+	addi.w #0x14,(ram_actor_x2).l
 	bra.s loc_007136
 loc_007116:
-	subi.w #0x14,(0xff04fc).l
-	addi.w #0x14,(0xff04e4).l
-	move.w #0x80,(0xff05b0).l
-	move.w #0x0,(0xff05a4).l
+	subi.w #0x14,(ram_actor_y2).l
+	addi.w #0x14,(ram_actor_x2).l
+	move.w #0x80,(ram_actor_depth_y+4).l
+	move.w #0x0,(ram_actor_depth_x+4).l
 loc_007136:
-	cmpi.w #0x160,(0xff04e4).l
+	cmpi.w #0x160,(ram_actor_x2).l
 	ble.s loc_007148
-	move.w #0x160,(0xff04e4).l
+	move.w #0x160,(ram_actor_x2).l
 loc_007148:
-	cmpi.w #0x150,(0xff04e8).l
+	cmpi.w #0x150,(ram_actor_x2+4).l
 	bne.s loc_00715A
-	move.w #0x150,(0xff04e8).l
+	move.w #0x150,(ram_actor_x2+4).l
 loc_00715A:
 	moveq #0x5,d0
-	lea.l (0xff0508).l,a1
-	lea.l (0xff05aa).l,a2
+	lea.l (ram_actor_y2+12).l,a1
+	lea.l (ram_actor_depth_x+10).l,a2
 loc_007168:
-	btst.l d0,(0xff0ab8).l
+	btst.l d0,(ram_actors_depth_on).l
 	beq.w loc_007208
 	btst.b #0x1,(ram_09e9).l
 	bne.w loc_007208
 	move.w d0,-(sp)
 	move.w (a1),d0
 	lsr.w #0x3,d0
-	movea.l (ram_room_data_ptr).l,a0
+	movea.l (ram_room_depth_rows).l,a0
 	moveq #0x0,d2
 	move.w d2,d1
 loc_00718E:
@@ -7275,27 +7319,27 @@ loc_0071CC:
 	cmp.w (a2),d7
 	beq.w loc_0071F6
 	move.w d7,(a2)
-	bset.b d0,(0xff0abe).l
+	bset.b d0,(ram_actors_depth_new).l
 loc_0071F6:
 	cmp.w (0xc,a2),d7
 	beq.w loc_007208
 	move.w d7,(0xc,a2)
-	bset.b d0,(0xff0abe).l
+	bset.b d0,(ram_actors_depth_new).l
 loc_007208:
 	tst.l -(a1)
 	tst.w -(a2)
 	dbra d0,loc_007168
 	btst.b #0x3,(ram_09e8).l
 	beq.w loc_00723A
-	lea.l (0xff05a0).l,a0
+	lea.l (ram_actor_depth_x).l,a0
 	move.w (0xff08b0).l,d0
 	add.w d0,d0
-	move.w (0xff05a0).l,(0x0,a0,d0.w)
-	move.w (0xff05ac).l,(0xc,a0,d0.w)
+	move.w (ram_actor_depth_x).l,(0x0,a0,d0.w)
+	move.w (ram_actor_depth_y).l,(0xc,a0,d0.w)
 loc_00723A:
 	moveq #0x2,d0
-	lea.l (0xff04e4).l,a0
-	lea.l (0xff05e0).l,a1
+	lea.l (ram_actor_x2).l,a0
+	lea.l (ram_actor_target_x+4).l,a1
 	lea.l (ram_zone_map).l,a2
 loc_00724E:
 	btst.b #0x3,(ram_09e9).l
@@ -7303,16 +7347,16 @@ loc_00724E:
 	cmpi.w #0x4,d0
 	blt.w loc_0073C6
 loc_007260:
-	btst.l d0,(0xff0ab4).l
+	btst.l d0,(ram_actors_active).l
 	beq.w loc_0073C6
-	btst.l d0,(0xff0ab7).l
+	btst.l d0,(ram_actors_moving).l
 	bne.w loc_007308
-	btst.l d0,(0xff0ac0).l
+	btst.l d0,(ram_actors_on_path).l
 	beq.w loc_007374
-	lea.l (0xff0aa5).l,a3
+	lea.l (ram_actor_path_delay).l,a3
 	lea.l (ram_shaggy_x).l,a4
-	lea.l (0xff060c).l,a5
-	lea.l (0xff05f4).l,a6
+	lea.l (ram_actor_path_pos).l,a5
+	lea.l (ram_actor_path_ptr).l,a6
 	move.w d0,d1
 	add.w d1,d1
 	move.w d1,d2
@@ -7336,11 +7380,11 @@ loc_0072D8:
 	move.w #0x0,(0x0,a5,d1.w)
 	cmpi.w #0xfffe,d5
 	beq.s loc_0072EC
-	btst.l d0,(0xff0ac3).l
+	btst.l d0,(ram_actors_path_once).l
 	beq.s loc_0072B0
 loc_0072EC:
-	bclr.b d0,(0xff0ac0).l
-	bclr.b d0,(0xff0ac3).l
+	bclr.b d0,(ram_actors_on_path).l
+	bclr.b d0,(ram_actors_path_once).l
 	bra.w loc_007374
 loc_0072FC:
 	move.w d5,(0x0,a4,d2.w)
@@ -7389,11 +7433,11 @@ loc_007374:
 	move.w (0x18,a0),d2
 	cmp.w (0xc,a1),d2
 	bne.w loc_00738E
-	bclr.b d0,(0xff0ab7).l
+	bclr.b d0,(ram_actors_moving).l
 loc_00738E:
 	move.w (a0),d2
 	move.w (0x18,a0),d3
-	btst.l d0,(0xff0ac2).l
+	btst.l d0,(ram_actors_no_zone).l
 	bne.s loc_0073C6
 	lsr.w #0x3,d2
 	add.w d2,d2
@@ -7404,10 +7448,10 @@ loc_00738E:
 	add.w d3,d2
 	tst.w (0x0,a2,d2.w)
 	bpl.w loc_0073C0
-	bset.b d0,(0xff0abb).l
+	bset.b d0,(ram_actors_behind).l
 	bra.w loc_0073C6
 loc_0073C0:
-	bclr.b d0,(0xff0abb).l
+	bclr.b d0,(ram_actors_behind).l
 loc_0073C6:
 	tst.l (a0)+
 	tst.w (a1)+
@@ -7415,9 +7459,9 @@ loc_0073C6:
 	cmpi.w #0x6,d0
 	bne.w loc_00724E
 	rts
-sub_0073D6:
-	move.w (ram_cursor_x).l,d0
-	move.w (ram_cursor_y).l,d1
+walk_blocked_probe:
+	move.w (ram_walk_probe_x).l,d0
+	move.w (ram_walk_probe_y).l,d1
 	tst.w d0
 	bmi.w loc_007474
 	tst.w d1
@@ -7438,15 +7482,15 @@ sub_0073D6:
 	andi.w #0x7fff,d0
 	beq.w loc_007474
 	add.w d0,d0
-	lea.l (dat_02AF8E).l,a0
+	lea.l (coll_names).l,a0
 	move.w (0x0,a0,d0.w),d0
 	move.w d0,d5
 	andi.w #0x7ff,d0
 	lsl.w #0x5,d0
-	lea.l (dat_02B0BA).l,a0
+	lea.l (coll_tiles).l,a0
 	lea.l (0x0,a0,d0.w),a0
-	move.w (ram_cursor_x).l,d0
-	move.w (ram_cursor_y).l,d1
+	move.w (ram_walk_probe_x).l,d0
+	move.w (ram_walk_probe_y).l,d1
 	andi.w #0x7,d0
 	andi.w #0x7,d1
 	btst.b #0xb,d5
@@ -7464,9 +7508,9 @@ loc_007464:
 	and.l (0x0,a0,d1.w),d5
 loc_007474:
 	rts
-sub_007476:
-	move.w (0xff064a).l,d0
-	move.w (0xff064e).l,d1
+walk_blocked_line_probe:
+	move.w (ram_line_probe_x).l,d0
+	move.w (ram_line_probe_y).l,d1
 	tst.w d0
 	bmi.w loc_007508
 	tst.w d1
@@ -7483,15 +7527,15 @@ sub_007476:
 	andi.w #0x7ff,d0
 	beq.w loc_007508
 	add.w d0,d0
-	lea.l (dat_02AF8E).l,a0
+	lea.l (coll_names).l,a0
 	move.w (0x0,a0,d0.w),d0
 	move.w d0,d5
 	andi.w #0x7ff,d0
 	lsl.w #0x5,d0
-	lea.l (dat_02B0BA).l,a0
+	lea.l (coll_tiles).l,a0
 	lea.l (0x0,a0,d0.w),a0
-	move.w (0xff064a).l,d0
-	move.w (0xff064e).l,d1
+	move.w (ram_line_probe_x).l,d0
+	move.w (ram_line_probe_y).l,d1
 	andi.w #0x7,d0
 	andi.w #0x7,d1
 	btst.b #0xb,d5
@@ -7509,7 +7553,7 @@ loc_0074F8:
 	and.l (0x0,a0,d1.w),d5
 loc_007508:
 	rts
-sub_00750A:
+pad_dir8:
 	btst.b #0x2,(ram_pad1).l
 	bne.w loc_00753A
 	btst.b #0x0,(ram_pad1).l
@@ -7554,8 +7598,8 @@ sub_00758A:
 	clr.w d0
 	move.w #0x8000,d1
 	bsr.w vdp_clear_vram
-	clr.w (ram_6ca).l
-	clr.w (ram_6ce).l
+	clr.w (ram_camera_x).l
+	clr.w (ram_camera_y).l
 	clr.l (ram_vscroll).l
 	clr.l (ram_hscroll_a).l
 	lea.l (ram_pal_target).l,a0
@@ -7746,13 +7790,13 @@ loc_007848:
 	lea.l (ram_zone_map).l,a2
 	bsr.w lzss_decompress
 	adda.l (-0x4,a0),a0
-	move.l a0,(ram_room_data_ptr).l
+	move.l a0,(ram_room_depth_rows).l
 	move.w (ram_map_height).l,d0
 	add.w d0,d0
 	lea.l (0x0,a0,d0.w),a0
-	move.l a0,(0xff0696).l
+	move.l a0,(ram_room_spawns).l
 	lea.l (0x20,a0),a1
-	move.l a1,(ram_room_ptr_69a).l
+	move.l a1,(ram_room_idle_spots).l
 	moveq #0x0,d0
 loc_007888:
 	cmpi.l #-0x1,(a1)+
@@ -7761,7 +7805,7 @@ loc_007888:
 	cmpi.w #0x8,d0
 	bne.s loc_007888
 loc_00789A:
-	move.w d0,(0xff06a0).l
+	move.w d0,(ram_room_idle_count).l
 	move.w (0xff069e).l,d0
 	lea.l (0x0,a0,d0.w),a0
 	move.w (a0),d0
@@ -7769,12 +7813,12 @@ loc_00789A:
 	btst.b #0x3,(ram_09de).l
 	bne.w loc_0078DA
 	move.w d0,(ram_shaggy_x).l
-	move.w d0,(ram_shaggy_x_prev).l
+	move.w d0,(ram_scooby_x).l
 	move.w (0x2,a0),d0
 	lsl.w #0x3,d0
 	move.w d0,(ram_shaggy_y).l
 	subq.w #0x1,d0
-	move.w d0,(ram_shaggy_y_prev).l
+	move.w d0,(ram_scooby_y).l
 loc_0078DA:
 	move.w (ram_shaggy_x).l,d3
 	move.w (ram_shaggy_y).l,d4
@@ -7812,8 +7856,8 @@ loc_007932:
 	move.w d4,d2
 	lsl.w #0x3,d3
 	lsl.w #0x3,d4
-	move.w d3,(ram_6ca).l
-	move.w d4,(ram_6ce).l
+	move.w d3,(ram_camera_x).l
+	move.w d4,(ram_camera_y).l
 	bsr.w sub_007950
 	bsr.w sub_007A8C
 	rts
@@ -7821,8 +7865,8 @@ sub_007950:
 	move.w (ram_map_width).l,d5
 	lsl.w #0x1,d5
 	andi.l #0xffff,d5
-	move.w (ram_6ca).l,d1
-	move.w (ram_6ce).l,d2
+	move.w (ram_camera_x).l,d1
+	move.w (ram_camera_y).l,d2
 	lsr.w #0x3,d1
 	lsr.w #0x3,d2
 	move.w d1,d3
@@ -7926,9 +7970,9 @@ loc_007A74:
 	rts
 sub_007A8C:
 	andi.b #0x3,(0xff0abf).l
-	clr.b (0xff0ac3).l
-	clr.b (0xff0ac0).l
-	move.w #0x64,(0xff0688).l
+	clr.b (ram_actors_path_once).l
+	clr.b (ram_actors_on_path).l
+	move.w #0x64,(ram_scooby_wander_timer).l
 	bclr.b #0x5,(ram_09de).l
 	moveq #0x5,d0
 	lea.l (ram_618).l,a0
@@ -7936,29 +7980,29 @@ loc_007AB8:
 	move.w #0xffff,(-0x10c,a0)
 	move.w #0xffff,(a0)+
 	dbra d0,loc_007AB8
-	move.b #0x0,(0xff0acc).l
-	andi.b #0xfc,(0xff0ab7).l
-	move.w #0x12c,(0xff0686).l
+	move.b #0x0,(ram_shaggy_turning).l
+	andi.b #0xfc,(ram_actors_moving).l
+	move.w #0x12c,(ram_shaggy_idle_timer).l
 	moveq #0x1,d0
 	move.w #0x4,d1
-	add.w (ram_5b8).l,d1
+	add.w (ram_shaggy_facing).l,d1
 	move.w d1,(ram_cur_index).l
 	btst.b #0x7,(ram_09de).l
 	bne.w loc_007B0E
 	addq.b #0x2,d0
 	move.w #0x4,d1
-	add.w (ram_5b8).l,d1
+	add.w (ram_shaggy_facing).l,d1
 	move.w d1,(ram_484a).l
 loc_007B0E:
-	move.b #0x0,(0xff0abe).l
+	move.b #0x0,(ram_actors_depth_new).l
 	moveq #0x3,d0
 	move.b d0,d3
 	move.b d0,d6
 	lea.l (ram_objects).l,a0
 	lea.l (0xff0478).l,a1
 	lea.l (ram_484c).l,a2
-	lea.l (0xff051c).l,a5
-	lea.l (0xff04e4).l,a6
+	lea.l (ram_actor_step_x+8).l,a5
+	lea.l (ram_actor_x2).l,a6
 	move.w (0xff06f4).l,d1
 	moveq #0x2,d2
 loc_007B42:
@@ -8006,9 +8050,9 @@ loc_007BCA:
 	lea.l (0x1a,a0),a0
 	dbra d1,loc_007B42
 loc_007BD2:
-	move.b d0,(0xff0ab4).l
+	move.b d0,(ram_actors_active).l
 	move.b d3,(ram_0ab5).l
-	move.b d6,(0xff0ab8).l
+	move.b d6,(ram_actors_depth_on).l
 	clr.b (0xff0ab6).l
 	clr.b (0xff0ab9).l
 	btst.b #0x7,(ram_09de).l
@@ -8178,8 +8222,8 @@ loc_007DDE:
 	move.w d7,d3
 	add.w (0x4,a1),d2
 	add.w (0x6,a1),d3
-	move.w (ram_6ca).l,d4
-	move.w (ram_6ce).l,d5
+	move.w (ram_camera_x).l,d4
+	move.w (ram_camera_y).l,d5
 	lsr.w #0x3,d4
 	lsr.w #0x3,d5
 	movea.w d4,a2
@@ -8355,30 +8399,30 @@ sub_00801A:
 	move.l #0x642d0,(0xff0474).l
 	clr.w (0xff04a0).l
 	clr.w (0xff04a2).l
-	move.b #0x3,(0xff0ab4).l
+	move.b #0x3,(ram_actors_active).l
 	move.b #0x3,(ram_0ab5).l
-	move.b #0x3,(0xff0ab8).l
+	move.b #0x3,(ram_actors_depth_on).l
 	clr.b (0xff0ac8).l
 	clr.b (0xff0ab6).l
-	clr.b (0xff0ab7).l
+	clr.b (ram_actors_moving).l
 	clr.b (0xff0ab9).l
-	clr.b (0xff0abb).l
+	clr.b (ram_actors_behind).l
 	clr.b (0xff0abf).l
-	clr.b (0xff0ac2).l
+	clr.b (ram_actors_no_zone).l
 	move.w #0x4,(ram_cur_index).l
 	move.w #0x4,(ram_484a).l
 	clr.w (ram_484c).l
 	clr.w (ram_list_484+10).l
 	clr.w (0xff0490).l
 	clr.w (0xff0492).l
-	clr.w (ram_5b8).l
-	clr.w (0xff05ba).l
+	clr.w (ram_shaggy_facing).l
+	clr.w (ram_scooby_facing).l
 	clr.w (0xff05bc).l
 	clr.w (0xff05be).l
 	clr.w (0xff05c0).l
 	clr.w (0xff05c2).l
 	move.w #0xffff,(ram_618).l
-	move.w #0xffff,(0xff061a).l
+	move.w #0xffff,(ram_scooby_anim_lock).l
 	move.w #0xffff,(0xff061c).l
 	move.w #0xffff,(0xff061e).l
 	move.w #0xffff,(0xff0620).l
@@ -10679,7 +10723,7 @@ loc_00A1AA:
 loc_00A1CA:
 	btst.b #0x4,(ram_09de).l
 	beq.w loc_00A1E8
-	btst.b #0x0,(0xff0abc).l
+	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w loc_00A1E8
 	jsr (sub_0020DA).l
 loc_00A1E8:
@@ -10727,18 +10771,18 @@ game_reset:
 	clr.w (0xff069e).l
 	clr.w (ram_hscroll_verb).l
 	clr.w (ram_room_index).l
-	move.w #0xffff,(0xff065a).l
-	move.w #0xffff,(0xff0670).l
-	move.b #0x0,(0xff0abe).l
+	move.w #0xffff,(ram_shaggy_wp_count).l
+	move.w #0xffff,(ram_scooby_wp_count).l
+	move.b #0x0,(ram_actors_depth_new).l
 	move.b #0xff,(ram_pad1).l
 	move.b #0xff,(ram_pad_last).l
 	move.b #0xff,(ram_pad2).l
 	move.b #0xff,(ram_pad_last+1).l
 	move.w #0x4,(0xff080c).l
-	clr.l (ram_room_data_ptr).l
-	clr.w (ram_6ca).l
-	clr.w (ram_6ce).l
-	clr.w (0xff0688).l
+	clr.l (ram_room_depth_rows).l
+	clr.w (ram_camera_x).l
+	clr.w (ram_camera_y).l
+	clr.w (ram_scooby_wander_timer).l
 	clr.w (0xff0804).l
 	clr.w (0xff0806).l
 	clr.b (ram_vblank_flags).l
@@ -10747,7 +10791,7 @@ game_reset:
 	clr.b (ram_09e9).l
 	clr.b (ram_09ea).l
 	clr.b (ram_09eb).l
-	clr.b (0xff0ab3).l
+	clr.b (ram_camera_scroll_req).l
 	clr.b (ram_script_flags).l
 	clr.b (ram_script_flags2).l
 	clr.b (0xff0ab1).l
@@ -10759,7 +10803,7 @@ game_reset:
 	clr.w (0xff07fe).l
 	clr.w (0xff06ae).l
 	clr.b (0xff0ac7).l
-	move.b #0xff,(0xff0acb).l
+	move.b #0xff,(ram_verb_bar_slide).l
 	lea.l (ram_pal_target).l,a0
 	lea.l (shared_palettes).l,a1
 	move.w #0x1f,d0
@@ -10894,7 +10938,7 @@ vblank_main:
 	beq.w loc_00A6B0
 	bsr.w sub_007C04
 loc_00A6B0:
-	bsr.w sub_005E4A
+	bsr.w player_update
 	bset.b #0x6,(ram_vblank_flags).l
 	move.w #0x2600,sr
 loc_00A6C0:
@@ -11101,7 +11145,7 @@ sub_00A984:
 	move.w (ram_6de).l,d0
 	cmpi.w #0xa8,d0
 	blt.w loc_00AA76
-	tst.b (0xff0acb).l
+	tst.b (ram_verb_bar_slide).l
 	bpl.w loc_00AAB6
 	move.w #0x128,d1
 	cmpi.w #0xc0,d0
@@ -11277,7 +11321,7 @@ loc_00AC0A:
 	move.l #0x0,(a0)+
 	addq.w #0x4,d5
 	move.b (0xff0abf).l,(0xff0aba).l
-	move.b (0xff0ab4).l,d0
+	move.b (ram_actors_active).l,d0
 	eori.b #0xff,(0xff0aba).l
 	and.b d0,(0xff0aba).l
 	move.w d5,-(sp)
@@ -11297,7 +11341,7 @@ loc_00AC94:
 	moveq #0x5,d1
 	move.w d1,d4
 	move.w #0x8001,d0
-	lea.l (0xff0508).l,a1
+	lea.l (ram_actor_y2+12).l,a1
 loc_00ACA2:
 	btst.l d1,(0xff0aba).l
 	beq.w loc_00ACC4
@@ -11317,7 +11361,7 @@ loc_00ACCA:
 	bclr.b d4,(0xff0aba).l
 	btst.l d4,(0xff0ac5).l
 	bne.s loc_00ACE0
-	btst.l d4,(0xff0abd).l
+	btst.l d4,(ram_actors_anim_looped).l
 	beq.s loc_00AC68
 loc_00ACE0:
 	bset.b d4,(0xff0ac4).l
@@ -11356,8 +11400,8 @@ loc_00AD54:
 	movea.l (a2),a1
 	move.w (-0x7c,a2),d2
 	move.w (-0x64,a2),d3
-	sub.w (ram_6ca).l,d2
-	sub.w (ram_6ce).l,d3
+	sub.w (ram_camera_x).l,d2
+	sub.w (ram_camera_y).l,d3
 	cmpi.w #0xffb0,d2
 	blt.w loc_00AF22
 	cmpi.w #0xffb0,d3
@@ -11368,7 +11412,7 @@ loc_00AD54:
 	bgt.w loc_00AF22
 	addi.w #0x80,d2
 	addi.w #0x90,d3
-	btst.l d4,(0xff0ab8).l
+	btst.l d4,(ram_actors_depth_on).l
 	beq.s loc_00ADAA
 	sub.w (0x24,a3),d2
 	sub.w (0x30,a3),d3
@@ -11464,7 +11508,7 @@ loc_00AEEE:
 	move.w d6,d0
 	add.w (a4)+,d0
 	or.w (0xa,a1),d0
-	btst.l d4,(0xff0abb).l
+	btst.l d4,(ram_actors_behind).l
 	beq.s loc_00AF0C
 	ori.w #0x8000,d0
 loc_00AF0C:
@@ -11483,9 +11527,9 @@ sub_00AF24:
 	lea.l (0xff0540).l,a2
 	lea.l (0xff0588).l,a3
 	move.w #0xd800,d3
-	move.b (0xff0ab4).l,d4
+	move.b (ram_actors_active).l,d4
 	move.b (0xff0ab6).l,d5
-	move.b (0xff0abd).l,d7
+	move.b (ram_actors_anim_looped).l,d7
 loc_00AF4E:
 	btst.l d2,d4
 	beq.s loc_00AF94
@@ -11521,7 +11565,7 @@ loc_00AF94:
 	bne.s loc_00AF4E
 loc_00AFA2:
 	move.b d5,(0xff0ab6).l
-	move.b d7,(0xff0abd).l
+	move.b d7,(ram_actors_anim_looped).l
 	bsr.w sub_00A984
 	lea.l (ram_sat_buf).l,a0
 	move.w #0xc8,d1
@@ -11608,7 +11652,7 @@ loc_00B0F8:
 	lea.l (dat_0FCA08).l,a5
 	lea.l (ram_sat_buf).l,a0
 loc_00B11A:
-	btst.l d4,(0xff0ab4).l
+	btst.l d4,(ram_actors_active).l
 	beq.w loc_00B374
 	tst.w (a3)
 	bgt.w loc_00B374
@@ -11623,7 +11667,7 @@ loc_00B140:
 	move.w (0x0,a1,d1.w),d6
 	btst.l d4,(ram_0ab5).l
 	bne.s loc_00B1A6
-	btst.l d4,(0xff0abe).l
+	btst.l d4,(ram_actors_depth_new).l
 	bne.s loc_00B1A6
 	cmpi.w #0x1,d4
 	beq.s loc_00B1A6
@@ -11632,8 +11676,8 @@ loc_00B140:
 	move.w (0x0,a1,d1.w),d2
 	lea.l (ram_shaggy_y).l,a1
 	move.w (0x0,a1,d1.w),d3
-	sub.w (ram_6ca).l,d2
-	sub.w (ram_6ce).l,d3
+	sub.w (ram_camera_x).l,d2
+	sub.w (ram_camera_y).l,d3
 	cmpi.w #0xffb0,d2
 	blt.w loc_00B374
 	cmpi.w #0x150,d2
@@ -11651,8 +11695,8 @@ loc_00B1A6:
 	bne.w loc_00B374
 	btst.l d4,(0xff0ab9).l
 	bne.w loc_00B374
-	bclr.b d4,(0xff0abc).l
-	bclr.b d4,(0xff0abd).l
+	bclr.b d4,(ram_actors_anim_done).l
+	bclr.b d4,(ram_actors_anim_looped).l
 	movea.l (a6),a1
 	move.w (0x2,a1),d0
 	move.w (a4),d1
@@ -11663,12 +11707,12 @@ loc_00B1A6:
 	bclr.b d4,(ram_0ab5).l
 loc_00B1F2:
 	movea.l (a6),a1
-	btst.l d4,(0xff0abc).l
+	btst.l d4,(ram_actors_anim_done).l
 	beq.w loc_00B216
-	btst.l d4,(0xff0abe).l
+	btst.l d4,(ram_actors_depth_new).l
 	beq.w loc_00B374
 	move.w (0x18,a4),d1
-	bclr.b d4,(0xff0abe).l
+	bclr.b d4,(ram_actors_depth_new).l
 	bra.w loc_00B2EA
 loc_00B216:
 	move.w (0xc,a4),d0
@@ -11687,9 +11731,9 @@ loc_00B236:
 loc_00B242:
 	cmpi.w #0x3,d0
 	bne.w loc_00B260
-	btst.l d4,(0xff0ac3).l
+	btst.l d4,(ram_actors_path_once).l
 	beq.s loc_00B25A
-	bclr.b d4,(0xff0ac3).l
+	bclr.b d4,(ram_actors_path_once).l
 	bra.s loc_00B2A0
 loc_00B25A:
 	move.w d1,(0xc,a4)
@@ -11708,13 +11752,13 @@ loc_00B27C:
 loc_00B286:
 	cmpi.w #0x9,d0
 	bne.w loc_00B298
-	bset.b d4,(0xff0abc).l
+	bset.b d4,(ram_actors_anim_done).l
 	bra.w loc_00B374
 loc_00B298:
 	cmpi.w #0xd,d0
 	bne.w loc_00B2AC
 loc_00B2A0:
-	bclr.b d4,(0xff0abd).l
+	bclr.b d4,(ram_actors_anim_looped).l
 	move.w d1,(a4)
 	bra.w loc_00B216
 loc_00B2AC:
@@ -11768,7 +11812,7 @@ loc_00B32E:
 	move.w #0x3c0,d1
 loc_00B332:
 	move.w d1,(0x100,a4)
-	btst.l d4,(0xff0ab8).l
+	btst.l d4,(ram_actors_depth_on).l
 	beq.w loc_00B358
 	btst.l d4,(0xff0ab6).l
 	bne.w loc_00B374
@@ -11915,11 +11959,11 @@ loc_00B4E8:
 	move.w (0xe,a0),d0
 	move.w (0x10,a0),d1
 	move.w #0xff,d2
-	sub.w (0xff05a0).l,d2
+	sub.w (ram_actor_depth_x).l,d2
 	muls.w d2,d0
 	asr.l #0x8,d0
 	move.w #0xff,d2
-	sub.w (0xff05ac).l,d2
+	sub.w (ram_actor_depth_y).l,d2
 	muls.w d2,d1
 	asr.l #0x8,d1
 	neg.w d0
@@ -16095,9 +16139,9 @@ sub_00FA78:
 	bne.w loc_00FC0A
 	btst.b #0x5,(ram_09e9).l
 	beq.s loc_00FAE4
-	move.w (ram_6ca).l,d0
+	move.w (ram_camera_x).l,d0
 	add.w (0xff08b4).l,d0
-	move.w d0,(ram_6ca).l
+	move.w d0,(ram_camera_x).l
 	move.w d0,d2
 	andi.w #0x7,d2
 	move.w #0x8,d3
@@ -16107,33 +16151,33 @@ sub_00FA78:
 	bne.s loc_00FAD2
 	tst.w (0xff08b4).l
 	bpl.s loc_00FACA
-	bset.b #0x1,(0xff0ab3).l
+	bset.b #0x1,(ram_camera_scroll_req).l
 	bra.s loc_00FAD2
 loc_00FACA:
-	bset.b #0x0,(0xff0ab3).l
+	bset.b #0x0,(ram_camera_scroll_req).l
 loc_00FAD2:
 	cmp.w (0xff08b6).l,d0
 	bne.w loc_00FAE4
 	bclr.b #0x5,(ram_09e9).l
 loc_00FAE4:
-	move.w (ram_6ca).l,d0
+	move.w (ram_camera_x).l,d0
 	andi.w #0x3ff,d0
 	neg.w d0
 	move.w d0,(ram_hscroll_b).l
 	btst.b #0x6,(ram_09de).l
 	beq.w loc_00FB12
 	move.w (ram_shaggy_x).l,d0
-	sub.w (ram_6ca).l,d0
+	sub.w (ram_camera_x).l,d0
 	subi.w #0x2c,d0
 loc_00FB12:
 	move.w d0,(ram_hscroll_a).l
-	move.w (ram_6ce).l,d0
+	move.w (ram_camera_y).l,d0
 	andi.w #0xff,d0
 	move.w d0,(0xff07fe).l
 	btst.b #0x6,(ram_09de).l
 	beq.s loc_00FB44
 	move.w (ram_shaggy_y).l,d0
-	sub.w (ram_6ce).l,d0
+	sub.w (ram_camera_y).l,d0
 	subi.w #0x30,d0
 	neg.w d0
 loc_00FB44:
@@ -16168,23 +16212,23 @@ loc_00FBB2:
 	move.w (0x2,a0,d0.w),d1
 	add.w d1,(0xff07fe).l
 loc_00FBCC:
-	btst.b #0x0,(0xff0ab3).l
+	btst.b #0x0,(ram_camera_scroll_req).l
 	beq.s loc_00FBDA
 	bsr.w sub_00FC3A
 loc_00FBDA:
-	btst.b #0x1,(0xff0ab3).l
+	btst.b #0x1,(ram_camera_scroll_req).l
 	beq.s loc_00FBE8
 	bsr.w sub_00FD5E
 loc_00FBE8:
-	btst.b #0x2,(0xff0ab3).l
+	btst.b #0x2,(ram_camera_scroll_req).l
 	beq.s loc_00FBF6
 	bsr.w sub_00FE74
 loc_00FBF6:
-	btst.b #0x3,(0xff0ab3).l
+	btst.b #0x3,(ram_camera_scroll_req).l
 	beq.s loc_00FC04
 	bsr.w sub_00FF68
 loc_00FC04:
-	clr.b (0xff0ab3).l
+	clr.b (ram_camera_scroll_req).l
 loc_00FC0A:
 	move.w #0xdc00,d0
 	move.w (ram_hscroll_a).l,d1
@@ -16196,13 +16240,13 @@ loc_00FC0A:
 	move.l (ram_vscroll).l,(vdp_data).l
 	rts
 sub_00FC3A:
-	move.w (ram_6ca).l,d4
+	move.w (ram_camera_x).l,d4
 	lsr.w #0x3,d4
 	move.w (ram_map_width).l,d5
 	subi.w #0x20,d5
 	cmp.w d5,d4
 	beq.w loc_00FD54
-	move.w (ram_6ce).l,d5
+	move.w (ram_camera_y).l,d5
 	lsr.w #0x3,d5
 	addi.w #0x20,d4
 	move.w d4,d2
@@ -16289,11 +16333,11 @@ loc_00FD54:
 	move.w #0x8f02,(vdp_ctrl).l
 	rts
 sub_00FD5E:
-	move.w (ram_6ca).l,d4
+	move.w (ram_camera_x).l,d4
 	lsr.w #0x3,d4
 	beq.w loc_00FE6A
 	subq.w #0x1,d4
-	move.w (ram_6ce).l,d5
+	move.w (ram_camera_y).l,d5
 	lsr.w #0x3,d5
 	move.w d4,d2
 	move.w d5,d3
@@ -16379,10 +16423,10 @@ loc_00FE6A:
 	move.w #0x8f02,(vdp_ctrl).l
 	rts
 sub_00FE74:
-	move.w (ram_6ce).l,d5
+	move.w (ram_camera_y).l,d5
 	lsr.w #0x3,d5
 	beq.w loc_00FF66
-	move.w (ram_6ca).l,d4
+	move.w (ram_camera_x).l,d4
 	lsr.w #0x3,d4
 	move.w d4,d2
 	move.w d5,d3
@@ -16462,14 +16506,14 @@ loc_00FF52:
 loc_00FF66:
 	rts
 sub_00FF68:
-	move.w (ram_6ce).l,d5
+	move.w (ram_camera_y).l,d5
 	move.w (ram_map_height).l,d4
 	subi.w #0x13,d4
 	lsr.w #0x3,d5
 	cmp.w d4,d5
 	beq.w loc_010068
 	addi.w #0x13,d5
-	move.w (ram_6ca).l,d4
+	move.w (ram_camera_x).l,d4
 	lsr.w #0x3,d4
 	move.w d4,d2
 	move.w d5,d3
@@ -16679,9 +16723,9 @@ dat_0296FA:
 	.incbin "baserom.md",0x296FA,0x578
 dat_029C72:
 	.incbin "baserom.md",0x29C72,0x131C
-dat_02AF8E:
+coll_names:
 	.incbin "baserom.md",0x2AF8E,0x12C
-dat_02B0BA:
+coll_tiles:
 	.incbin "baserom.md",0x2B0BA,0x280
 dat_02B33A:
 	.incbin "baserom.md",0x2B33A,0x3C40
@@ -16775,11 +16819,11 @@ dat_0F88DC:
 	.incbin "baserom.md",0xF88DC,0x1E9E
 dat_0FA77A:
 	.incbin "baserom.md",0xFA77A,0x1F66
-dat_0FC6E0:
+scooby_turn_anims:
 	.incbin "baserom.md",0xFC6E0,0x20
-dat_0FC700:
+scooby_pose_table:
 	.incbin "baserom.md",0xFC700,0x20
-dat_0FC720:
+shaggy_turn_anims:
 	.incbin "baserom.md",0xFC720,0x20
 dat_0FC740:
 	.incbin "baserom.md",0xFC740,0x20

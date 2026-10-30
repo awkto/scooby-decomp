@@ -188,6 +188,22 @@ static void set_hle_for_side(const hle_def *target, bool c_side, const opts *o)
 	(void)c_side;
 }
 
+/* Per-function comparison exemptions, applied automatically (also by `check all`).
+ * Every entry needs a proof in the C source that no caller reads what is ignored. */
+static const struct {
+	uint32_t addr;
+	uint32_t regs;      /* bit n = Dn, bit 8+n = An */
+	uint16_t sr;        /* CCR bits */
+} dt_ignores[] = {
+	/* walk.c: $005E4A and its tails end at one rts back into vblank_main, whose caller
+	 * (VBlank $0008BC) restores D0-D7/A0-A6 and SR; vblank_main reads no register. */
+	{ 0x005E4A, 0x7FFF, 0x1F },
+	{ 0x006AE8, 0x7FFF, 0x1F },
+	{ 0x006B28, 0x7FFF, 0x1F },
+	{ 0x006C28, 0x7FFF, 0x1F },
+	{ 0x006D24, 0x7FFF, 0x1F },
+};
+
 static int do_run(const hle_def *target, const opts *o)
 {
 	char dirbuf[512];
@@ -263,6 +279,11 @@ static int do_run(const hle_def *target, const opts *o)
 		if (min_sp < lo)
 			lo = min_sp;
 		sb_cmp_opts co = o->cmp;
+		for (size_t k = 0; k < sizeof dt_ignores / sizeof dt_ignores[0]; k++)
+			if (dt_ignores[k].addr == target->addr) {
+				co.ignore_regs |= dt_ignores[k].regs;
+				co.ignore_sr |= dt_ignores[k].sr;
+			}
 		co.quiet = true;
 		int bad = sb_compare(ref, got, lo, sp0, &co, stdout);
 		if (bad) {

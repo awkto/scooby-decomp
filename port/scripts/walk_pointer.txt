@@ -1,0 +1,56 @@
+# Lobby, then test pointer mode: does clicking on the floor make Shaggy walk there?
+# (walking subsystem #16; answer: no - see docs/subsystems/walking.md)
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+ram lobby
+peek sx FF04DC 2
+peek sy FF04F4 2
+# open the pointer with B, move it down-left onto empty floor
+press B 2
+run 10
+peek menu FF09DC 1
+peek cx FF06DC 2
+peek cy FF06DE 2
+press DL 30
+run 2
+peek cx FF06DC 2
+peek cy FF06DE 2
+peek obj FF06AE 2
+shot pointer
+# click with B, then with A, and wait
+press B 2
+run 120
+peek sx FF04DC 2
+peek sy FF04F4 2
+peek menu FF09DC 1
+shot afterB
+press A 2
+run 120
+peek sx FF04DC 2
+peek sy FF04F4 2
+peek menu FF09DC 1
+shot afterA
+# C (pointer toggle per #7)
+press C 2
+run 30
+peek menu FF09DC 1
+press DL 30
+press B 2
+run 120
+peek sx FF04DC 2
+peek sy FF04F4 2
+shot afterC

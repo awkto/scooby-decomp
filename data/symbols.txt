@@ -185,3 +185,31 @@
 002FCC script_subop_3B
 002FAE script_subop_3C
 002FB8 script_subop_3D
+
+# ---- walking subsystem (#16, docs/subsystems/walking.md, port/src/game/walk.c)
+005E4A player_update       # per-frame: Shaggy path/verb bar/menu cursor/D-pad walk + tails below (from vblank_main)
+006AE8 player_zone_flags   # tail: Shaggy behind-flag from zone bit 15, falls into camera_follow
+006B28 camera_follow       # tail: camera dead-zone follow + column/row stream requests
+006C28 verb_menu_open_check # tail: A/B opens the verb menu (pointer) at Shaggy
+006D24 actors_update       # tail: Scooby walk/path/wander, per-row depth, actors 2-5; the rts of player_update
+0073D6 walk_blocked_probe  # Z=0 if ram_walk_probe_x/y is on a blocked collision pixel (bounds d2/d3)
+007476 walk_blocked_line_probe # same for ram_line_probe_x/y (no upper bound, zone mask $7FF)
+00750A pad_dir8            # D-pad -> 0 DR 1 UL 2 UR 3 DL 4 L 5 R 6 U 7 D
+005002 shaggy_walk_to      # script walk: d0,d1 target px, d2 speed, d7 anim base; straight or via room waypoints; blocks until arrived
+005364 shaggy_line_clear   # walk_line_clear from Shaggy's position
+005378 walk_line_clear     # step a probe from ram_line_from to (d0,d1); d3=1 (Z=0) if a blocked pixel is hit
+00532A shaggy_waypoints_reachable # d0 bit n = room waypoint n reachable in a straight line from Shaggy
+00547A shaggy_dir_to       # shaggy_set_dir from Shaggy's position
+00548E shaggy_set_dir      # d0,d1 target, d2 speed: ram_shaggy_dir_x/y (8.8) and facing d6
+0056B0 scooby_walk_to      # Scooby version of shaggy_walk_to (from the idle-spot wander, scripts)
+0059B0 scooby_line_clear
+0059DC scooby_set_dir
+005976 scooby_waypoints_reachable
+005AE0 scooby_walk_start
+005AD8 scooby_walk_direct
+000E8C dat_scooby_pose_anims # 4 words: idle-spot pose animation bases (by spot flag bits 14-15)
+02AF8E coll_names          # w[150] zone index -> collision tile (bits 0-10) | hflip<<11 | vflip<<12
+02B0BA coll_tiles          # 20 4bpp 8x8 collision tiles, nibble != 0 = blocked
+0FC720 shaggy_turn_anims   # w[4][4] [facing][new dir]
+0FC6E0 scooby_turn_anims
+0FC700 scooby_pose_table

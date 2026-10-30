@@ -38,25 +38,26 @@ FF048A 2    ram_484a
 FF048C 2    ram_484c
 
 # ---- Shaggy (player) -- 16.16 fixed point, integer part is the first word
-FF04DC 4    ram_shaggy_x     # X position 16.16 (D-pad walks it directly)
-FF04E0 2    ram_shaggy_x_prev # previous integer X (copied before moving)
-FF04F4 4    ram_shaggy_y     # Y position 16.16
-FF04F8 2    ram_shaggy_y_prev
+FF04DC 4    ram_shaggy_x     # actor 0 X 16.16 (actor arrays: X[6] at $FF04DC, Y[6] at $FF04F4; docs/subsystems/walking.md)
+FF04E0 4    ram_scooby_x     # actor 1 (Scooby) X 16.16
+FF04E4 16   ram_actor_x2     # actors 2-5 X 16.16
+FF04F4 4    ram_shaggy_y     # actor 0 Y 16.16 (feet)
+FF04F8 4    ram_scooby_y     # actor 1 Y 16.16
+FF04FC 16   ram_actor_y2     # actors 2-5 Y 16.16
 
 # ---- level / room state (docs/formats.md)
-FF05B8 2    ram_5b8
+FF05B8 2    ram_shaggy_facing # 0 right 1 left 2 up 3 down
 FF0618 2    ram_618
-FF0642 2    ram_cursor_x     # pixel coords tested by sub_0073D6 against the map (?)
-FF0646 2    ram_cursor_y
-FF0652 2    ram_view_x0
-FF0654 2    ram_view_x1
-FF0656 2    ram_view_y0
-FF0658 2    ram_view_y1
+FF0642 4    ram_walk_probe_x # candidate Shaggy position 16.16, tested by walk_blocked_probe
+FF0646 4    ram_walk_probe_y
+FF0652 4    ram_line_from_x  # start of a straight-line walkability test (walk_line_clear), 16.16
+FF0656 4    ram_line_from_y
 FF068A 2    ram_ui_tile_base_a
 FF068C 2    ram_font_base    # tile base added to text characters (draw_text_plane_a)
 FF068E 4    ram_mystery_hdr  # active mystery header pointer
-FF0692 4    ram_room_data_ptr # pointer to further room data (scripts/objects)
-FF069A 4    ram_room_ptr_69a # pointer; +$20 holds viewport dims (read by $0052C0)
+FF0692 4    ram_room_depth_rows # -> room walk data: w[height] depth per cell row (then spawn points)
+FF0696 4    ram_room_spawns  # -> 8 entry points (cell x, cell y); $FF069E = byte offset of the one used
+FF069A 4    ram_room_idle_spots # -> up to 8 Scooby idle spots (long each, -1 ends); +$20: two path waypoints (cells)
 FF06A6 4    ram_cur_music    # id of the "current music" ($2F at boot)
 FF06AA 2    ram_mystery_idx  # 0 = Blake's Hotel, 1 = Ha Ha Carnival
 FF06AC 2    ram_room_index   # current room number (starts at 2)
@@ -64,8 +65,8 @@ FF06C0 2    ram_6c0
 FF06C2 2    ram_6c2
 FF06C6 2    ram_map_width    # room width in cells
 FF06C8 2    ram_map_height   # room height in cells
-FF06CA 2    ram_6ca
-FF06CE 2    ram_6ce
+FF06CA 2    ram_camera_x     # world x of the left screen edge
+FF06CE 2    ram_camera_y     # world y shown at screen line 16
 FF06D2 4    ram_room_name_ptr # absolute pointer to the room name string
 FF06DC 2    ram_6dc
 FF06DE 2    ram_6de
@@ -118,3 +119,48 @@ FF8C00 7168 ram_planea_tmp   # decompressed plane A names
 FFA800 7168 ram_planeb_names
 FFC400 7168 ram_planea_names
 FFE000 4096 ram_zone_map     # per-cell zone/walk ids
+
+# ---- walking subsystem (#16, docs/subsystems/walking.md, port/src/game/walk.h)
+FF0514 24   ram_actor_step_x # actors 2-5 |x step| 16.16 (indexed from actor 0)
+FF052C 16   ram_actor_step_y # actors 2-5 |y step| (array base $FF0528)
+FF05A0 12   ram_actor_depth_x # w[6] depth scale 0 (near) .. far; x speed = (256-depth)*k
+FF05AC 12   ram_actor_depth_y # w[6] same for y speed
+FF05BA 2    ram_scooby_facing
+FF05DC 12   ram_actor_target_x # w[6] auto-walk target pixel x
+FF05E8 12   ram_actor_target_y # w[6]
+FF05F4 24   ram_actor_path_ptr # l[6] scripted path tables
+FF060C 12   ram_actor_path_pos # w[6] byte offset into the path
+FF061A 2    ram_scooby_anim_lock
+FF062A 4    ram_shaggy_speed # 16.16 D-pad speed = (256-depth)*$155
+FF062E 2    ram_shaggy_dir_x # auto-walk direction 8.8
+FF0630 2    ram_shaggy_dir_y
+FF0632 4    ram_shaggy_speed_x
+FF0636 4    ram_shaggy_speed_y
+FF063A 2    ram_scooby_dir_x
+FF063C 2    ram_scooby_dir_y
+FF063E 2    ram_scooby_pose_anim
+FF0640 2    ram_scooby_pose_facing
+FF064A 4    ram_line_probe_x # point stepped along a line by walk_line_clear, 16.16
+FF064E 4    ram_line_probe_y
+FF065A 2    ram_shaggy_wp_count # waypoints left (consumed from the end)
+FF065C 20   ram_shaggy_wp    # w[2] x, w[2] y, w[2] dir x, w[2] dir y, w[2] facing
+FF0670 2    ram_scooby_wp_count
+FF0672 20   ram_scooby_wp
+FF0686 2    ram_shaggy_idle_timer # frames to the bored animation (300)
+FF0688 2    ram_scooby_wander_timer # frames to the next idle-spot walk (100)
+FF06A0 2    ram_room_idle_count
+FF0AA5 6    ram_actor_path_delay
+FF0AAB 6    ram_actor_path_reload
+FF0AB3 1    ram_camera_scroll_req # bit0 right 1 left 2 up 3 down: stream a column/row
+FF0AB4 1    ram_actors_active
+FF0AB7 1    ram_actors_moving # bit n: actor n auto-walking to its target
+FF0AB8 1    ram_actors_depth_on
+FF0ABB 1    ram_actors_behind # bit n: actor n on a zone cell with bit 15 (behind the foreground)
+FF0ABC 1    ram_actors_anim_done
+FF0ABD 1    ram_actors_anim_looped
+FF0ABE 1    ram_actors_depth_new
+FF0AC0 1    ram_actors_on_path
+FF0AC2 1    ram_actors_no_zone
+FF0AC3 1    ram_actors_path_once
+FF0ACB 1    ram_verb_bar_slide
+FF0ACC 1    ram_shaggy_turning # bit0 R 1 L 2 U 3 D: turn animation running

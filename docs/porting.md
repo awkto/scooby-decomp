@@ -247,6 +247,14 @@ restructure them.
 | $009964 | vram_write_word | vdp.c | 200/200 |
 | $009BE4 | vram_fill_words (VRAM memset; also reached via `bra` from $9C58) | vdp.c | 96/96 (all calls on the route) |
 | $005B56 | str_copy (strcpy A0 to A1) | util.c | 54/54 (all calls on the route) |
+| $005E4A | player_update (Shaggy per-frame update; see docs/subsystems/walking.md) | walk.c | 200/200 + walk_dt.sh |
+| $006AE8 / $006B28 / $006C28 / $006D24 | player_zone_flags / camera_follow / verb_menu_open_check / actors_update (tails of player_update) | walk.c | 200/200 each |
+| $0073D6 | walk_blocked_probe (per-pixel collision test) | walk.c | 200/200 |
+| $007476 | walk_blocked_line_probe | walk.c | 200/200 |
+| $00750A | pad_dir8 | walk.c | 7/7 (all calls on the route) + walk_dt.sh |
 
 The "pad read $9D3A" in older notes is the body of $9D34. The function is entered at
 $9D34 with `jsr $1F6D7A` (Z80 bus request) and is called from $A4A4 and $A6C0.
+
+The five walking entries ignore final D0-D7/A0-A6/CCR (`dt_ignores` in difftest.c): they only
+return into vblank_main, whose VBlank wrapper restores every register.

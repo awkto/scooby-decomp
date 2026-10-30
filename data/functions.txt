@@ -141,30 +141,30 @@
 004f50    32 script_op_12  # 8 insns
 004f70    78 script_op_1F  # 21 insns
 004fbe    68 script_op_17  # 19 insns
-005002   410 sub_005002  # 146 insns +00558a:224
+005002   410 shaggy_walk_to  # 146 insns +00558a:224
 00519c    72 sub_00519C  # 15 insns
 0051e4    74 sub_0051E4  # 15 insns
 00522e    72 sub_00522E  # 15 insns
 005276    74 sub_005276  # 15 insns
 0052c0    52 sub_0052C0  # 11 insns
 0052f4    54 sub_0052F4  # 11 insns
-00532a    58 sub_00532A  # 20 insns
-005364    20 sub_005364  # 2 insns
-005378   258 sub_005378  # 83 insns
-00547a    20 sub_00547A  # 2 insns
-00548e   252 sub_00548E  # 83 insns
+00532a    58 shaggy_waypoints_reachable  # 20 insns
+005364    20 shaggy_line_clear  # 2 insns
+005378   258 walk_line_clear  # 83 insns
+00547a    20 shaggy_dir_to  # 2 insns
+00548e   252 shaggy_set_dir  # 83 insns
 00566a    70 sub_00566A  # 14 insns
-0056b0   418 sub_0056B0  # 104 insns
+0056b0   418 scooby_walk_to  # 104 insns
 005852    72 sub_005852  # 15 insns
 00589a    74 sub_00589A  # 15 insns
 0058e4    72 sub_0058E4  # 15 insns
 00592c    74 sub_00592C  # 15 insns
-005976    58 sub_005976  # 20 insns
-0059b0    24 sub_0059B0  # 3 insns
+005976    58 scooby_waypoints_reachable  # 20 insns
+0059b0    24 scooby_line_clear  # 3 insns
 0059c8    20 sub_0059C8  # 2 insns
-0059dc   252 sub_0059DC  # 83 insns
-005ad8     8 sub_005AD8  # 1 insns
-005ae0   118 sub_005AE0  # 24 insns
+0059dc   252 scooby_set_dir  # 83 insns
+005ad8     8 scooby_walk_direct  # 1 insns
+005ae0   118 scooby_walk_start  # 24 insns
 005b56     8 strcpy  # 3 insns
 005b5e    52 sub_005B5E  # 17 insns
 005b92    74 sub_005B92  # 23 insns
@@ -175,16 +175,16 @@
 005cb6    64 sub_005CB6  # 16 insns
 005cf6    38 sub_005CF6  # 7 insns
 005d1c   302 sub_005D1C  # 98 insns
-005e4a  2802 sub_005E4A  # 609 insns +006940:28 +006960:392
+005e4a  2802 player_update  # 609 insns +006940:28 +006960:392
 00693c     4 sub_00693C  # 1 insns
 00695c     4 sub_00695C  # 1 insns
-006ae8    64 sub_006AE8  # 15 insns
-006b28   256 sub_006B28  # 60 insns
-006c28   252 sub_006C28  # 42 insns
-006d24  1714 sub_006D24  # 370 insns
-0073d6   160 sub_0073D6  # 45 insns
-007476   148 sub_007476  # 41 insns
-00750a   128 sub_00750A  # 32 insns
+006ae8    64 player_zone_flags  # 15 insns
+006b28   256 camera_follow  # 60 insns
+006c28   252 verb_menu_open_check  # 42 insns
+006d24  1714 actors_update  # 370 insns
+0073d6   160 walk_blocked_probe  # 45 insns
+007476   148 walk_blocked_line_probe  # 41 insns
+00750a   128 pad_dir8  # 32 insns
 00758a   966 sub_00758A  # 245 insns
 007950   218 sub_007950  # 62 insns
 007a2a    98 sub_007A2A  # 35 insns
