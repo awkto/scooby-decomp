@@ -1,0 +1,11 @@
+#!/bin/sh
+# One-command difftest:  port/tools/dt FUNC... [difftest check options]
+#   builds build/port (Release), captures >=200 entry states per function if missing
+#   (runs/states/<ADDR>/), then compares the original 68k code with the C replacement.
+# Examples:  port/tools/dt pad_read        port/tools/dt all        port/tools/dt '$9D34' -v
+set -e
+root=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$root"
+[ -f build/port/CMakeCache.txt ] || cmake -S port -B build/port -DCMAKE_BUILD_TYPE=Release >/dev/null
+cmake --build build/port -j"$(nproc)" --target difftest >/dev/null
+exec build/port/difftest check "$@"

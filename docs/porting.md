@@ -1,0 +1,252 @@
+# Native port: host, HLE layer and difftest
+
+The port runs the original ROM on a statically linked Genesis Plus GX core and replaces
+68k functions with C one at a time. Each replacement is proven equivalent to the original
+by `difftest` before it is enabled. When every function has been replaced, the CPU core
+is no longer needed.
+
+```
+port/
+  CMakeLists.txt        targets: scoobyport (SDL2 host), difftest (headless)
+  cmake/gpgx.cmake      exports GPGX 60bee4c from ext/gpgx + applies tools/patches/*.patch
+  third_party/gpgx/     GPGX license (sources are not copied into this repo)
+  hle/hle.h             THE API for decompiled code: HLE_FUNC, ctx, RAM/ROM/bus/VDP accessors, flags
+  hle/hle.c             registry, dispatch from the CPU, nested 68k calls, bus accessors
+  hle/sandbox.[ch]      run one function in isolation, snapshot and compare machine state
+  hle/gx.[ch]           the only code that touches GPGX internals
+  src/emu.[ch]          core wrapper (libretro entry points called directly), ROM sha1 check
+  src/script.[ch]       harness-compatible scripts (run/press/shot/ram/vdp/save/load/hle/capture/regs)
+  src/capture.[ch]      entry-state capture (savestate + pad state when PC hits ADDR)
+  src/main.c            SDL2 host
+  src/game/*.c          decompiled game code, grouped by subsystem (io.c, vdp.c, util.c, ...)
+  src/game/game.h       prototypes of decompiled functions + named RAM variables
+  tools/difftest.c      differential tester
+  tools/dt              one-command build + capture + difftest
+  scripts/              lobby.txt (route to the Lobby), capture.txt (route used for captures)
+```
+
+## Building
+
+All building and testing happens on a leased VM (see README), not on your workstation:
+
+    vm=$(tools/vm/lease my-task)
+    tools/vm/vmrun $vm 'cmake -S port -B build/port -DCMAKE_BUILD_TYPE=Release && cmake --build build/port -j4'
+    tools/vm/release $vm
+
+At configure time CMake runs `git archive 60bee4c` on the Genesis-Plus-GX checkout in
+`ext/gpgx` (override it with `-DGPGX_DIR=...`). `-DGPGX_CLONE=ON` clones it once if it is
+missing. CMake then applies `gpgx-cpuhook`, `gpgx-vdptrace` and `gpgx-hle.patch` into
+`build/port/gpgx-src` and compiles that copy. ext/gpgx is never modified. The export is
+redone whenever a patch file changes.
+
+`tools/patches/gpgx-hle.patch` adds the following to the core:
+- `m68k_hle_bitmap` and `m68k_hle_handler`: before fetching an instruction whose address
+  bit is set, the handler runs and may replace the instruction.
+- `m68k_step_one()`: executes exactly one instruction without polling interrupts. Nested
+  calls are safe.
+- `m68k_bus_read*/write*`: bus accesses with the CPU's exact semantics.
+- `m68k_hle_get_sr/set_ccr/set_sr`.
+- `vdp_hle_get_internal()`: VDP port latches, for comparing state.
+
+## Running the host
+
+    build/port/scoobyport                       # rom/baserom.md, sha1 checked (wrong ROM -> refused)
+    build/port/scoobyport --hle none            # pure emulation, no C replacements
+    build/port/scoobyport --hle all,-pad_read   # everything except one function
+    build/port/scoobyport --list-hle
+
+| Key | Action |
+| --- | --- |
+| arrows | D-pad |
+| Z or A | Genesis A |
+| X or S | Genesis B |
+| C or D | Genesis C |
+| Enter | Start |
+| F1 | debug overlay (frame, fps, HLE calls/frame, Shaggy X/Y, pad byte, audio queue) |
+| F2 | toggle all C replacements (A/B comparison) |
+| F5 / F9 | save / load state (slot files in `~/.local/share/scoobyport`) |
+| F6 / F7 | previous / next slot |
+| P | pause |
+| N or . | advance one frame |
+| Tab (held) | fast forward |
+| F11 or Alt+Enter | fullscreen |
+| F12 | screenshot to `runs/port/` |
+| Esc | quit |
+
+Gamepads use the SDL GameController mapping:
+
+| Pad button | Genesis button |
+| --- | --- |
+| D-pad, left stick | D-pad |
+| X, Y | A |
+| A | B |
+| B, RB | C |
+| Start | Start |
+| Back | pause |
+
+The picture is always scaled by a whole number and letterboxed.
+
+Audio paces the emulation: one frame is emulated each time the SDL audio queue drops
+below about 50 ms. The frame rate is GPGX's NTSC rate (59.92 Hz). Without an audio device,
+a timer paces it instead.
+
+Headless (VM, CI):
+
+    SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/port/scoobyport \
+        --script port/scripts/lobby.txt --outdir runs/port --screenshot runs/port/end.ppm
+    # --window-shot f.ppm saves the scaled window (with --overlay: the overlay too)
+    # --frames N exits after N frames (after the script)
+    # --capture ADDR N saves entry states while you play (interactive capture)
+    port/tools/hosttest.sh   # wrong-ROM refusal, Lobby == harness screenshot, savestate
+                             # round trip, scaled window + overlay, real-time pacing + audio
+
+## The C API (port/hle/hle.h)
+
+```c
+#include "game.h"            /* includes hle.h */
+
+/* $00992C: copy D1.w words from (A0)+ to VRAM address D0.w ... */
+HLE_FUNC(0x00992C, vram_write_words, 0)
+{
+	uint16_t addr = (uint16_t)ctx->d[0];
+	...
+	vdp_ctrl_w(...);  vdp_data_w(bus_r16(ctx->a[0]));  ctx->a[0] += 2;
+}
+```
+
+- `HLE_FUNC(addr, name, cycles)` defines `void name(hle_ctx *ctx)` and registers it with
+  a constructor. Because `scooby_common` is a CMake OBJECT library, a new `.c` file under
+  `src/game/` is picked up with no other changes (re-run cmake so the glob sees it).
+- The host calls the function when the CPU reaches `addr`. Afterwards the layer pops the
+  return address, which is the original `rts`. A function that ends in a jump to other code
+  calls `hle_jump(ctx, addr)` instead.
+- `ctx->d[8]`, `ctx->a[8]` (a[7] = SP), `ctx->sr`. Partial writes: `set_b(&ctx->d[0], v)`,
+  `set_w(...)`.
+- Flags: `cc_logic8/16/32` (MOVE/AND/OR/TST: N Z, V=C=0, X kept), `lsr16`, `lsl8`,
+  `cc_set(ctx, mask, bits)`. Add more helpers to hle.h as you need them.
+- Memory:
+  - `RAM8(a)` / `RAM16(a)` are lvalues; `RAM32(a)` / `RAM32_W(a, v)` for longs.
+  - `ROM8/16/32(a)`.
+  - `bus_r*/bus_w*`: any address, with the hardware side effects of I/O, VDP and the Z80
+    area.
+  - VDP: `vdp_ctrl_w`, `vdp_ctrl_w32`, `vdp_data_w`, `vdp_data_r`, `vdp_status_r`,
+    `vdp_reg_w`.
+  - All port I/O must go through `bus_*` or the `vdp_*` helpers so that difftest sees it.
+- Cycles: the third `HLE_FUNC` argument is the cost charged to the CPU. A function can set
+  `ctx->cycles` per call, for example proportional to a loop count. difftest prints the
+  original's min/avg/max cycles: use the average.
+- Callees that are not decompiled yet: `hle_call68k(ctx, addr)` runs the 68k code as a
+  `jsr` and returns when it `rts`es. Inside it, other enabled C replacements still apply.
+  `hle_call68k_orig` bypasses an override at `addr` itself.
+- C-to-C calls: decompiled functions take `hle_ctx *` and keep the original register
+  contract. Call them directly (`z80_bus_request(ctx);`) and declare them in `game.h`.
+- Interrupts never fire inside a C function. Write a function that waits for VBlank
+  (spins on a RAM flag set by the interrupt handler) as a state machine, or leave it in
+  68k for now.
+
+### Conventions
+
+- One file per subsystem: `src/game/<subsystem>.c` (io, vdp, sound, room, script, actor,
+  ...).
+- Name functions descriptively, in snake_case. If the purpose is unknown, use
+  `sub_XXXXXX`.
+- Put the address and the original asm idiom in the comment above each function, and
+  document every non-obvious flag or register side effect.
+- Give RAM variables `#define`s in `game.h` (for example `PAD1_CUR 0xFF09E0`). Move them to
+  structs when the layout is understood.
+- Plain C behaviour first. Equivalence is about state, not timing.
+
+## Decompiling one function, end to end
+
+1. **Pick and read it.** Find the label in `src/scooby.s`. Note its callers (`grep
+   'loc_XXXXXX' src/scooby.s`), its exits (all `rts`, any `jmp`/`bra` tails), the registers
+   it saves and clobbers, and its final flags. The final flags come from the last
+   flag-setting instruction before `rts`. Watch out for `move.w sr,-(sp)` …
+   `move.w (sp)+,sr` pairs: they restore the flags as they were at the push.
+2. **Write it** in `port/src/game/<subsystem>.c` with `HLE_FUNC(0xADDR, name, cycles)`.
+   Mirror every register and flag effect the original leaves behind, even ones that look
+   unused: difftest compares all of them.
+3. **Test it** on a VM:
+
+       tools/vm/vmrun $vm 'port/tools/dt name'
+
+   `dt` builds difftest, then captures 200 entry states into `runs/states/<ADDR>/` if
+   there are fewer. Capture plays `port/scripts/capture.txt`: boot, the Lobby route, then
+   about 20,000 frames of seeded random play. It first counts all calls on that route and
+   keeps every k-th call, so the states are spread out and are not 200 identical boot-time
+   calls. dt then runs every state twice:
+   - the original 68k code until it returns, with all other C replacements off;
+   - your C function.
+
+   It compares:
+   - D0–D7/A0–A7, SR, the inactive SP and the return PC;
+   - 64 KiB work RAM;
+   - VRAM, CRAM, VSRAM, VDP registers, VDP address/code/pending latches, DMA length;
+   - Z80 RAM, Z80 bus and bank state, I/O registers;
+   - the ordered list of 68k writes to $A00000–$A1FFFF (Z80 area and I/O) and
+     $C00000–$DFFFFF (VDP ports).
+
+   RAM below the entry SP (scratch stack, 256 bytes or as deep as the original went) is
+   ignored. On failure it prints the first failing state, its entry registers, and the
+   first mismatching item of each category. For example:
+
+       FAIL runs/states/009BE4/00000.cap (frame 36713, call #0): 1 category differ
+         entry: D0=00000000 D1=74788000 ...
+         SR: 68k=2700 C=2710 (XNZVC 68k=00000 C=10000)
+
+   Iterate until you get `name $ADDR: 200/200 states equal`.
+4. **If the route never calls the function**, or calls it fewer than 200 times, get more
+   states in one of these ways:
+   - write a script that reaches the code (harness syntax) and run
+     `difftest capture ADDR 200 --script my.txt`;
+   - start from a savestate: `load path/x.state` inside the script;
+   - capture while playing: `scoobyport --hle none --capture ADDR 200`.
+
+   Keep good scripts under `port/scripts/`. Never commit the states: they are ROM-derived
+   and live in runs/.
+5. **Play-test it.** Run `scoobyport --script port/scripts/lobby.txt --screenshot x.ppm`
+   with `--hle all` and with `--hle none`, and check the game still reaches the same
+   places. Small sprite or animation differences are expected: C functions don't take the
+   same number of cycles. Check that `SCOOBY_HLE_TRACE=1` shows the function being called
+   with sensible charged cycles.
+6. **Commit** the C file, any new scripts, and new `hle.h` helpers.
+
+difftest options:
+- `--ignore-regs d0,a1` / `--ignore-flags`: only with a comment in the C source proving no
+  caller reads them.
+- `--strict-stack`: also compare the scratch stack.
+- `--with-hle`: keep other C replacements active on both sides.
+- `--passthrough`: the C side calls the original through `hle_call68k_orig`. This
+  self-tests the harness and must always pass.
+- `--keep-going`, `-v`, `--max N`, `--states DIR`.
+
+`difftest check all` tests every registered function.
+
+### Sandbox semantics (what "equivalent" means)
+
+These rules make the comparison independent of timing:
+- Interrupts are held off.
+- The Z80 is frozen, so bus requests don't run it.
+- A VDP DMA completes at once after each write or instruction.
+- The VDP's line base follows the CPU clock.
+
+VDP data-port writes made from C are untimed: GPGX's FIFO wait model breaks when hundreds
+of writes happen inside one CPU time slice. The function's cost is charged through its
+cycle count instead (see `gx_vdp_untimed_begin` in hle/gx.c). Code that busy-waits on the
+VDP status or the HV counter cannot be compared exactly. Keep those waits in 68k, or
+restructure them.
+
+## Functions replaced so far
+
+| Address | Name | File | difftest result |
+| --- | --- | --- | --- |
+| $1F6D7A | z80_bus_request | io.c | 200/200 |
+| $1F6D8E | z80_bus_release | io.c | 200/200 |
+| $009D34 | pad_read (reads pads 1 and 2; PADn_CUR/PREV/EDGE at $FF09E0–$FF09E7) | io.c | 200/200 |
+| $00992C | vram_write_words (VRAM memcpy from (A0)+) | vdp.c | 200/200 |
+| $009964 | vram_write_word | vdp.c | 200/200 |
+| $009BE4 | vram_fill_words (VRAM memset; also reached via `bra` from $9C58) | vdp.c | 96/96 (all calls on the route) |
+| $005B56 | str_copy (strcpy A0 to A1) | util.c | 54/54 (all calls on the route) |
+
+The "pad read $9D3A" in older notes is the body of $9D34. The function is entered at
+$9D34 with `jsr $1F6D7A` (Z80 bus request) and is called from $A4A4 and $A6C0.

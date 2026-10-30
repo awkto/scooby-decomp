@@ -22,6 +22,20 @@ Tracking: https://github.com/awkto/scooby-decomp
     gcc -O2 -I ext/gpgx/libretro/libretro-common/include -o tools/harness/harness tools/harness/harness.c -ldl
     make disasm && make
 
+## Native port (`port/`)
+`scoobyport` is an SDL2 host with the GPGX core compiled in statically. It refuses a ROM
+with the wrong sha1. It supports keyboard and gamepad input, integer scaling, F5/F9
+savestates, frame advance and a debug overlay. C replacements of 68k functions plug in
+through the HLE layer (`port/hle/hle.h`), and `difftest` proves each one equivalent to the
+original on 200 captured entry states.
+
+    cmake -S port -B build/port -DCMAKE_BUILD_TYPE=Release && cmake --build build/port -j4   # on a VM
+    build/port/scoobyport                      # play (rom/baserom.md)
+    port/tools/dt pad_read                     # capture states if needed + difftest one function
+
+See `docs/porting.md` for the API, the controls, and the step-by-step workflow for
+decompiling a function.
+
 ## Findings so far
 - Developer: Illusions Gaming Company (Sunsoft/Acclaim, 1995). Hand-written 68k assembly.
 - All 68k code lives in $000200–$011000 plus a small stub at $1F6D7A–$1F6F66; the rest is data.

@@ -2,6 +2,7 @@
 """Compare a gfx.py reconstruction PNG against a harness screenshot (PPM).
 
   cmpshot.py RECON.png SHOT.ppm --y0 16 --x0 0 [--diff OUT.png]
+  cmpshot.py A.ppm B.ppm [--diff OUT.png]     exact comparison of two emulator screenshots
 
 Both images are reduced to Genesis 3-bit-per-channel levels before comparing
 (GPGX's RGB565 output and gfx.py's 8-bit levels differ only in scaling).
@@ -65,8 +66,25 @@ def main():
     ap.add_argument('--x0', type=int, default=0); ap.add_argument('--y0', type=int, default=0)
     ap.add_argument('--diff')
     a = ap.parse_args()
-    rec = read_png(a.recon)
     shot = read_ppm(a.shot)
+    if a.recon.endswith('.ppm'):
+        # emulator screenshot vs emulator screenshot (e.g. port/ host vs tools/harness)
+        ref = read_ppm(a.recon)
+        h, w = len(ref), len(ref[0])
+        if (h, w) != (len(shot), len(shot[0])):
+            print(f'size differs: {w}x{h} vs {len(shot[0])}x{len(shot)}')
+            sys.exit(1)
+        diffs = [(x, y) for y in range(h) for x in range(w) if ref[y][x] != shot[y][x]]
+        print(f'{w * h - len(diffs)}/{w * h} pixels identical ({100.0 * (w * h - len(diffs)) / (w * h):.2f}%)')
+        if diffs:
+            xs = [d[0] for d in diffs]
+            ys = [d[1] for d in diffs]
+            print(f'differences within x {min(xs)}-{max(xs)}, y {min(ys)}-{max(ys)}')
+        if a.diff:
+            gfx.write_png(a.diff, [[(255, 0, 255) if ref[y][x] != shot[y][x] else tuple(c // 3 for c in ref[y][x])
+                                    for x in range(w)] for y in range(h)])
+        sys.exit(1 if diffs else 0)
+    rec = read_png(a.recon)
     same = tot = 0
     diff = []
     for y in range(len(rec)):
