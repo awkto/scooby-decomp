@@ -491,6 +491,13 @@ HLE_FUNC(0x00A984, sprite_build, 5279)
 }
 
 /* ================================================================== actor_dma */
+/* NOT ENABLED: actor_dma stays 68k (docs/porting.md "HV counter reads", #33). It decides on
+ * the beam position (HV counter), and C code must not read $C00008: in the live game the
+ * nested-time window of vblank_main makes the 68k read see the right line, C would not.
+ * This translation passed difftest (200/200, D6 ignored) before #33 and is kept as the
+ * reference for the native port; build with -DSPRITE_ACTOR_DMA_C to register it. */
+#ifdef SPRITE_ACTOR_DMA_C
+
 /* $00AF24 actor_dma (VBlank, from vblank_main): upload the tiles of at most one slot,
  * then build and upload the sprite table and count down the script timers.
  * Slots are tried in order 0..5; the first active slot with TILES_READY is DMA'd, but only
@@ -568,6 +575,7 @@ HLE_FUNC(0x00AF24, actor_dma, 1500)
 	if (ctx->cycles < 500)
 		ctx->cycles = 500;
 }
+#endif
 
 /* ================================================================== actor_animate */
 /* Animation script commands: (u16 op, u16 arg) pairs. */
