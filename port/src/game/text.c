@@ -119,43 +119,9 @@ HLE_FUNC(0x009F72, draw_text_plane_a, 0)
 	ctx->cycles = 110 + 270 * n;
 }
 
-/* $009F30: print the string at A0 centred in a 32-cell row (D2 = row; D1 is replaced by the
- * column (32 - length) / 2) and tail-call draw_text_plane_a. A0 is advanced by that call. */
-HLE_FUNC(0x009F30, draw_text_centered, 0)
-{
-	uint32_t a0 = ctx->a[0];
-	uint16_t d1 = 1;
-	do {
-		d1--;                                      /* subq.w #1,d1 ... tst.b (a0)+ */
-	} while (bus_r8(a0++));
-	d1 = (uint16_t)((uint16_t)(d1 + 0x20) >> 1);       /* addi.w #$20 ; lsr.w #1 */
-	set_w(&ctx->d[1], d1);
-	draw_text_plane_a(ctx);
-}
-
-/* $009F58: draw_text_plane_a with the priority bit (15) of the font base forced on, so the
- * text appears in front of the sprites (menus). The font base is restored. */
-HLE_FUNC(0x009F58, draw_text_priority, 0)
-{
-	uint16_t saved = RAM16(RAM_FONT_BASE);
-	RAM8(RAM_FONT_BASE) |= 0x80;
-	draw_text_plane_a(ctx);
-	RAM16(RAM_FONT_BASE) = saved;
-}
-
-/* $009F46: blank column 0.. of the row (34 spaces) and then print the caller's string at A0
- * with draw_text_priority; D1 and A0 are the caller's when it returns into $009F58 (the
- * code falls through into it after restoring them). */
-HLE_FUNC(0x009F46, draw_text_line_clear_first, 0)
-{
-	uint32_t d1 = ctx->d[1], a0 = ctx->a[0];
-	ctx->d[1] = 0;
-	ctx->a[0] = ROM_BLANK_LINE;
-	draw_text_priority(ctx);
-	ctx->d[1] = d1;
-	ctx->a[0] = a0;
-	draw_text_priority(ctx);
-}
+/* $009F30 (centred), $009F58 (priority bit forced on) and $009F46 (blank row first) are small
+ * wrappers around draw_text_plane_a used only by the title/sound-test/debug-room menus. No route
+ * reaches them, so they cannot be difftested and stay 68k (docs/subsystems/text.md). */
 
 /* ------------------------------------------------------------------ word wrap */
 /* Find where to cut a string longer than 30 characters. Scans backwards from the 31st byte:
@@ -598,21 +564,12 @@ static void pose_request(hle_ctx *c, uint16_t idx)
 	RAM8(RAM_0AB5) |= 1;
 }
 
-/* the rest-pose request after the pose animation ran: facing + 4 (standing) */
-static void pose_rest(hle_ctx *c)
-{
-	uint16_t v = (uint16_t)(RAM16(RAM_SHAGGY_FACING) + 4);
-	set_w(&c->d[0], v);
-	RAM16(RAM_CUR_INDEX) = v;
-	cc_btst(c, RAM8(RAM_0AB5), 0);
-	RAM8(RAM_0AB5) |= 1;
-}
-
 /* $004E12: clear the box before the text, keep the old font base for later (pushed by the 68k) */
 static void say_clear_box(hle_ctx *c)
 {
 	text_clear(c);
 	set_w(&c->d[2], RAM16(RAM_FONT_BASE));
+	cc_logic16(c, RAM16(RAM_FONT_BASE));                 /* move.w sets N/Z */
 	c->cycles += 40;
 	hle_jump(c, 0x004E1C);                                 /* movew d2,-(sp) */
 }
@@ -659,24 +616,9 @@ HLE_RANGE(0x004DC0, script_op_say_pose_in, 40, 0x004DDA)
 	pose_request(ctx, idx);
 	hle_jump(ctx, 0x004DDA);                           /* bsr sub_00B0B8 */
 }
-HLE_RANGE(0x004DDE, script_op_say_pose_wait1, 20, 0x004DDA, 0x004DEA)
-{
-	uint8_t ad = RAM8(RAM_ACTORS_ANIMDONE);
-	cc_btst(ctx, ad, 0);
-	hle_jump(ctx, (ad & 1) ? 0x004DDA : 0x004DEA);     /* wait until the pose starts */
-}
-HLE_RANGE(0x004DEE, script_op_say_pose_wait2, 40, 0x004DEA, 0x004E1C)
-{
-	uint8_t ad = RAM8(RAM_ACTORS_ANIMDONE);
-	cc_btst(ctx, ad, 0);
-	if (!(ad & 1)) {                                   /* pose still running */
-		hle_jump(ctx, 0x004DEA);
-		return;
-	}
-	pose_rest(ctx);                                    /* then stand in the new facing */
-	say_clear_box(ctx);
-}
-/* $004E1E: set up the font for this line and print: A0 = text. Both font_tiles_load calls
+/* Not ported (no captured states, i.e. no route plays the Shaggy pose): the pose-wait loops
+ * $004DDE/$004DEE and the pose-back sequence $004E82..$004EDA stay 68k.
+ * $004E1E: set up the font for this line and print: A0 = text. Both font_tiles_load calls
  * cost ~1.02 M cycles each (charged in full, the layer slices it). */
 HLE_RANGE(0x004E1E, script_op_say_text, 120, 0x004E50)
 {
@@ -718,32 +660,4 @@ HLE_RANGE(0x004E5E, script_op_say_font_back, 120, 0x004EDC, 0x004E80)
 	}
 	set_w(&ctx->d[1], RAM16(RAM_SHAGGY_FACING));
 	hle_jump(ctx, 0x004E80);                           /* movew (sp)+,d0 : the old facing */
-}
-HLE_RANGE(0x004E82, script_op_say_pose_out, 40, 0x004EA4)
-{
-	uint16_t old = lo16(ctx->d[0]);
-	RAM16(RAM_SHAGGY_FACING) = old;                    /* restore the old facing */
-	uint16_t d0 = (uint16_t)(old + old);
-	uint16_t d1 = (uint16_t)(lo16(ctx->d[1]) << 3);
-	set_w(&ctx->d[1], d1);
-	set_w(&ctx->d[0], (uint16_t)(d0 + d1));
-	pose_request(ctx, (uint16_t)(d0 + d1));
-	hle_jump(ctx, 0x004EA4);                           /* bsr sub_00B0B8 */
-}
-HLE_RANGE(0x004EA8, script_op_say_out_wait1, 20, 0x004EA4, 0x004EB4)
-{
-	uint8_t ad = RAM8(RAM_ACTORS_ANIMDONE);
-	cc_btst(ctx, ad, 0);
-	hle_jump(ctx, (ad & 1) ? 0x004EA4 : 0x004EB4);
-}
-HLE_RANGE(0x004EB8, script_op_say_out_wait2, 40, 0x004EB4, 0x004EDC)
-{
-	uint8_t ad = RAM8(RAM_ACTORS_ANIMDONE);
-	cc_btst(ctx, ad, 0);
-	if (!(ad & 1)) {
-		hle_jump(ctx, 0x004EB4);
-		return;
-	}
-	pose_rest(ctx);
-	hle_jump(ctx, 0x004EDC);
 }

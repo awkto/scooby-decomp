@@ -113,9 +113,6 @@ void logo5_frame(hle_ctx *ctx);        /* $000BC8 */
 /* ---- text.c (#20: text/dialogue rendering, docs/subsystems/text.md) */
 void str_length(hle_ctx *ctx);          /* $00A236 */
 void draw_text_plane_a(hle_ctx *ctx);   /* $009F72 */
-void draw_text_centered(hle_ctx *ctx);  /* $009F30 */
-void draw_text_priority(hle_ctx *ctx);  /* $009F58 */
-void draw_text_line_clear_first(hle_ctx *ctx); /* $009F46 */
 void talk_line_print(hle_ctx *ctx);     /* $009FA2 */
 void text_box_print(hle_ctx *ctx);      /* $00A054 */
 void text_clear(hle_ctx *ctx);          /* $00A172 */

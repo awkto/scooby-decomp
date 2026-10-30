@@ -28,16 +28,16 @@ Everything below was read from `src/scooby.s` and checked with difftest on captu
 | --- | --- | --- | --- |
 | `$00A236` | `str_length` (strlen) | D0.l = length of the NUL-terminated string at A0 | C |
 | `$009F72` | `draw_text_plane_a` | print A0 at column D1, row D2 of plane A (`$C000`, 32 cells/row); regs preserved | C |
-| `$009F30` | `draw_text_centered` | same, column = (32 - length) / 2 (D1 ignored) | C |
-| `$009F58` | `draw_text_priority` | `draw_text_plane_a` with the font base's priority bit forced on (menus, in front of sprites) | C |
-| `$009F46` | `draw_text_line_clear_first` | blank the row (34 spaces `$02FFF4`), then print with `draw_text_priority` | C |
+| `$009F30` | `draw_text_centered` | same, column = (32 - length) / 2 (D1 ignored) | 68k (`draw_text_centered`: no route reaches it, cannot be tested) |
+| `$009F58` | `draw_text_priority` | `draw_text_plane_a` with the font base's priority bit forced on (menus, in front of sprites) | 68k (untestable, as above) |
+| `$009F46` | `draw_text_line_clear_first` | blank the row (34 spaces `$02FFF4`), then print with `draw_text_priority` | 68k (untestable, as above) |
 | `$009FA2` | `talk_line_print` | one TALK-menu choice: left aligned into plane `$A000` from `$AA82`, 128 bytes per row, wraps like `text_box_print`; returns D0 = lines, `$FF080A` = lines * 300 | C |
 | `$00A054` | `text_box_print` | clear the window plane, print A0 centred + wrapped at 30 chars, set the window height, arm the timer | C |
 | `$00A172` | `text_clear` | empty `$FF08BC`, `text_box_print` it (clears the box, height 2) | C |
 | `$00A130` | `text_show` (+ `_print`, `_clear`, `_done`) | show a line and wait for it: 4 ranges around the stack push and the wait | C (ranges) |
 | `$00A18C` | `text_wait` (+ `_frame`, `_tick`) | the wait: pacing timer, A/B/Start, keeps the actors running | C (ranges; the VBlank/actor/pad spins stay 68k) |
 | `$00A828` | `status_line_update` | builds "Verb object [with/to object2]" or the room name for the top line | C |
-| `$004D80` | `script_op_say` (+ 10 ranges) | script op `$10`: text box with colour, palette, optional Shaggy pose | C (ranges) |
+| `$004D80` | `script_op_say` (+ 6 ranges) | script op `$10`: text box with colour, palette, optional Shaggy pose | C (ranges); the pose waits ($004DDE, $004DEE) and the pose-back part ($004E82..$004EDA) stay 68k: no route plays them, no states |
 | `$000400` | `region_print` | lockout screen text (wrong region) | 68k: never runs on a legitimate ROM |
 | `$007A2A` | `font_tiles_load` | recolour + write the 95 glyph tiles | C (room.c, #18) |
 | `$005B5E` / `$005B56` | `object_name_ptr` / `str_copy` | object id -> name string / strcpy | C (verbs.c / util.c) |

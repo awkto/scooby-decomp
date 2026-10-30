@@ -68,7 +68,7 @@ See "Difftest results" for the numbers.
 | 0D | $0048B6 | sound | func | C |
 | 0E / 1B | $0049BA | walk | | 68k: pushes D7 first; calls shaggy_walk_to/scooby_walk_to (walking, blocking) |
 | 0F | $004C20 | walk_obj | | 68k: same |
-| 10 | $004D80 | say | ranges (text.c, #20) | C: 11 ranges `script_op_say*` split at the stack pushes/pops and the waits ($004D80 .. $004EB8), see docs/subsystems/text.md section 8 |
+| 10 | $004D80 | say | ranges (text.c, #20) | C: 6 ranges `script_op_say*` split at the stack pushes/pops and the waits ($004D80 .. $004EB8), see docs/subsystems/text.md section 8 |
 | 11 | $004F0E | goto_room (+ $4F34, $4F4A) | ranges around palette_read_cram / room_reload | C |
 | 12 / 14 | $004F50 / $002E7E | set_hotspot / set_hotspot2 | func | 14 C; 12 same code, not registered (never executed) |
 | 13 | $002446 | on_event | func | C |
