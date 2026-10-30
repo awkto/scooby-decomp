@@ -312,8 +312,8 @@ VBlank:
 	movem.l (sp)+,d0-d7/a0-a6
 	rte
 loc_0008CE:
-	move.l #0xa65c,(0xff0000).l
-	move.l #0x1006c,(0xff0004).l
+	move.l #loc_00A65C,(0xff0000).l
+	move.l #loc_01006C,(0xff0004).l
 	move.l #0x1c70c5,-(sp)
 	move.l #0x1be496,-(sp)
 	move.l #0x1be31f,-(sp)
@@ -338,7 +338,7 @@ loc_00093C:
 	or.b (0x0,a1,d0.w),d1
 	move.w d1,(0xc00004).l
 	dbra d0,loc_00093C
-	move.l #0x1006a,(0xff0004).l
+	move.l #loc_01006A,(0xff0004).l
 	move.w #0xc594,d0
 	lea.l (dat_023226).l,a0
 	move.w #0xc,d1
@@ -996,13 +996,13 @@ loc_0013BA:
 	movem.l d0-d7/a0-a6,-(sp)
 	move.w #0x2700,sr
 	move.l (0xff0000).l,-(sp)
-	move.l #0xa4a4,(0xff0000).l
+	move.l #loc_00A4A4,(0xff0000).l
 	move.w #0x9100,(0xc00004).l
 	move.w #0x9200,(0xc00004).l
 	move.w #0x9003,(0xc00004).l
 	move.w #0x8d2f,(0xc00004).l
 	move.w #0x855c,(0xc00004).l
-	move.l #0x1006a,(0xff0004).l
+	move.l #loc_01006A,(0xff0004).l
 	move.w #0x8b03,(0xc00004).l
 	lea.l (dat_018FEC).l,a4
 	move.w (0xff06aa).l,d0
@@ -1152,7 +1152,7 @@ loc_00167C:
 	jsr (loc_009DE0).l
 	move.w (dat_032480).l,(0xff0778).l
 	move.w #0x8b00,(0xc00004).l
-	move.l #0x1006c,(0xff0004).l
+	move.l #loc_01006C,(0xff0004).l
 	move.w #0x856c,(0xc00004).l
 	move.w #0x8d37,(0xc00004).l
 	move.w #0x9001,(0xc00004).l
@@ -1380,7 +1380,7 @@ loc_0019F8:
 	bsr.w loc_001BDA
 loc_001A22:
 	move.b #0x2,(0xff0ac9).l
-	move.l #0x23dc,(0xff0878).l
+	move.l #loc_0023DC,(0xff0878).l
 	move.w (0xff06be).l,d7
 	move.b (0xff09de).l,-(sp)
 	bsr.w loc_0023DC
@@ -1391,7 +1391,7 @@ loc_001A22:
 	move.w (0x6,a5),d0
 	lea.l (0x0,a5,d0.w),a6
 	lea.l (0x8,a5),a5
-	move.l #0x2406,(0xff0878).l
+	move.l #loc_002406,(0xff0878).l
 	bclr.b #0x0,(0xff0ac9).l
 	bsr.w loc_001BDA
 	bsr.w loc_002406
@@ -1696,7 +1696,7 @@ loc_001E72:
 	move.w (0x0,a1,d0.w),d0
 	movea.l (0x14,a0,d3.w),a5
 	lea.l (0x0,a5,d0.w),a6
-	move.l #0x2406,(0xff0878).l
+	move.l #loc_002406,(0xff0878).l
 	movea.l (0x0,a0,d3.w),a0
 	movem.l d0-d7/a0-a6,-(sp)
 	move.b #0x0,(0xff08bc).l
@@ -1871,7 +1871,7 @@ loc_00219A:
 loc_00221A:
 	move.l (0xff0878).l,-(sp)
 	move.b (0xff09dc).l,-(sp)
-	move.l #0x2406,(0xff0878).l
+	move.l #loc_002406,(0xff0878).l
 	move.w (0xff06ac).l,d0
 	subq.w #0x2,d0
 	mulu.w #0x14,d0
@@ -1893,7 +1893,7 @@ loc_00221A:
 loc_002278:
 	move.l (0xff0878).l,-(sp)
 	move.b (0xff09dc).l,-(sp)
-	move.l #0x2406,(0xff0878).l
+	move.l #loc_002406,(0xff0878).l
 	move.w (0xff06ac).l,d0
 	subq.w #0x2,d0
 	mulu.w #0x14,d0
@@ -1942,14 +1942,47 @@ loc_002320:
 	move.w #0x0,(0xff080e).l
 	movem.l a5-a6,-(sp)
 	move.l (0xff0878).l,-(sp)
-	move.l #0x23dc,(0xff0878).l
+	move.l #loc_0023DC,(0xff0878).l
 	bsr.w loc_0023DC
 	move.l (sp)+,(0xff0878).l
 	movem.l (sp)+,a5-a6
 	rts
 | data 0x002354-0x0023DC
 dat_002354:
-	.incbin "baserom.md",0x2354,0x88
+	dc.l loc_00250C
+	dc.l loc_00246A
+	dc.l loc_0025AC
+	dc.l loc_002732
+	dc.l loc_00274A
+	dc.l loc_0028A0
+	dc.l loc_002B5A
+	dc.l loc_002BF8
+	dc.l loc_002C56
+	dc.l loc_002D5E
+	dc.l loc_002DC0
+	dc.l loc_002DF2
+	dc.l loc_002E9E
+	dc.l loc_0048B6
+	dc.l loc_0049BA
+	dc.l loc_004C20
+	dc.l loc_004D80
+	dc.l loc_004F0E
+	dc.l loc_004F50
+	dc.l loc_002446
+	dc.l loc_002E7E
+	dc.l loc_0048D8
+	dc.l loc_002AD0
+	dc.l loc_004FBE
+	dc.l loc_004EE4
+	dc.l loc_002B0E
+	dc.l loc_002626
+	dc.l loc_0049BA
+	dc.l loc_00255E
+	dc.l loc_002510
+	dc.l loc_00268E
+	dc.l loc_004F70
+	dc.l loc_0048F8
+	dc.l loc_004944
 loc_0023DC:
 	cmpa.l a5,a6
 	ble.w loc_002404
@@ -1984,6 +2017,7 @@ loc_00241A:
 	blt.w loc_002406
 loc_002444:
 	rts
+loc_002446:
 	bne.w loc_002460
 	btst.b #0x4,(0xff0ac9).l
 	beq.w loc_002460
@@ -1993,6 +2027,7 @@ loc_002460:
 	move.w (0x2,a5),d0
 	lea.l (0x0,a5,d0.w),a5
 	rts
+loc_00246A:
 	bne.w loc_002502
 	btst.b #0x1,(0xff0ac9).l
 	beq.w loc_002502
@@ -2090,6 +2125,7 @@ loc_002594:
 loc_0025A6:
 	lea.l (0x4,a5),a5
 	rts
+loc_0025AC:
 	bne.w loc_00261C
 	btst.b #0x2,(0xff0ac9).l
 	beq.w loc_00261C
@@ -2119,6 +2155,7 @@ loc_00261C:
 	move.w (0xa,a5),d0
 	lea.l (0x0,a5,d0.w),a5
 	rts
+loc_002626:
 	beq.w loc_002688
 	move.w (0x2,a5),d0
 	cmpi.w #0x4,d0
@@ -2146,6 +2183,7 @@ loc_002660:
 loc_002688:
 	lea.l (0xa,a5),a5
 	rts
+loc_00268E:
 	beq.w loc_00272C
 	move.w (0x2,a5),d3
 	bclr.b #0xf,d3
@@ -2188,6 +2226,7 @@ loc_002716:
 loc_00272C:
 	lea.l (0x6,a5),a5
 	rts
+loc_002732:
 	bsr.w loc_002796
 	beq.w loc_002740
 	lea.l (0x10,a5),a5
@@ -2196,6 +2235,7 @@ loc_002740:
 	move.w (0x2,a5),d0
 	lea.l (0x0,a5,d0.w),a5
 	rts
+loc_00274A:
 	bsr.w loc_002796
 	beq.w loc_00278C
 	movem.l a5-a6,-(sp)
@@ -2303,6 +2343,7 @@ loc_00289A:
 loc_00289C:
 	tst.w d3
 	rts
+loc_0028A0:
 	beq.w loc_002ACA
 	move.w (0x2,a5),d0
 	andi.w #0x7fff,d0
@@ -2461,6 +2502,7 @@ loc_002AA6:
 loc_002ACA:
 	lea.l (0x6,a5),a5
 	rts
+loc_002AD0:
 	beq.w loc_002B08
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -2482,6 +2524,7 @@ loc_002AFA:
 loc_002B08:
 	lea.l (0x4,a5),a5
 	rts
+loc_002B0E:
 	beq.w loc_002B54
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -2506,6 +2549,7 @@ loc_002B3E:
 loc_002B54:
 	lea.l (0x4,a5),a5
 	rts
+loc_002B5A:
 	beq.w loc_002BF2
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -2579,6 +2623,7 @@ loc_002C32:
 loc_002C50:
 	lea.l (0x4,a5),a5
 	rts
+loc_002C56:
 	beq.w loc_002D58
 	move.w (0xa,a5),d0
 	btst.b #0x2,d0
@@ -2704,6 +2749,7 @@ loc_002DC0:
 loc_002DEC:
 	lea.l (0x6,a5),a5
 	rts
+loc_002DF2:
 	beq.w loc_002E78
 	move.w (0x2,a5),d0
 	andi.w #0x7fff,d0
@@ -2743,6 +2789,7 @@ loc_002E6E:
 loc_002E78:
 	lea.l (0x6,a5),a5
 	rts
+loc_002E7E:
 	beq.w loc_002E98
 	move.w (0x2,a5),d0
 	subq.w #0x3,d0
@@ -2752,6 +2799,7 @@ loc_002E78:
 loc_002E98:
 	lea.l (0x6,a5),a5
 	rts
+loc_002E9E:
 	beq.w loc_002EAE
 	move.w (0x2,a5),d0
 	lsl.w #0x2,d0
@@ -2760,16 +2808,88 @@ loc_002E98:
 loc_002EAE:
 	lea.l (0x4,a5),a5
 	rts
-| data 0x002EB4-0x002FC2
+| data 0x002EB4-0x002FAC
 dat_002EB4:
-	.incbin "baserom.md",0x2EB4,0x10E
+	dc.l loc_002FAC
+	dc.l loc_00453E
+	dc.l loc_004548
+	dc.l loc_00454E
+	dc.l loc_004568
+	dc.l loc_0045A4
+	dc.l loc_00481A
+	dc.l loc_0044BA
+	dc.l loc_004534
+	dc.l loc_004496
+	dc.l loc_0044A8
+	dc.l loc_002FFC
+	dc.l loc_0045A4
+	dc.l loc_004482
+	dc.l loc_00448C
+	dc.l loc_0043C0
+	dc.l loc_004428
+	dc.l loc_0043AC
+	dc.l loc_0043B6
+	dc.l loc_004374
+	dc.l loc_004390
+	dc.l loc_00432C
+	dc.l loc_00436A
+	dc.l loc_0042A2
+	dc.l loc_0042E0
+	dc.l loc_004322
+	dc.l loc_004274
+	dc.l loc_004298
+	dc.l loc_004862
+	dc.l loc_00482E
+	dc.l loc_0041B6
+	dc.l loc_0041A2
+	dc.l loc_0041AC
+	dc.l loc_00415A
+	dc.l loc_004120
+	dc.l loc_00410C
+	dc.l loc_004116
+	dc.l loc_0040FC
+	dc.l loc_0040E0
+	dc.l loc_003F58
+	dc.l loc_003F4E
+	dc.l loc_003F3A
+	dc.l loc_003F44
+	dc.l loc_003ED2
+	dc.l loc_003F16
+	dc.l loc_003EBE
+	dc.l loc_003EC8
+	dc.l loc_003E96
+	dc.l loc_003EAA
+	dc.l loc_003EB4
+	dc.l loc_003142
+	dc.l loc_00312E
+	dc.l loc_003138
+	dc.l loc_00301E
+	dc.l loc_003014
+	dc.l loc_0030A6
+	dc.l loc_002FD6
+	dc.l loc_002FE0
+	dc.l loc_002FC2
+	dc.l loc_002FCC
+	dc.l loc_002FAE
+	dc.l loc_002FB8
+loc_002FAC:
+	rts
+loc_002FAE:
+	bset.b #0x6,(0xff09eb).l
+	rts
+loc_002FB8:
+	bclr.b #0x6,(0xff09eb).l
+	rts
+loc_002FC2:
 	bset.b #0x5,(0xff09eb).l
 	rts
+loc_002FCC:
 	bclr.b #0x5,(0xff09eb).l
 	rts
 loc_002FD6:
 	bclr.b #0x1,(0xff0aca).l
 	rts
+loc_002FE0:
 	bset.b #0x1,(0xff0aca).l
 	btst.b #0x2,(0xff09ed).l
 	beq.s loc_002FFA
@@ -3625,16 +3745,276 @@ loc_003D74:
 	add.w d6,d6
 	move.w (dat_003D86,pc,d6.w),(0xff05bc).l
 	rts
-| data 0x003D86-0x004274
+| data 0x003D86-0x003E96
 dat_003D86:
 	.incbin "baserom.md",0x3D86,0x10
 dat_003D96:
-	.incbin "baserom.md",0x3D96,0x4DE
+	.incbin "baserom.md",0x3D96,0x100
+loc_003E96:
+	bset.b #0x3,(0xff0aca).l
+	move.w (0xff120c).l,(0xff06da).l
+	rts
+loc_003EAA:
+	bset.b #0x7,(0xff09e9).l
+	rts
+loc_003EB4:
+	bclr.b #0x7,(0xff09e9).l
+	rts
+loc_003EBE:
+	bset.b #0x6,(0xff09e9).l
+	rts
+loc_003EC8:
+	bclr.b #0x6,(0xff09e9).l
+	rts
+loc_003ED2:
+	bset.b #0x4,(0xff09e9).l
+	bclr.b #0x0,(0xff0ab8).l
+	move.l #0xb5d02,(0xff0470).l
+	move.w #0x1e,(0xff0488).l
+	bset.b #0x0,(0xff0ab5).l
+loc_003EFC:
+	bsr.w loc_00B0B8
+	btst.b #0x0,(0xff0abd).l
+	beq.w loc_003EFC
+	bclr.b #0x7,(0xff09dc).l
+	rts
+loc_003F16:
+	bset.b #0x0,(0xff0ab8).l
+	move.l #0x32700,(0xff0470).l
+	bclr.b #0x4,(0xff09e9).l
+	bclr.b #0x7,(0xff09dc).l
+	rts
+loc_003F3A:
+	bset.b #0x3,(0xff09e9).l
+	rts
+loc_003F44:
+	bclr.b #0x3,(0xff09e9).l
+	rts
+loc_003F4E:
+	bset.b #0x2,(0xff0aca).l
+	rts
+loc_003F58:
+	bset.b #0x2,(0xff09e9).l
+	moveq #0x0,d1
+	move.b #0xff,(0xff09e0).l
+	btst.b #0x2,(0xff0ac0).l
+	bne.s loc_003F7A
+	clr.w (0xff0610).l
+loc_003F7A:
+	move.w #0x0,(0xff08ae).l
+	bsr.w loc_00B0B8
+	btst.b #0x2,(0xff09e0).l
+	bne.s loc_003F92
+	dc.w 0x72fe	| moveq #$fe, d1
+loc_003F92:
+	btst.b #0x3,(0xff09e0).l
+	bne.s loc_003F9E
+	moveq #0x2,d1
+loc_003F9E:
+	move.w d1,d0
+	add.w (0xff04e8).l,d0
+	cmpi.w #0x64,d0
+	blt.s loc_003FBE
+	cmpi.w #0x94,d0
+	bgt.s loc_003FBE
+	move.w d0,(0xff04e8).l
+	move.w d0,(0xff04ec).l
+loc_003FBE:
+	btst.b #0x6,(0xff09e0).l
+	beq.s loc_003FE0
+	btst.b #0x4,(0xff09e0).l
+	beq.s loc_003FE0
+loc_003FD2:
+	tst.w (0xff08ae).l
+	bpl.w loc_003FD2
+	bra.s loc_003F7A
+loc_003FDE:
+	tst.w d1
+loc_003FE0:
+	beq.s loc_004008
+loc_003FE2:
+	move.w d1,d0
+	bsr.w loc_00974C
+	add.w (0xff04e8).l,d0
+	cmpi.w #0x64,d0
+	blt.s loc_004008
+	cmpi.w #0x94,d0
+	bgt.s loc_004008
+	move.w d0,(0xff04e8).l
+	move.w d0,(0xff04ec).l
+	bra.s loc_003FE2
+loc_004008:
+	move.w (0xff0500).l,d0
+loc_00400E:
+	move.w d0,(0xff0500).l
+	bsr.w loc_00974C
+	addq.w #0x2,d0
+	cmpi.w #0x4a,d0
+	blt.s loc_00400E
+	move.w #0x4a,(0xff0500).l
+	move.w (0xff0610).l,d0
+	cmpi.w #0x94,(0xff04e8).l
+	bne.s loc_004046
+	cmpi.w #0x5c,d0
+	blt.s loc_00406E
+	cmpi.w #0x78,d0
+	bgt.s loc_00406E
+	bra.s loc_004052
+loc_004046:
+	cmpi.w #0xf8,d0
+	blt.s loc_00406E
+	cmpi.w #0x114,d0
+	bgt.s loc_00406E
+loc_004052:
+	dc.w 0x203c,0x0000,0x0063	| move.l #$63, d0
+	bsr.w loc_009762
+	move.w #0x1c,(0xff048e).l
+	move.w #0x1,(0xff120c).l
+	bra.s loc_00407E
+loc_00406E:
+	move.w #0x1b,(0xff048e).l
+	move.w #0x0,(0xff120c).l
+loc_00407E:
+	bset.b #0x3,(0xff0ab5).l
+loc_004086:
+	bsr.w loc_00B0B8
+	btst.b #0x3,(0xff0abc).l
+	beq.s loc_004086
+	dc.w 0x203c,0x0000,0x0062	| move.l #$62, d0
+	bsr.w loc_009762
+	tst.w (0xff120c).l
+	beq.s loc_0040AE
+	bset.b #0x2,(0xff0abf).l
+loc_0040AE:
+	bsr.w loc_00974C
+	subq.w #0x1,(0xff0500).l
+	bne.s loc_0040AE
+	bclr.b #0x2,(0xff09e9).l
+	bclr.b #0x6,(0xff09dc).l
+	bsr.w loc_009DE0
+	bset.b #0x6,(0xff09dc).l
+	bclr.b #0x2,(0xff0abf).l
+	rts
+loc_0040E0:
+	move.w #0x0,(0xff120c).l
+	btst.b #0x0,(0xff0ac0).l
+	bne.s loc_0040FA
+	move.w #0x1,(0xff120c).l
+loc_0040FA:
+	rts
+loc_0040FC:
+	bsr.w loc_00B0B8
+	btst.b #0x0,(0xff0ac0).l
+	bne.s loc_0040FC
+	rts
+loc_00410C:
+	bset.b #0x1,(0xff09e9).l
+	rts
+loc_004116:
+	bclr.b #0x1,(0xff09e9).l
+	rts
+loc_004120:
+	move.w #0x49,d1
+	move.w (0xff04dc).l,d0
+	cmpi.w #0x114,d0
+	blt.s loc_004132
+	addq.w #0x1,d1
+loc_004132:
+	move.w d1,(0xff0488).l
+	move.w #0xffff,(0xff0618).l
+	bset.b #0x0,(0xff0ab5).l
+loc_004148:
+	bsr.w loc_00B0B8
+	btst.b #0x0,(0xff0abd).l
+	beq.w loc_004148
+	rts
+loc_00415A:
+	bsr.w loc_00B0B8
+	btst.b #0x2,(0xff09e0).l
+	bne.s loc_004172
+	move.w #0x0,(0xff120c).l
+	bra.s loc_004198
+loc_004172:
+	btst.b #0x3,(0xff09e0).l
+	bne.s loc_004186
+	move.w #0x1,(0xff120c).l
+	bra.s loc_004198
+loc_004186:
+	btst.b #0x1,(0xff09e0).l
+	bne.s loc_00415A
+	move.w #0x2,(0xff120c).l
+loc_004198:
+	bset.b #0x0,(0xff0ac3).l
+	rts
+loc_0041A2:
+	bset.b #0x0,(0xff09e9).l
+	rts
+loc_0041AC:
+	bclr.b #0x0,(0xff09e9).l
+	rts
+loc_0041B6:
+	move.w #0x1e,d0
+	bsr.w loc_009742
+	bset.b #0x1,(0xff09eb).l
+	lea.l (dat_0296FA).l,a0
+	lea.l (0xff3000).l,a1
+	lea.l (0xff7000).l,a2
+	bsr.w loc_0097AA
+	movea.l a2,a0
+	move.w (0xff068a).l,d0
+	lsl.w #0x5,d0
+	move.l (a1),d1
+	lsr.w #0x1,d1
+	bsr.w loc_00992C
+	lea.l (dat_029C72).l,a0
+	bsr.w loc_0097AA
+	move.l (a1),d0
+	movea.l a2,a3
+	adda.l d0,a3
+	movea.l a2,a0
+	lsr.w #0x1,d0
+	subq.w #0x1,d0
+	move.w (0xff068a).l,d1
+loc_00420A:
+	add.w d1,(a2)+
+	dbra d0,loc_00420A
+	move.w #0x1c,d2
+	moveq #0x0,d3
+	move.w #0x20,d1
+	moveq #0x0,d5
+loc_00421C:
+	move.w d3,(0xff07fc).l
+	bsr.w loc_00B0B8
+	bsr.w loc_00974C
+	eori.w #0x1,d5
+	bne.s loc_00421C
+	addq.w #0x1,d3
+	move.w d3,d4
+	andi.w #0x7,d4
+	bne.s loc_00421C
+	addq.w #0x1,d2
+	andi.w #0x1f,d2
+	move.w d2,d0
+	lsl.w #0x7,d0
+	addi.w #0xc000,d0
+	bsr.w loc_00992C
+	cmpa.l a0,a3
+	bgt.s loc_00421C
+	move.w #0x12c,(0xff08ae).l
+loc_004258:
+	bsr.w loc_00B0B8
+	tst.w (0xff08ae).l
+	bpl.s loc_004258
+	bclr.b #0x6,(0xff09dc).l
+	bsr.w loc_009DE0
+	bra.w loc_008F9A
+loc_004274:
 	move.w #0xffff,(0xff08aa).l
 	move.w #0x1,(0xff08ac).l
 	move.b (dat_03247C).l,(0xff0acf).l
 	bset.b #0x7,(0xff09e8).l
 	rts
+loc_004298:
 	bclr.b #0x7,(0xff09e8).l
 	rts
 loc_0042A2:
@@ -3710,6 +4090,7 @@ loc_0043AC:
 loc_0043B6:
 	bclr.b #0x2,(0xff09e8).l
 	rts
+loc_0043C0:
 	bset.b #0x1,(0xff09e8).l
 	bclr.b #0x0,(0xff06cb).l
 	move.w (0xff06ca).l,d0
@@ -3755,6 +4136,7 @@ loc_004480:
 loc_004482:
 	bset.b #0x1,(0xff09e8).l
 	rts
+loc_00448C:
 	bclr.b #0x1,(0xff09e8).l
 	rts
 loc_004496:
@@ -3827,6 +4209,7 @@ loc_00458A:
 	btst.b #0x4,(0xff09e2).l
 	beq.w loc_004568
 	rts
+loc_0045A4:
 	btst.b #0x1,(0xff2a00).l
 	beq.w loc_0045B2
 	rts
@@ -3980,6 +4363,7 @@ loc_004806:
 	addi.w #0x40,d0
 	dbra d3,loc_004802
 	rts
+loc_00481A:
 	btst.b #0x1,(0xff2a00).l
 	bne.w loc_004828
 	rts
@@ -4021,6 +4405,7 @@ loc_00488C:
 	bsr.w loc_007A2A
 	bclr.b #0x1,(0xff2a00).l
 	rts
+loc_0048B6:
 	beq.w loc_0048D2
 	move.w (0x2,a5),d0
 	bpl.s loc_0048CC
@@ -4034,6 +4419,7 @@ loc_0048CC:
 loc_0048D2:
 	lea.l (0x4,a5),a5
 	rts
+loc_0048D8:
 	beq.w loc_0048F2
 	move.w (0x2,a5),(0xff08ae).l
 loc_0048E4:
@@ -4103,6 +4489,7 @@ loc_0049B0:
 	move.w (0x2,a5),d0
 	lea.l (0x8,a5,d0.w),a5
 	rts
+loc_0049BA:
 	beq.w loc_004B10
 	move.w d7,-(sp)
 	move.w (0x2,a5),d0
@@ -4290,6 +4677,7 @@ loc_004C10:
 	bne.w loc_004C10
 loc_004C1E:
 	rts
+loc_004C20:
 	beq.w loc_004D7A
 	move.w d7,-(sp)
 	move.w (0x2,a5),d0
@@ -4392,6 +4780,7 @@ loc_004D78:
 loc_004D7A:
 	lea.l (0xc,a5),a5
 	rts
+loc_004D80:
 	beq.w loc_004EDE
 	move.w d7,-(sp)
 	move.w (0x2,a5),d0
@@ -4479,6 +4868,7 @@ loc_004EDC:
 loc_004EDE:
 	lea.l (0x8,a5),a5
 	rts
+loc_004EE4:
 	beq.w loc_004F08
 	move.w (0x2,a5),(0xff06ac).l
 	move.w (0x6,a5),(0xff05b8).l
@@ -4489,6 +4879,7 @@ loc_004EDE:
 loc_004F08:
 	lea.l (0x8,a5),a5
 	rts
+loc_004F0E:
 	beq.w loc_004F4A
 	move.w (0x2,a5),(0xff06ac).l
 	move.w (0x6,a5),(0xff05b8).l
@@ -4513,6 +4904,7 @@ loc_004F50:
 loc_004F6A:
 	lea.l (0x6,a5),a5
 	rts
+loc_004F70:
 	beq.w loc_004FB8
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -4537,6 +4929,7 @@ loc_004FA0:
 loc_004FB8:
 	lea.l (0x4,a5),a5
 	rts
+loc_004FBE:
 	beq.w loc_004FFC
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -7948,8 +8341,8 @@ loc_008196:
 	move.l #0x7c000003,(0xc00004).l
 	move.w #0x857e,(0xc00004).l
 	move.l #0x0,(0xc00000).l
-	move.l #0xa38c,(0xff0000).l
-	move.l #0x1006a,(0xff0004).l
+	move.l #loc_00A38C,(0xff0000).l
+	move.l #loc_01006A,(0xff0004).l
 	move.w #0x9100,(0xc00004).l
 	move.w #0x9200,(0xc00004).l
 	move.w #0x9000,(0xc00004).l
@@ -8155,9 +8548,14 @@ loc_0085CC:
 	jmp (a0)
 | data 0x0085DC-0x008660
 dat_0085DC:
-	.incbin "baserom.md",0x85DC,0xC
+	dc.l loc_008FB8
+	dc.l loc_008FC2
+	dc.l loc_00940C
 dat_0085E8:
-	.incbin "baserom.md",0x85E8,0x10
+	dc.l loc_008CD6
+	dc.l loc_008F8A
+	dc.l loc_0088A2
+	dc.l loc_008C40
 dat_0085F8:
 	.incbin "baserom.md",0x85F8,0x68
 loc_008660:
@@ -8298,9 +8696,355 @@ loc_008820:
 	move.w d0,(0xff000c).l
 loc_008826:
 	rts
-| data 0x008828-0x008CD6
+| data 0x008828-0x008876
 dat_008828:
-	.incbin "baserom.md",0x8828,0x4AE
+	.incbin "baserom.md",0x8828,0x4E
+loc_008876:
+	move.w sr,-(sp)
+	move.w #0x2700,sr
+	move.w #0x8f04,(0xc00004).l
+	move.w #0x40,d1
+	move.w #0xdc00,d0
+	lea.l (0xff8c00).l,a0
+	bsr.w loc_0099F6
+	move.w #0x8f02,(0xc00004).l
+	move.w (sp)+,sr
+	rts
+loc_0088A2:
+	lea.l (dat_018DD0).l,a0
+	bsr.w loc_0096F4
+	move.w (0xff000a).l,d0
+	bsr.w loc_0088D8
+	cmpi.w #0x1,d0
+	ble.s loc_0088A2
+	move.w d0,(0xff000a).l
+	move.w #0xfc00,d0
+	move.w #0x34,d1
+	lea.l (dat_0085F8).l,a0
+	bsr.w loc_0099F6
+	bra.w loc_00851E
+loc_0088D8:
+	move.w d0,d3
+	movea.l (0xff068e).l,a2
+	move.l (0xc,a2),d4
+	sub.l (0x8,a2),d4
+	divu.w #0x14,d4
+	dc.w 0x7aff	| moveq #$ff, d5
+loc_0088EE:
+	addq.w #0x1,d5
+	subi.w #0x10,d3
+	bpl.w loc_0088EE
+	addi.w #0x10,d3
+loc_0088FC:
+	movea.l (0x8,a2),a1
+	move.w d5,d1
+	mulu.w #0x140,d1
+	adda.l d1,a1
+	lea.l (-0x28,a1),a1
+	moveq #0x1,d1
+	move.w #0x7,d2
+	move.w d4,d6
+	move.w d5,d0
+	lsl.w #0x4,d0
+	sub.w d0,d6
+	cmpi.w #0xf,d6
+	ble.w loc_008926
+	move.w #0xf,d6
+loc_008926:
+	move.w d6,d7
+	bsr.w loc_00974C
+loc_00892C:
+	move.l (0x8,a2),d0
+	sub.l a1,d0
+	ble.s loc_00894A
+	cmpi.w #0x28,d0
+	bne.s loc_008942
+	lea.l (dat_008A9C).l,a0
+	bra.s loc_008950
+loc_008942:
+	lea.l (dat_008AA2).l,a0
+	bra.s loc_008950
+loc_00894A:
+	movea.l (0x20,a2),a0
+	adda.l (a1),a0
+loc_008950:
+	bsr.w loc_009F46
+	addq.w #0x1,d2
+	lea.l (0x14,a1),a1
+	dbra d6,loc_00892C
+loc_00895E:
+	cmpi.w #0x17,d2
+	beq.s loc_008972
+	lea.l (dat_02FFF4).l,a0
+	bsr.w loc_009F46
+	addq.w #0x1,d2
+	bra.s loc_00895E
+loc_008972:
+	bsr.w loc_00974C
+	move.w d7,-(sp)
+	move.w #0x7d0,d0
+	move.w #0x80,d1
+	move.w d3,d2
+	lsl.w #0x3,d2
+	addi.w #0xb8,d2
+	move.w #0xc01,d7
+	move.w #0x2700,sr
+	move.l #0x7c000003,(0xc00004).l
+loc_00899A:
+	move.w d2,(0xc00000).l
+	move.w d7,(0xc00000).l
+	move.w d0,(0xc00000).l
+	move.w d1,(0xc00000).l
+	addi.w #0x20,d1
+	addq.w #0x1,d7
+	cmpi.w #0xc08,d7
+	bne.s loc_00899A
+	move.w d2,(0xc00000).l
+	move.w #0xc00,(0xc00000).l
+	move.w d0,(0xc00000).l
+	move.w d1,(0xc00000).l
+	move.w #0x2000,sr
+	move.w (sp)+,d7
+	btst.b #0x0,(0xff09e0).l
+	bne.s loc_008A08
+	btst.b #0x0,(0xff09e2).l
+	beq.s loc_008A08
+	tst.w d3
+	beq.s loc_0089FA
+	subq.w #0x1,d3
+	bra.s loc_008A36
+loc_0089FA:
+	tst.w d5
+	beq.s loc_008A36
+	move.w #0xf,d3
+	subq.w #0x1,d5
+	bra.w loc_0088FC
+loc_008A08:
+	btst.b #0x1,(0xff09e0).l
+	bne.s loc_008A36
+	btst.b #0x1,(0xff09e2).l
+	beq.s loc_008A36
+	cmp.w d3,d7
+	beq.s loc_008A24
+	addq.w #0x1,d3
+	bra.s loc_008A36
+loc_008A24:
+	move.w d4,d0
+	subq.w #0x1,d0
+	lsr.w #0x4,d0
+	cmp.w d5,d0
+	beq.s loc_008A36
+	moveq #0x0,d3
+	addq.w #0x1,d5
+	bra.w loc_0088FC
+loc_008A36:
+	btst.b #0x6,(0xff09e0).l
+	bne.s loc_008A56
+	btst.b #0x6,(0xff09e2).l
+	beq.s loc_008A56
+	tst.w d5
+	beq.s loc_008A56
+	subq.w #0x1,d5
+	moveq #0x0,d3
+	bra.w loc_0088FC
+loc_008A56:
+	btst.b #0x5,(0xff09e0).l
+	bne.s loc_008A7C
+	btst.b #0x5,(0xff09e2).l
+	beq.s loc_008A7C
+	move.w d4,d0
+	subq.w #0x1,d0
+	lsr.w #0x4,d0
+	cmp.w d5,d0
+	beq.s loc_008A7C
+	addq.w #0x1,d5
+	moveq #0x0,d3
+	bra.w loc_0088FC
+loc_008A7C:
+	btst.b #0x4,(0xff09e0).l
+	bne.w loc_008972
+	btst.b #0x4,(0xff09e2).l
+	beq.w loc_008972
+	move.w d5,d0
+	lsl.w #0x4,d0
+	add.w d3,d0
+	rts
+| data 0x008A9C-0x008AB4
+dat_008A9C:
+	.incbin "baserom.md",0x8A9C,0x6
+dat_008AA2:
+	.incbin "baserom.md",0x8AA2,0x12
+loc_008AB4:
+	moveq #0x0,d0
+	movea.l (0xff068e).l,a2
+	move.w d0,d3
+	move.w (0xff06f4).l,d4
+	dc.w 0x7aff	| moveq #$ff, d5
+loc_008AC6:
+	addq.w #0x1,d5
+	subi.w #0x10,d3
+	bpl.w loc_008AC6
+	addi.w #0x10,d3
+loc_008AD4:
+	movea.l (0x28,a2),a1
+	move.w d5,d1
+	lsl.w #0x7,d1
+	lea.l (0x0,a1,d1.w),a1
+	moveq #0x1,d1
+	move.w #0x7,d2
+	move.w d4,d6
+	move.w d5,d0
+	lsl.w #0x4,d0
+	sub.w d0,d6
+	cmpi.w #0xf,d6
+	ble.w loc_008AFA
+	move.w #0xf,d6
+loc_008AFA:
+	move.w d6,d7
+	bsr.w loc_00974C
+loc_008B00:
+	movea.l (0x20,a2),a0
+	adda.l (0x4,a1),a0
+	bsr.w loc_009F46
+	addq.w #0x1,d2
+	lea.l (0x8,a1),a1
+	dbra d6,loc_008B00
+loc_008B16:
+	bsr.w loc_00974C
+	move.w d7,-(sp)
+	move.w #0x7d0,d0
+	move.w #0x80,d1
+	move.w d3,d2
+	lsl.w #0x3,d2
+	addi.w #0xb8,d2
+	move.w #0xc01,d7
+	move.w #0x2700,sr
+	move.l #0x7c000003,(0xc00004).l
+loc_008B3E:
+	move.w d2,(0xc00000).l
+	move.w d7,(0xc00000).l
+	move.w d0,(0xc00000).l
+	move.w d1,(0xc00000).l
+	addi.w #0x20,d1
+	addq.w #0x1,d7
+	cmpi.w #0xc08,d7
+	bne.s loc_008B3E
+	move.w d2,(0xc00000).l
+	move.w #0xc00,(0xc00000).l
+	move.w d0,(0xc00000).l
+	move.w d1,(0xc00000).l
+	move.w #0x2000,sr
+	move.w (sp)+,d7
+	btst.b #0x0,(0xff09e0).l
+	bne.s loc_008BAC
+	btst.b #0x0,(0xff09e2).l
+	beq.s loc_008BAC
+	tst.w d3
+	beq.s loc_008B9E
+	subq.w #0x1,d3
+	bra.s loc_008BDA
+loc_008B9E:
+	tst.w d5
+	beq.s loc_008BDA
+	move.w #0xf,d3
+	subq.w #0x1,d5
+	bra.w loc_008AD4
+loc_008BAC:
+	btst.b #0x1,(0xff09e0).l
+	bne.s loc_008BDA
+	btst.b #0x1,(0xff09e2).l
+	beq.s loc_008BDA
+	cmp.w d3,d7
+	beq.s loc_008BC8
+	addq.w #0x1,d3
+	bra.s loc_008BDA
+loc_008BC8:
+	move.w d4,d0
+	subq.w #0x1,d0
+	lsr.w #0x4,d0
+	cmp.w d5,d0
+	beq.s loc_008BDA
+	moveq #0x0,d3
+	addq.w #0x1,d5
+	bra.w loc_008AD4
+loc_008BDA:
+	btst.b #0x6,(0xff09e0).l
+	bne.s loc_008BFA
+	btst.b #0x6,(0xff09e2).l
+	beq.s loc_008BFA
+	tst.w d5
+	beq.s loc_008BFA
+	subq.w #0x1,d5
+	moveq #0x0,d3
+	bra.w loc_008AD4
+loc_008BFA:
+	btst.b #0x5,(0xff09e0).l
+	bne.s loc_008C20
+	btst.b #0x5,(0xff09e2).l
+	beq.s loc_008C20
+	move.w d4,d0
+	subq.w #0x1,d0
+	lsr.w #0x4,d0
+	cmp.w d5,d0
+	beq.s loc_008C20
+	addq.w #0x1,d5
+	moveq #0x0,d3
+	bra.w loc_008AD4
+loc_008C20:
+	btst.b #0x4,(0xff09e0).l
+	bne.w loc_008B16
+	btst.b #0x4,(0xff09e2).l
+	beq.w loc_008B16
+	move.w d5,d0
+	lsl.w #0x4,d0
+	add.w d3,d0
+	rts
+loc_008C40:
+	move.w #0xf,d0
+	move.w #0x0,d1
+	move.w (0xff068c).l,d2
+	bsr.w loc_007A2A
+	lea.l (dat_018E08).l,a0
+	bsr.w loc_0096F4
+	bsr.w loc_008AB4
+	move.w d0,-(sp)
+	mulu.w #0x1a,d0
+	lea.l (0xff1200).l,a0
+	movem.l d0/a0,-(sp)
+	move.w (0x6,a0,d0.w),d0
+	bsr.w loc_0088D8
+	move.w d0,d1
+	movem.l (sp)+,d0/a0
+	move.w (sp)+,d2
+	cmp.w (0x6,a0,d0.w),d1
+	beq.s loc_008CC0
+	cmpi.w #0x1,(0x6,a0,d0.w)
+	bne.s loc_008CA2
+	lea.l (0xff0a1e).l,a1
+loc_008C94:
+	cmp.w (a1)+,d2
+	bne.s loc_008C94
+loc_008C98:
+	move.w (a1)+,(-0x4,a1)
+	bpl.w loc_008C98
+	bra.s loc_008CBC
+loc_008CA2:
+	cmpi.w #0x1,d1
+	bne.s loc_008CBC
+	lea.l (0xff0a1e).l,a1
+loc_008CAE:
+	tst.w (a1)+
+	bpl.w loc_008CAE
+	move.w d2,(-0x2,a1)
+	move.w #0xffff,(a1)
+loc_008CBC:
+	move.w d1,(0x6,a0,d0.w)
+loc_008CC0:
+	move.w #0xfc00,d0
+	move.w #0x34,d1
+	lea.l (dat_0085F8).l,a0
+	bsr.w loc_0099F6
+	bra.w loc_00851E
 loc_008CD6:
 	bsr.w loc_009DE0
 	move.w #0x9001,(0xc00004).l
@@ -8314,8 +9058,8 @@ loc_008CFE:
 	move.w #0x2700,sr
 	move.w #0x856c,(0xc00004).l
 	bclr.b #0x1,(0xff09eb).l
-	move.l #0x1006c,(0xff0004).l
-	move.l #0xa65c,(0xff0000).l
+	move.l #loc_01006C,(0xff0004).l
+	move.l #loc_00A65C,(0xff0000).l
 	move.w #0x2000,sr
 	rts
 loc_008D36:
@@ -8473,18 +9217,22 @@ loc_008F6C:
 	move.w #0x8f02,(0xc00004).l
 	move.w (sp)+,sr
 	rts
+loc_008F8A:
 	lea.l (dat_018F58).l,a0
 	bsr.w loc_008D36
 	tst.w d0
 	beq.w loc_00851E
+loc_008F9A:
 	bclr.b #0x6,(0xff09dc).l
 	bsr.w loc_009DE0
 	move.w #0x2700,sr
 	movea.l (dat_000000).l,sp
 	movea.l (dat_000004).l,a0
 	jmp (a0)
+loc_008FB8:
 	move.w #0x0,(0xff06aa).l
 	bra.s loc_008FCA
+loc_008FC2:
 	move.w #0x1,(0xff06aa).l
 loc_008FCA:
 	bsr.w loc_007F22
@@ -8591,10 +9339,18 @@ loc_00912E:
 	movea.l (dat_009164,pc,d0.w),a0
 	jsr (a0)
 	bra.s loc_0091CA
+loc_009162:
 	rts
 | data 0x009164-0x009184
 dat_009164:
-	.incbin "baserom.md",0x9164,0x20
+	dc.l loc_0093A2
+	dc.l loc_0093B6
+	dc.l loc_0093CC
+	dc.l loc_0093CC
+	dc.l loc_0093DC
+	dc.l loc_009298
+	dc.l loc_009162
+	dc.l loc_00927A
 loc_009184:
 	dc.w 0x203c,0x0000,0x0027	| move.l #$27, d0
 	bsr.w loc_009762
@@ -8666,11 +9422,13 @@ loc_00920A:
 	addq.w #0x1,d2
 	bsr.w loc_009F58
 	bra.w loc_00903A
+loc_00927A:
 	bsr.w loc_00974C
 	move.l #0x7c600003,(0xc00004).l
 	move.l #0x0,(0xc00000).l
 	tst.l (sp)+
 	bra.w loc_00851E
+loc_009298:
 	move.w d4,-(sp)
 	lea.l (0xff08bc).l,a0
 	lea.l (0xff003e).l,a1
@@ -8761,6 +9519,7 @@ loc_00939C:
 	subq.w #0x1,d1
 	roxl.b #0x1,d3
 	rts
+loc_0093A2:
 	dc.w 0x203c,0x0000,0x0075	| move.l #$75, d0
 	bsr.w loc_009762
 	subq.w #0x1,d4
@@ -8768,6 +9527,7 @@ loc_00939C:
 	move.w #0x18,d4
 loc_0093B4:
 	rts
+loc_0093B6:
 	dc.w 0x203c,0x0000,0x0075	| move.l #$75, d0
 	bsr.w loc_009762
 	addq.w #0x1,d4
@@ -8776,6 +9536,7 @@ loc_0093B4:
 	moveq #0x0,d4
 loc_0093CA:
 	rts
+loc_0093CC:
 	dc.w 0x203c,0x0000,0x0075	| move.l #$75, d0
 	bsr.w loc_009762
 	eori.w #0x1,d5
@@ -8794,6 +9555,7 @@ loc_0093F8:
 | data 0x0093FC-0x00940C
 dat_0093FC:
 	.incbin "baserom.md",0x93FC,0x10
+loc_00940C:
 	move.b (0xff09e2).l,(0xff0010).l
 	bsr.w loc_00E40C
 	bsr.w loc_00F272
@@ -9903,6 +10665,7 @@ loc_00A37E:
 	rts
 | data 0x00A386-0x00A38C
 	.incbin "baserom.md",0xA386,0x6
+loc_00A38C:
 	btst.b #0x7,(0xff09eb).l
 	beq.w loc_00A4A0
 	tst.w (0xff0016).l
@@ -9969,6 +10732,7 @@ loc_00A494:
 	dbra d2,loc_00A494
 loc_00A4A0:
 	bsr.w loc_00879E
+loc_00A4A4:
 	bsr.w loc_009D34
 	btst.b #0x7,(0xff09e0).l
 	bne.w loc_00A4BC
@@ -9986,11 +10750,30 @@ loc_00A4E6:
 	rts
 | data 0x00A4E8-0x00A65C
 dat_00A4E8:
-	.incbin "baserom.md",0xA4E8,0x70
+	dc.l dat_016CF8
+	dc.l dat_00A4F8
+	dc.l dat_00A518
+	dc.l dat_00A538
+dat_00A4F8:
+	.incbin "baserom.md",0xA4F8,0x20
+dat_00A518:
+	.incbin "baserom.md",0xA518,0x20
+dat_00A538:
+	.incbin "baserom.md",0xA538,0x20
 dat_00A558:
 	.incbin "baserom.md",0xA558,0x20
 dat_00A578:
-	.incbin "baserom.md",0xA578,0xE4
+	dc.l dat_00A59C
+	dc.l dat_00A5EC
+	dc.l dat_00A614
+	.incbin "baserom.md",0xA584,0x18
+dat_00A59C:
+	.incbin "baserom.md",0xA59C,0x50
+dat_00A5EC:
+	.incbin "baserom.md",0xA5EC,0x28
+dat_00A614:
+	.incbin "baserom.md",0xA614,0x48
+loc_00A65C:
 	move.w #0x8230,(0xc00004).l
 	move.w #0x8407,(0xc00004).l
 	move.w #0x856c,(0xc00004).l
@@ -10672,7 +11455,7 @@ loc_00B024:
 	andi.b #0x80,d1
 	ori.b #0x10,d1
 	move.b d1,(0xff0ac9).l
-	move.l #0x23dc,(0xff0878).l
+	move.l #loc_0023DC,(0xff0878).l
 	movea.l (a1),a5
 	adda.l a2,a5
 	move.w (a5),d1
@@ -10689,7 +11472,7 @@ loc_00B024:
 	move.w (0x2,a5),d0
 	lea.l (0x0,a5,d0.w),a6
 	tst.l (a5)+
-	move.l #0x2406,(0xff0878).l
+	move.l #loc_002406,(0xff0878).l
 	jsr (loc_002406).l
 	movem.l (sp)+,d0/a0-a2
 loc_00B09A:
@@ -15660,6 +16443,7 @@ loc_010054:
 	bsr.w loc_0099F6
 loc_010068:
 	rts
+loc_01006A:
 	rts
 loc_01006C:
 	moveq #0x0,d1
@@ -15714,7 +16498,9 @@ dat_01155A:
 dat_0165B8:
 	.incbin "baserom.md",0x165B8,0x700
 dat_016CB8:
-	.incbin "baserom.md",0x16CB8,0x80
+	.incbin "baserom.md",0x16CB8,0x40
+dat_016CF8:
+	.incbin "baserom.md",0x16CF8,0x40
 dat_016D38:
 	.incbin "baserom.md",0x16D38,0x132
 dat_016E6A:
@@ -15734,7 +16520,11 @@ dat_018BFA:
 dat_018C72:
 	.incbin "baserom.md",0x18C72,0x4C
 dat_018CBE:
-	.incbin "baserom.md",0x18CBE,0x18A
+	.incbin "baserom.md",0x18CBE,0x112
+dat_018DD0:
+	.incbin "baserom.md",0x18DD0,0x38
+dat_018E08:
+	.incbin "baserom.md",0x18E08,0x40
 dat_018E48:
 	.incbin "baserom.md",0x18E48,0x110
 dat_018F58:
@@ -15780,7 +16570,11 @@ dat_02864C:
 dat_0287C8:
 	.incbin "baserom.md",0x287C8,0xEB2
 dat_02967A:
-	.incbin "baserom.md",0x2967A,0x1914
+	.incbin "baserom.md",0x2967A,0x80
+dat_0296FA:
+	.incbin "baserom.md",0x296FA,0x578
+dat_029C72:
+	.incbin "baserom.md",0x29C72,0x131C
 dat_02AF8E:
 	.incbin "baserom.md",0x2AF8E,0x12C
 dat_02B0BA:

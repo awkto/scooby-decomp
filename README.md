@@ -6,9 +6,9 @@ Tracking: https://github.com/awkto/scooby-decomp
 ## Layout
 - `rom/` – copy your ROM to `rom/baserom.md` (sha1 `ccc9542d964de5bdc1e9101620cae40dd98e7127`, not committed)
 - `src/scooby.s` – generated disassembly; `make` rebuilds a byte-identical ROM
-- `tools/py/disasm.py` – recursive-descent disassembler (vectors + `data/exec_starts.txt` + gap fill)
+- `tools/py/disasm.py` – recursive-descent disassembler (vectors + `data/exec_starts.txt` + gap fill + indirect-jump resolution in `tools/py/indirect.py`; extra seeds in `tools/py/seeds.txt`)
 - `tools/harness/` – headless libretro harness (GPGX core built with `tools/patches/gpgx-cpuhook.patch`, `HOOK_CPU=1`)
-- `data/` – runtime coverage (executed instruction starts, ROM bytes read as data)
+- `data/` – runtime coverage (executed instruction starts, ROM bytes read as data); generated `indirect.txt` (indirect jmp/jsr sites → targets) and `code_gaps.txt` (classified non-code ranges in the code area, manual notes in `gap_notes.txt`)
 
 ## Setup
     sudo apt install binutils-m68k-linux-gnu
