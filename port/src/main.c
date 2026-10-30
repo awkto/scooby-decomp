@@ -558,6 +558,7 @@ int main(int argc, char **argv)
 				snprintf(t, sizeof t, "F %ld\nOVERLAY TEST 0123456789", emu_frame_count());
 				overlay_text(v.buf, (int)w, (int)h, 2, 2, 0xFFE0, t);
 			}
+			mouse_draw(v.buf, (int)w, (int)h);
 			video_present(&v, v.buf, (int)w, (int)h);
 		}
 		if (window_shot(&v, a.window_shot))

@@ -158,7 +158,7 @@ void mouse_click(int button)
 	M.active = true;
 	if (button == MOUSE_MIDDLE) {               /* Start: pause / in-game menu */
 		plan_clear();
-		push(OP_PRESS, 0, 0, 2, PAD_START);
+		push(OP_PRESS, 0, 0, 4, PAD_START);
 		push(OP_GAP, 0, 0, 2, 0);
 		return;
 	}
@@ -168,10 +168,10 @@ void mouse_click(int button)
 	mg_mode mode = mg_mode_get();
 	mlog("button %d at (%d,%d), mode %d", button, M.mx, M.my, mode);
 	if (mode == MG_NONE || mode == MG_BUSY) {
-		/* dialogue, cut scene, title...: the buttons the game waits for (A or B edges
-		 * advance text, B confirms a choice; Start on the title / intro screens) */
-		unsigned b = button == MOUSE_RIGHT ? PAD_A : mode == MG_NONE ? (PAD_START | PAD_B) : PAD_B;
-		push(OP_PRESS, 0, 0, 2, b);
+		/* in a room (dialogue, cut scene): A or B edges advance text, B confirms a choice;
+		 * outside a room (title menu, intro pages): Start, as in the harness route */
+		unsigned b = button == MOUSE_RIGHT ? PAD_A : mode == MG_NONE ? PAD_START : PAD_B;
+		push(OP_PRESS, 0, 0, 4, b);                /* some screens poll every other frame */
 		push(OP_GAP, 0, 0, 2, 0);
 		return;
 	}

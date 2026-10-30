@@ -31,6 +31,11 @@ for hle in all none; do
 	mkdir -p "$d"
 	{ echo "load $out/lobby.state"; cat port/scripts/mouse/exit.txt; } > "$d/script.txt"
 	$P --hle "$hle" --no-mouse --script "$d/script.txt" --outdir "$d" --frames 0 >"$d/log.txt" 2>&1
+	# title -> Lobby by clicking, then the host cursor in a window shot (--scale 3)
+	d="$out/$hle/title"
+	mkdir -p "$d"
+	$P --hle "$hle" --script port/scripts/mouse/title.txt --outdir "$d" --frames 0 --scale 3 \
+		--window-shot "$d/window.ppm" >"$d/log.txt" 2>&1
 done
 
 python3 - "$out" <<'EOF' || fail=1
@@ -96,6 +101,25 @@ for hle in ("all", "none"):
     p = peeks(f"{out}/{hle}/nomouse/peek.log")
     check(f"[{hle}] --no-mouse ignores the mouse", p.get("room") == 16 and not (p.get("moving", 0) & 1),
           f"room {p.get('room')}")
+
+    p = peeks(f"{out}/{hle}/title/peek.log")
+    check(f"[{hle}] title -> Lobby with clicks", p.get("room") == 16 and bool(p.get("ptr", 0) & 8),
+          f"room {p.get('room')}, $FF09DC={p.get('ptr', 0):02x}")
+    # window 960x672, game image 768x672 at x 96 (3x): arrow tip at game (60,185) is black,
+    # (61,187) is inside the arrow (white)
+    try:
+        d = open(f"{out}/{hle}/title/window.ppm", "rb").read()
+        hdr = d.split(b"\n", 3)
+        w, h = map(int, hdr[1].split())
+        pix = hdr[3]
+        def px(x, y):
+            i = 3 * (y * w + x)
+            return tuple(pix[i:i + 3])
+        tip, fill = px(96 + 3 * 60 + 1, 3 * 185 + 1), px(96 + 3 * 61 + 1, 3 * 187 + 1)
+        check(f"[{hle}] host cursor drawn at the mouse (window shot)", tip == (0, 0, 0) and min(fill) > 240,
+              f"tip {tip} fill {fill}")
+    except (OSError, ValueError, IndexError) as e:
+        check(f"[{hle}] host cursor drawn at the mouse (window shot)", False, str(e))
 sys.exit(1 if fails else 0)
 EOF
 [ $fail = 0 ] && echo "mousetest: all passed" || echo "mousetest: FAILURES"
