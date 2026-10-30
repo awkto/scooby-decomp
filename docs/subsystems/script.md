@@ -75,7 +75,7 @@ See "Difftest results" for the numbers.
 | 0D | $0048B6 | sound | func | C |
 | 0E / 1B | $0049BA | walk_spawn / walk_xy (+ $4A34, $4AB2, $4A4C, $4ACA, $4B0E) | ranges, D7 pushed (SP -2 / +2) | C (2nd pass) |
 | -- | $004B24 | actor_walk_to (+ $4BA0, $4C14) | ranges | C (2nd pass) |
-| 0F | $004C20 | walk_obj (+ $4D1C, $4D78; helper sprite_frame_hotspot $00197E) | ranges, D7 pushed | C (2nd pass); the Scooby tail $4D48 has no states (not registered) |
+| 0F | $004C20 | walk_obj (+ $4D1C, $4D78; helper sprite_frame_hotspot $00197E) | ranges, D7 pushed | C (2nd pass); the Scooby tail $4D48: 1/1 (w0_full) |
 | 10 | $004D80 | say | ranges (text.c, #20) + script_ops.c | C: text.c's 6 ranges, plus (2nd pass) the pushes/pops $4D84 $4DBE $4E1C $4E5C $4E80 $4EDC and the pose waits $4DDE $4DEE $4EA8 $4EB8 |
 | 11 | $004F0E | goto_room (+ $4F34, $4F4A) | ranges around palette_read_cram / room_reload | C |
 | 12 / 14 | $004F50 / $002E7E | set_hotspot / set_hotspot2 | func | 14 C; 12 same code, not registered: op $12 occurs nowhere in the data |
@@ -101,7 +101,7 @@ See "Difftest results" for the numbers.
 | $005378 / $005364 / $0059B0 / $0052C0 / $0052F4 | walk_line_clear, shaggy_/scooby_line_clear, waypoint0_/waypoint1_line_clear | straight-line collision test (per-step cost model) | C |
 | $00548E / $0059DC / $00547A / $0059C8 | shaggy_/scooby_set_dir, _dir_to | walk direction (8.8) and facing | C |
 | $00532A / $005976 | shaggy_/scooby_waypoints_reachable | | C |
-| $00519C, $005852, $00589A, $0058E4, $00592C | leg setup (waypoint -> target) | | C; Shaggy's $0051E4/$00522E/$005276 have no states (not registered; the planner range runs the same C) |
+| $00519C, $005852, $00589A, $0058E4, $00592C | leg setup (waypoint -> target) | | C; Shaggy $0051E4 5/5, $005276 1/1, $00522E 4+1 synthetic (--entry) |
 
 ### Sub-op handlers (`script_subop_table` $002EB4)
 
@@ -112,7 +112,7 @@ See "Difftest results" for the numbers.
 | 02 | $004548 | room_fade_in | 68k: `bsr room_fade_in / rts`, nothing to port |
 | 03 | $00454E (+ $4560) | fade_out | C (2nd pass, VBLANK_FLAGS byte pushed) |
 | 04 | $004570 | wait_button (test after the two calls) | C (range; the entry is two `bsr`s) |
-| 05 / 0C | $0045A4 | fullscreen_picture / bar_hide_once | 68k: long picture viewer with VRAM save/restore, no states |
+| 05 / 0C | $0045A4 | fullscreen_picture / bar_hide_once | C (8 ranges, 3rd pass; w0_full states, docs/subsystems/minigames.md) |
 | 06 | $00481A | bar_show_if_hidden | C (2nd pass, synthetic) |
 | 07 | $0044C2 | closeup_picture (after the 68k spin at $44BA) | C (2nd pass, synthetic) |
 | 09 / 0A / 0B / 36 | | scooby_away / back / pose_on / pose_off | C (2nd pass, synthetic) |
@@ -125,13 +125,13 @@ See "Difftest results" for the numbers.
 | 1A / 1B | $004274 / $004298 | pal_flash on / off | C |
 | 1C | $004862 (+ $4874) | bar_show | C (ranges) |
 | 1D | $00482E (+ $4844, $4850) | bar_hide | C (ranges; the wait-for-idle spin $4836 stays 68k) |
-| 1E | $0041B6 | ending_credits | 68k: the end sequence (LZSS, scroll, fade, soft reset), no states |
+| 1E | $0041B6 | ending_credits | C (4 ranges; tail `bra soft_reset` stays 68k) |
 | 1F/20, 23/24, 29/2A, 2D/2E, 30/31 | | $FF09E9 bits 0, 1, 3, 6, 7 | C (synthetic) |
 | 21 | $00415E | wait_dpad_choice (after its `bsr`) | C (synthetic) |
 | 22 | $004120 (+ $414C) | shaggy_anim_by_x | C (synthetic) |
 | 25 | $004100 | wait_shaggy_path (after its `bsr`) | C (synthetic) |
 | 26 | $0040E0 | test_shaggy_path | C (synthetic) |
-| 27 / 32 | $003F58 / $003142 | minigame_throw / minigame_tug | 68k: interactive mini-games (100 / 450 instructions of input loops), no states |
+| 27 / 32 | $003F58 / $003142 | minigame_throw (Crane Game claw) / minigame_tug (Bumper Car duel) | C (7 + 11 ranges; w1_part states) |
 | 28 / 2F | $003F4E / $003E96 | talk_end / then_talk | C (synthetic) |
 | 2B / 2C | $003ED2 (+ $3F00) / $003F16 | shaggy_alt_sprite on / off | C (synthetic) |
 | 33/34, 3A/3B, 3C/3D | | $FF09EB bits 0, 5, 6 | C (3A/3B route states, others synthetic) |
@@ -276,18 +276,34 @@ pokes are an artifact of `script_pokes.py`).
 
 **Not registered** (`-DSCRIPT_UNTESTED`), all because nothing in the script data uses them
 (`build/scripts/op_starts.txt`): ops $00, $12, $1D; sub-ops $00, $08, $37 (shaggy_pose_47).
-Also without states: the Scooby tail of walk_obj ($4D48) and Shaggy's leg setups $51E4,
-$522E, $5276 (the planner range runs the same C for them).
 
-**Still 68k** in the subsystem, with reasons:
-* sub-ops $05/$0C fullscreen_picture, $1E ending_credits, $27 minigame_throw, $32
-  minigame_tug: long interactive or end-of-game sequences with many waits and no states
-  (no route reaches them; they would need a late-game route plus their own range chains).
+**Still 68k** in the subsystem, with reasons (the fullscreen picture, credits and the two mini-games
+are C since the third pass):
 * sub-op $02 room_fade_in (`bsr room_fade_in / rts`), $04's entry (two `bsr`s), the entries
   of $15/$21/$25 (`bsr actor_animate` first), and the 68k VBlank spins (`$4836` bar idle,
   `$44BA`/`$3026` sprite DMA idle): nothing but calls / wait primitives.
 * the TALK tail after `talk_leave` (`bsr wait_vblank / inventory_refresh /
   inventory_arrows_update / rts`) and action_execute's own pushes (first pass).
+
+## Difftest results, third pass (late-game sub-ops)
+
+`tools/py/script_dt_minigames.sh` (VM), states from `difftest capture-multi` on w0_full / w1_part
+(every call, up to 1100). **No failing state.** Details of the code: `docs/subsystems/minigames.md`.
+
+| function | states |
+| --- | --- |
+| credits: wait $41B6, setup $41BE, step $422A, hold $425C | 1/1, 1/1, 1100/1100, 1100/1100 |
+| fullscreen picture: $45A4, begin $45D2, draw $45E4, frame $46F8, restore $4716, status $4770, palette $4782, done $479A | 5/5, 1/1, 1/1, 201/201, 1/1, 1/1, 1/1, 1/1 |
+| Crane claw: $3F58, frame $3F86, next $3FDC, fall $4018, anim $408A, rise $40B2, done $40CE | 1/1, 1100/1100, 1100/1100, 37/37, 474/474, 74/74, 1/1 |
+| duel: setup $3142 (*), ready $331E, jingles $334E/$3360, check $337A, pause $338E, end wait $38E0, end $38EC | 1/1, 2/2, 1/1 each, 1014/1014, 1013/1013, 1100/1100, 1/1 |
+| duel frame $33D8 (*) | 1013/1013 |
+| duel pause path $338E / $33B6 / $33C4 (Start poked, `--entry` for the waits) | 60/60 each, both pad values (synthetic) |
+| walk_obj Scooby tail $4D48; Shaggy legs $51E4, $5276; $522E | 1/1; 5/5, 1/1; 4/4 + 1/1 (`--entry` from $51E4/$5276, synthetic) |
+
+(*) with `--ignore-regs d0-d7,a0-a4 --ignore-flags` (dead at the exit, see minigames.md).
+Cycles: the six long ranges are charged with the original's total minus nested cost
+(`charge_total`): credits setup 3.17 M, picture draw 0.70 M / restore 0.65 M / status 0.28 M,
+duel setup 42 K, duel frame 27 K per frame.
 
 ## Play test
 
