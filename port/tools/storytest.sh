@@ -23,7 +23,8 @@ run_one() { # ROUTE SPEC TAG
 	SCOOBY_BACKEND="port:$2" python3 tools/py/session.py serve "$d" >"$d.log" 2>&1 &
 	sp=$!
 	n=0; while [ ! -S "$d/sock" ] && [ $n -lt 100 ]; do sleep 0.2; n=$((n+1)); done
-	timeout ${STORYTEST_TIMEOUT:-3600} python3 tools/py/story_routes.py "$d" "$1" --cp "$out/$1.$3.cp.json" >"$out/$1.$3.out" 2>&1
+	# write regenerated routes under runs/, never over the committed tools/scripts/story/*.txt (mousetest reads those)
+	STORY_ROUTE_DIR="$d/routes" timeout ${STORYTEST_TIMEOUT:-3600} python3 tools/py/story_routes.py "$d" "$1" --cp "$out/$1.$3.cp.json" >"$out/$1.$3.out" 2>&1
 	python3 tools/py/session.py stop "$d" >/dev/null 2>&1
 	kill $sp 2>/dev/null; wait $sp 2>/dev/null
 }
