@@ -444,9 +444,21 @@ All names are in `data/ram.txt` and `port/src/game/walk.h`.
 
 ## 11. Status and open points
 
-* **Ported to C** (`port/src/game/walk.c`): the 8 entries of section 1. Each passes difftest on
-  200 states of the default capture route (`pad_dir8`: all 7 calls on that route) and on
-  `port/tools/walk_dt.sh` (11 rooms, random walking with A/B/C taps).
+* **Ported to C** (`port/src/game/walk.c`): the 8 entries of section 1.
+  * Default capture route: each passes difftest on 200 states. `pad_dir8` passes on all 7 calls
+    on that route.
+  * `port/tools/walk_dt.sh`: 40 states per function in each of 11 rooms. The rooms are the Lobby,
+    w0 rooms 2/4/6/9/15/20, w1 rooms 11/19, and the natural routes w0_r17 and w1_r27. The run
+    walks at random with A/B/C taps. Result: 3520/3520 equal.
+  * `port/tools/hosttest.sh` passes. With HLE on, the Lobby differs only in the fireplace area
+    (x 0-117, y 56-84), which is animation.
+* **Play test** (`port/tools/walk_play.sh`): a 2500-segment random walk.
+  * With all C replacements, the game walks, scrolls and goes through the Lobby exits into the
+    Cafe and the Hallway.
+  * Long runs end in different places with `--hle all` and `--hle none`. Enabling only
+    `pad_read` (not part of this subsystem) diverges just as much. The cause is timing: C
+    functions charge different cycle counts, which shifts the main loop and Scooby's random
+    wander. It is not a logic difference; difftest covers the logic.
 * **Not ported:** the walk-to family ($005002-$005AE0), which blocks across frames. It needs either
   a state-machine rewrite together with the script interpreter (#19), or to stay in 68k.
 * **Not decoded:**
