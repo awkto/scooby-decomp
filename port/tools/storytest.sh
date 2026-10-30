@@ -3,7 +3,8 @@
 # native port, once per --hle spec, and compare the per-step checkpoints (room, inventory, story bytes $FF2A00..+29).
 # Closed loop = tools/py/story.py decides every next input from RAM it reads back from the live port (session.py
 # with SCOOBY_BACKEND=port:SPEC), so C replacements that take ~0 emulated time cannot desync it.
-#   port/tools/storytest.sh [ROUTE...]     (run on a VM after building build/port; default: all routes)
+#   port/tools/storytest.sh [ROUTE...]     (run on a VM after building build/port; default: the six short routes)
+#   port/tools/storytest.sh long           the two complete walkthroughs w0_full / w1_full (power-on to credits, ~15 min each per --hle spec)
 # PASS per route = checkpoints identical for --hle none and --hle all.  The end room is also compared with the
 # harness-verified header of tools/scripts/story/ROUTE.txt (reported as a note).
 # On a none/all mismatch, STORYTEST_BISECT=1 bisects with --hle all,-FUNC and names the replacement whose removal restores agreement.
@@ -11,6 +12,7 @@ set -u
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
 routes=${*:-"w0_cafe_items w0_mine_wheels w0_office w0_kitchen w1_front_lot w1_boathouse"}
+[ "$routes" = "long" ] && routes="w0_full w1_full"
 out=runs/storytest; rm -rf "$out"; mkdir -p "$out/gen"
 export STORY_PRESS_MIN=5 STORY_OUT="$out/gen" SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 fail=0
@@ -21,7 +23,7 @@ run_one() { # ROUTE SPEC TAG
 	SCOOBY_BACKEND="port:$2" python3 tools/py/session.py serve "$d" >"$d.log" 2>&1 &
 	sp=$!
 	n=0; while [ ! -S "$d/sock" ] && [ $n -lt 100 ]; do sleep 0.2; n=$((n+1)); done
-	timeout 1200 python3 tools/py/story_routes.py "$d" "$1" --cp "$out/$1.$3.cp.json" >"$out/$1.$3.out" 2>&1
+	timeout ${STORYTEST_TIMEOUT:-3600} python3 tools/py/story_routes.py "$d" "$1" --cp "$out/$1.$3.cp.json" >"$out/$1.$3.out" 2>&1
 	python3 tools/py/session.py stop "$d" >/dev/null 2>&1
 	kill $sp 2>/dev/null; wait $sp 2>/dev/null
 }

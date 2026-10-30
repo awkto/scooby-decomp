@@ -11,6 +11,7 @@ every route is asserted here and written into the route header.
 import os, sys
 sys.path.insert(0, os.path.dirname(__file__))
 from story import *
+import story_full
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts", "story")
 
@@ -107,7 +108,21 @@ def w1_boathouse(g):
     return finish(g, "w1_boathouse", "Ha Ha Carnival (warp to The Boathouse): bottle with note, boat", dict(myst=1, room=14))
 
 
-ROUTES = {f.__name__: f for f in (w0_cafe_items, w0_mine_wheels, w0_office, w0_kitchen, w1_front_lot, w1_boathouse)}
+def w0_full(g):
+    """Blake's Hotel, power-on to the credits (story_full.hotel_1 .. hotel_12): every action decided from RAM."""
+    story_full.hotel_all(g)
+    return finish(g, "w0_full", "Blake's Hotel: complete walkthrough, power-on -> unmasking -> credits -> Sega logo (reset)",
+                  dict(room=0))
+
+
+def w1_full(g):
+    """Ha Ha Carnival, power-on to the credits (story_full.carnival_*)."""
+    story_full.carnival_all(g)
+    return finish(g, "w1_full", "Ha Ha Carnival: complete walkthrough, power-on -> unmasking -> credits -> Sega logo (reset)",
+                  dict(room=0))
+
+
+ROUTES = {f.__name__: f for f in (w0_cafe_items, w0_mine_wheels, w0_office, w0_kitchen, w1_front_lot, w1_boathouse, w0_full, w1_full)}
 
 if __name__ == "__main__":
     # usage: story_routes.py SESSION_DIR [--learn] NAME...
@@ -121,7 +136,7 @@ if __name__ == "__main__":
     g = Game(d, strict=not learn)
     open(g.rpath, "w").close()
     g.route = []
-    for n in args or list(ROUTES):
+    for n in args or [r for r in ROUTES if not r.endswith('_full')]:
         ROUTES[n](g)
         if learn:
             g.save_points()

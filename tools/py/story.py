@@ -53,6 +53,12 @@ class Game:
             f.write("".join(c + "\n" for c in cmds))
         return self.send(*cmds)
 
+    def note(self, *cmds):
+        """record commands in the route that were already executed with send() (time that passed during an observation)"""
+        self.route.extend(cmds)
+        with open(self.rpath, "a") as f:
+            f.write("".join(c + "\n" for c in cmds))
+
     def run(self, n):
         if n > 0:
             self.do(f"run {n}")
@@ -162,7 +168,136 @@ class Game:
         r = r or self.ram()
         return self.w(0xFF04DC, r), self.w(0xFF04F4, r)
 
+    def walkon_rects(self, myst, room, exclude=(), r=None):
+        """hotspot rectangles of the room's WALK_ON objects (exits...) except `exclude`: the planner steers around them"""
+        import json, hotspots
+        if not hasattr(Game, "_walkon"):
+            Game._walkon = {m: set(json.load(open(os.path.join(POINTS_DIR, f"walkon_w{m}.json")))) for m in (0, 1)}
+        r = r or self.ram()
+        out = []
+        for i, rec in enumerate(self.objects(r)):
+            tid = i + 3
+            if rec[3] == room and tid in Game._walkon[myst] and tid not in exclude:
+                rc = hotspots.rect_for_type(myst, rec[1])
+                if rc:
+                    out.append(rc)
+        return out
+
+    def walk_plan(self, goals, exclude=(), maxsteps=150, tol_px=0):
+        """steer Shaggy into one of the world-pixel rectangles `goals` along the game's own walkable area (walkplan.py), staying
+        out of other exits.  Returns True on arrival, False if the room changed or no route was found."""
+        import walkplan
+        r = self.ram()
+        myst, room = self.w(0xFF06AA, r), self.w(0xFF06AC, r)
+        pl = walkplan.Planner.get(myst, room)
+        avoid = self.walkon_rects(myst, room, exclude, r)
+        goals = [g for g in goals]
+        # spawn points often lie on another exit's hotspot (porch door, hallway door...): step out of it the shortest way
+        # first, before any step along the plan wanders inside it (every step in an exit zone fires its walk-on script)
+        for _ in range(8):
+            x, y = self.pos()
+            inside = [rc for rc in avoid if rc[0] <= x < rc[2] and rc[1] <= y < rc[3]]
+            if not inside:
+                break
+            rc = inside[0]
+            # distance (in frames, y is half speed) to leave the rectangle by each side that stays inside the room
+            cands = []
+            if rc[0] > 0:
+                cands.append((x - rc[0] + 1, "L"))
+            if rc[2] < pl.W:
+                cands.append((rc[2] - x, "R"))
+            if rc[1] > 0:
+                cands.append((2 * (y - rc[1] + 1), "U"))
+            if rc[3] < pl.H:
+                cands.append((2 * (rc[3] - y), "D"))
+            if not cands:
+                break
+            self.press(min(cands)[1], 6)
+            if self.w(0xFF06AC) != room:
+                return False
+        px, py = self.pos(r)
+
+        def known(d):
+            """pos (or a pixel within 4 px of it) has a route"""
+            for dy in range(-4, 5):
+                for dx in range(-4, 5):
+                    x, y = px + dx, py + dy
+                    if 0 <= x < pl.W and 0 <= y < pl.H and d[y * pl.W + x] >= 0:
+                        return True
+            return False
+
+        d = None
+        used = (avoid, 0)
+        for av in (avoid, []):                       # no way round the other exits: allow them
+            for margin in (2, 1, 0):                 # keep off the collision fence when there is room
+                dd = pl.field(goals, av, margin)
+                if known(dd):
+                    d = dd
+                    used = (av, margin)
+                    break
+            if d is not None:
+                break
+        if d is None:
+            # the goal is not reachable on foot (e.g. an item in a part of the room Shaggy cannot enter): get as close as possible
+            near = pl.nearest_reachable((px, py), goals, avoid)
+            if near is None or near == (px, py):
+                return False
+            goals = [(near[0] - 2, near[1] - 2, near[0] + 3, near[1] + 3)]
+            d = pl.field(goals, avoid, 0)
+        stuck = 0
+        blocked = []
+        for _ in range(maxsteps):
+            x, y = self.pos()
+            if self.w(0xFF06AC) != room:
+                return False
+            if any(g[0] <= x < g[2] and g[1] <= y < g[3] for g in goals):
+                return True
+            path = pl.path(d, (x, y), 16)
+            if not path:
+                return False
+            p0 = path[0]
+            m0 = (path[0][0] - x, path[0][1] - y)
+            run = 1
+            while run < len(path) and (path[run][0] - path[run - 1][0], path[run][1] - path[run - 1][1]) == m0:
+                run += 1
+            tx, ty = path[run - 1]
+            b = walkplan.PAD.get(m0) or walkplan.pad_for(m0[0], m0[1])
+            if not (0 <= x < pl.W and 0 <= y < pl.H) or d[y * pl.W + x] < 0:
+                # off the model (e.g. a spawn point just outside the collision fence): only straight moves slide the probe
+                # onto a free pixel, diagonals just stop; go for the nearest known pixel one axis at a time
+                dx, dy = p0[0] - x, p0[1] - y
+                if dx and dy:
+                    b = ("R" if dx > 0 else "L") if stuck % 2 == 0 else ("D" if dy > 0 else "U")
+                elif dx:
+                    b = "R" if dx > 0 else "L"
+                elif dy:
+                    b = "D" if dy > 0 else "U"
+            if stuck:
+                alt = {"R": ["DR", "UR"], "L": ["DL", "UL"], "U": ["UR", "UL"], "D": ["DR", "DL"]}.get(b, ["U", "D", "L", "R"])
+                b = alt[(stuck - 1) % len(alt)]
+            if os.environ.get("STORY_DEBUG"):
+                print(f"  plan: pos=({x},{y}) d={d[y * pl.W + x]} -> {(tx, ty)} press {b} stuck={stuck}")
+            self.press(b, max(4, min(12, 2 * run)))
+            stuck = stuck + 1 if self.pos() == (x, y) else 0
+            if stuck == 3 and len(blocked) < 12:
+                # the game's collision differs from the model here: treat the pixels in front of us as walls and re-plan
+                blocked.append((p0[0] - 3, p0[1] - 3, p0[0] + 4, p0[1] + 4))
+                d = pl.field(goals, list(used[0]) + blocked, used[1])
+                stuck = 0
+            if stuck > 6:
+                return False
+        return False
+
     def walk_to(self, tx, ty, tol=3, maxsteps=300, step=12, quiet=False):
+        try:
+            self.walk_plan([(tx - tol, ty - tol, tx + tol + 1, ty + tol + 1)])
+            return self.pos()
+        except Exception as e:                      # planner problems must not break the greedy fallback
+            if os.environ.get("STORY_DEBUG"):
+                print("walk_plan failed:", e)
+        return self.walk_to_greedy(tx, ty, tol, maxsteps, step, quiet)
+
+    def walk_to_greedy(self, tx, ty, tol=3, maxsteps=300, step=12, quiet=False):
         """walk Shaggy with the d-pad until within tol px of (tx,ty): axis-wise moves (the floor is
         irregular, diagonals get stuck), with a sidestep when both axes are blocked"""
         import random
@@ -229,7 +364,7 @@ class Game:
         r = self.ram()
         return bool(self.b(0xFF09DC, r) & 0x80)
 
-    def settle(self, maxframes=900, quiet=30):
+    def settle(self, maxframes=4000, quiet=30):
         """run until no action/dialogue is pending for `quiet` frames (or maxframes)"""
         t = 0
         calm = 0
@@ -488,9 +623,97 @@ def ensure_visible(self, tid):
 Game.ensure_visible = ensure_visible
 
 
-def locate(self, tid):
-    """crosshair point (screen coords) that hits object tid: from a scan, or in strict mode from points.json"""
+def hot_rect(self, tid, r=None):
+    """live hotspot rectangle (world pixels) of a non-actor object: record +2 (changed by set_hotspot) -> overlay table"""
+    import hotspots
+    r = r or self.ram()
+    if self.b(0xFF1200 + 26 * (tid - 3) + 0x18, r) & 2:          # actors have no hotspot rectangle (the hit area is the sprite)
+        return None
+    return hotspots.rect_for_type(self.w(0xFF06AA, r), self.w(0xFF1200 + 26 * (tid - 3) + 2, r))
+
+
+def probe_batch(self, tid, pts, addr):
+    """move the crosshair over `pts` (3 frames each) and report whether the hit test at `addr` ever shows `tid`; the first hit is
+    left in self._probe_hit.  Everything that moves the game (pointer pokes, frames) is recorded in the flat route exactly
+    (only the peeks are not): the pointer position during the probe is game input and a replay must see the same one."""
+    cmds = []
+    for x, y in pts:
+        cmds += [f"poke FF06DC 2 {x:X}", f"poke FF06DE 2 {y:X}", "run 3", f"peek t {addr:X} 2"]
+    self.note(*[c for c in cmds if not c.startswith("peek")])
+    log = self.send(*cmds)
+    vals = [_hex(l.split()[2]) for l in log if l.split()[1] == "t"]
+    for p, v in zip(pts, vals):
+        if v == tid:
+            self._probe_hit = p
+            return True
+    return False
+
+
+Game.probe_batch = probe_batch
+
+
+def probe_rect(self, tid, rect, addr=0xFF06AE):
+    """crosshair point (screen coords) inside `rect` for which the game's hit test reports `tid`, or None.
+    All candidates are tried in one batch (poke pointer, run 2, peek $FF06AE)."""
+    r = self.ram()
+    cx, cy = self.w(0xFF06CA, r), self.w(0xFF06CE, r)
+    # the hit test looks at world cell ((px+8+camera_x)>>3, (py-8+camera_y)>>3)  (docs/subsystems/walking.md section 2)
+    x0, y0, x1, y1 = rect[0] - cx - 8, rect[1] - cy + 8, rect[2] - cx - 8, rect[3] - cy + 8
+    x0, x1, y0, y1 = max(x0, 0), min(x1, 248), max(y0, 16), min(y1, 164)
+    if x0 >= x1 or y0 >= y1:
+        return None
+    mx, my = (x0 + x1) // 2, (y0 + y1) // 2
+    allpts = sorted(((x, y) for y in range(y0, y1, 4) for x in range(x0, x1, 2)), key=lambda p: (p[0] - mx) ** 2 + (p[1] - my) ** 2)
+    self.enter_pointer()
+    # nearest to the middle first; Shaggy / Scooby / other objects may cover part of the rectangle (they win the hit test),
+    # so widen to the whole rectangle in batches
+    for lo in range(0, len(allpts), 12):
+        pts = allpts[lo:lo + 12]
+        if self.probe_batch(tid, pts, addr):
+            return self._probe_hit
+    return None
+
+
+def probe_actor(self, tid, addr=0xFF06AE):
+    """crosshair point on an actor (Bellhop, Uncle Blake, the Clown...): the hit area is a box around its sprite; probe the
+    neighbourhood of the position kept in its object record (+$12/+$14 = world x/y of the feet)"""
+    r = self.ram()
+    rec = self.objects(r)[tid - 3]
+    cx, cy = self.w(0xFF06CA, r), self.w(0xFF06CE, r)
+    ax, ay = rec[9] - cx, rec[10] - cy + 16
+    pts = sorted(((x, y) for y in range(ay - 44, ay + 12, 4) for x in range(ax - 24, ax + 25, 4) if 0 <= x < 248 and 16 <= y < 164),
+                 key=lambda p: (p[0] - ax) ** 2 + (p[1] - ay + 16) ** 2)
+    if not pts:
+        return None
+    self.enter_pointer()
+    for lo in range(0, len(pts), 12):
+        if self.probe_batch(tid, pts[lo:lo + 12], addr):
+            return self._probe_hit
+    return None
+
+
+Game.probe_actor = probe_actor
+
+
+def locate(self, tid, rounds=4):
+    """crosshair point (screen coords) that hits object tid.  Static first: the object's hotspot rectangle, probed with the
+    live hit test, walking Shaggy towards it when it is off screen (the camera follows).  Fallback: a crosshair scan (non-strict)
+    or the points.json cache (strict) for actors, whose hit area is the sprite."""
     room0 = self.w(0xFF06AC)
+    for _ in range(rounds):
+        rect = self.hot_rect(tid)
+        if rect is None:
+            pt = self.probe_actor(tid)
+            if pt:
+                return pt
+            break
+        pt = self.probe_rect(tid, rect)
+        if pt:
+            return pt
+        if self.w(0xFF06AC) != room0:
+            return None
+        self.leave_pointer()
+        self.walk_to((rect[0] + rect[2]) // 2, (rect[1] + rect[3]) // 2 - 8, tol=6)
     self.ensure_visible(tid)
     if self.w(0xFF06AC) != room0:
         return None
@@ -505,12 +728,22 @@ def locate(self, tid):
     return objs[tid]["pt"] if tid in objs else None
 
 
+Game.hot_rect = hot_rect
+Game.probe_rect = probe_rect
 Game.locate = locate
 
 
 def go_to(self, tid, dy=-16, tries=3, verbose=True):
     """walk Shaggy onto the object `tid` (D-pad), return True when the walking hit-test reports it"""
     self.leave_pointer()
+    rect = self.hot_rect(tid)
+    if rect is not None:
+        room0 = self.w(0xFF06AC)
+        for _ in range(2):
+            ok = self.walk_plan([rect], exclude=(tid,))
+            self.run(10)
+            if self.w(0xFF06AC) != room0 or self.w(0xFF06AE) == tid:
+                return self.w(0xFF06AC) != room0 or self.w(0xFF06AE) == tid
     pt = self.locate(tid)
     if pt is None:
         return False
@@ -529,12 +762,25 @@ def go_to(self, tid, dy=-16, tries=3, verbose=True):
 
 def exit_via(self, tid, push=None):
     """walk to exit-like object `tid` and keep walking through it; True if the room changed"""
+    import walkplan
     room = self.w(0xFF06AC)
-    self.go_to(tid)
-    for b in ([push] if push else ["D", "U", "L", "R"]):
+    for attempt in range(3):
+        self.go_to(tid)
         if self.w(0xFF06AC) != room:
             break
-        self.press(b, 40, 30)
+        rect = self.hot_rect(tid)
+        pushes = [push] if push else []
+        if rect:                                     # step on towards the middle of the hotspot first
+            x, y = self.pos()
+            cx, cy = (rect[0] + rect[2]) // 2, (rect[1] + rect[3]) // 2
+            pushes.append(walkplan.pad_for(cx - x, 2 * (cy - y)) or "U")
+        pushes += ["D", "U", "L", "R"]
+        for b in pushes:
+            if self.w(0xFF06AC) != room:
+                break
+            self.press(b, 40, 30)
+        if self.w(0xFF06AC) != room:
+            break
     self.run(60)
     return self.w(0xFF06AC) != room
 
@@ -544,15 +790,169 @@ Game.exit_via = exit_via
 
 def act(self, verb, tid, quiet=False, wait=30):
     """verb on object `tid` (by scanning the crosshair hit points); recorded in the route"""
+    for attempt in range(3):
+        self.leave_pointer()
+        pt = self.locate(tid)
+        if pt is None:
+            print(f"!! {self.name(tid)} ({tid}) not under the crosshair")
+            return None
+        r = self.try_action(verb, tid, pt, wait=wait, restore=False)
+        if not (r["res"] and r["res"][0] == "target-mismatch"):
+            break
+        self.run(30)            # the room was still moving (camera pan / actor); locate again
+    if not quiet:
+        print(f"{verb} {self.name(tid)}: {' | '.join(r['said']) or '-'}", r["story"] or "", r["inv"] or "", r["room"] or "", r["res"][0] if r["res"] and r["res"][0] != "ok" else "")
+    return r
+
+
+def pick_item(self, item, res=None, addr=0xFF06AE):
+    """inventory view is showing: scroll to the page holding `item` (hit-test id) and click it with B.
+    List index i sits in slot i-4*page (0..7, 4 per row); page = $FF06EC; the arrows are in the right-most cell.
+    Returns True when the hit test reported `item` at the click."""
+    idx = self.inventory().index(item - 3)
+    want = idx // 4
+    for _ in range(14):
+        page = self.w(0xFF06EC)
+        if page == want:
+            break
+        self.set_pointer(220, 176 if page > want else 200)
+        self.press("B", 4, 8)
+        self.run(8)
+    slot = idx - 4 * self.w(0xFF06EC)
+    row, col = divmod(slot, 4)
+    ok = False
+    for attempt in range(4):
+        self.run(12)                                 # let the previous click (B edge) clear before the item click
+        self.set_pointer(40 * (col + 1) + 20 + 2 * attempt, 176 if row == 0 else 200)
+        if res is not None:
+            res["tgt1"] = self.w(0xFF06AE)
+        for _ in range(8):                           # hit test lags the crosshair by a few frames
+            if self.w(addr) == item:
+                ok = True
+                break
+            self.run(3)
+        if ok:
+            break
+    self.press("B", 4, 6)
+    return ok
+
+
+def talk_choices(self, r=None):
+    """texts of the TALK menu entries currently collected ($FF080E count, $FF0838 text pointers)"""
+    r = r or self.ram()
+    n = self.w(0xFF080E, r)
+    out = []
+    for i in range(min(n, 5)):
+        a = struct.unpack(">I", r[0x0838 + 4 * i:0x083C + 4 * i])[0]
+        e = _objects.ROM.find(b"\0", a)
+        out.append(_objects.ROM[a:e].decode("latin1"))
+    return out
+
+
+def talk_choose(self, text, wait=30):
+    """TALK menu is open: move the highlight to the entry whose text starts with `text`, pick it with B, wait for the reply"""
+    ch = self.talk_choices()
+    used = self.w(0xFF0874)                               # bit n = choice n already picked (not listed any more)
+    idx = next((i for i, c in enumerate(ch) if c.startswith(text) and not used >> i & 1), None)
+    if idx is None:
+        print(f"!! talk choice {text!r} not in {ch} (used {used:#x})")
+        return False
+    idx -= sum(1 for i in range(idx) if used >> i & 1)    # position among the listed choices
+    for _ in range(idx):
+        self.press("D", 6, 12)
+    self.press("B", 6, 12)
+    self.settle()
+    self.run(wait)
+    return True
+
+
+Game.talk_choices = talk_choices
+Game.talk_choose = talk_choose
+
+
+def talk_to(self, tid, *choices):
+    """TALK verb on `tid`; with a menu open, pick the given choices in turn (each by its text prefix)"""
     self.leave_pointer()
     pt = self.locate(tid)
     if pt is None:
         print(f"!! {self.name(tid)} ({tid}) not under the crosshair")
         return None
-    r = self.try_action(verb, tid, pt, wait=wait, restore=False)
-    if not quiet:
-        print(f"{verb} {self.name(tid)}: {' | '.join(r['said']) or '-'}", r["story"] or "", r["inv"] or "", r["room"] or "", r["res"][0] if r["res"] and r["res"][0] != "ok" else "")
-    return r
+    self.select_verb("Talk")
+    self.set_pointer(*pt)
+    for _ in range(15):
+        if self.w(0xFF06AE) == tid:
+            break
+        self.run(4)
+    self.press("B", 4, 10)
+    for c in choices:
+        for _ in range(120):                              # the menu is up when talk_menu_begin hid the pointer ($FF06EE = $FFFF)
+            self.run(10)
+            if self.w(0xFF080E) and self.w(0xFF06EE) == 0xFFFF:
+                break
+        self.run(40)
+        self.talk_choose(c)
+    self.settle()
+    self.leave_pointer()
+
+
+Game.talk_to = talk_to
+
+
+def use_inv(self, item1, item2, verb="Use", wait=30):
+    """two inventory items combined (Battery + Light Bulb...): verb, inventory view, click item1, click item2 (second target)"""
+    self.leave_pointer()
+    inv = self.inventory()
+    if (item1 - 3) not in inv or (item2 - 3) not in inv:
+        print(f"!! {self.name(item1)} / {self.name(item2)} not both in inventory {inv}")
+        return None
+    s0, i0 = self.story(), inv
+    for attempt in range(3):
+        self.select_verb(verb)
+        self.press("C", 3, 24)
+        self.pick_item(item1)
+        self.run(8)
+        if self.w(0xFF09DE) & 1:                     # two-object mode started
+            break
+        self.press("C", 3, 24) if self.b(0xFF09DC) & 0x10 else None
+        self.run(30)
+    if (item2 - 3) in self.inventory():
+        self.pick_item(item2, addr=0xFF06B6)
+        self.run(8)
+    self.settle()
+    self.run(wait)
+    if self.b(0xFF09DC) & 0x10:
+        self.press("C", 3, 24)
+    r = self.ram()
+    out = dict(story=story_diff(s0, self.story(r)), inv=(i0, self.inventory(r)) if self.inventory(r) != i0 else None)
+    print(f"{verb} {self.name(item1)} on {self.name(item2)} (inventory):", out["story"] or "", out["inv"] or "")
+    return out
+
+
+Game.use_inv = use_inv
+
+
+def act_inv(self, verb, item, wait=30):
+    """one-object verb on an inventory item (Eat, Look, Open...): verb, inventory view, click the item"""
+    self.leave_pointer()
+    if (item - 3) not in self.inventory():
+        print(f"!! {self.name(item)} not in inventory {self.inventory()}")
+        return None
+    s0, i0, room0 = self.story(), self.inventory(), self.w(0xFF06AC)
+    self.select_verb(verb)
+    self.press("C", 3, 24)
+    self.pick_item(item)
+    self.settle()
+    self.run(wait)
+    self.press("C", 3, 24) if self.b(0xFF09DC) & 0x10 else None
+    r = self.ram()
+    out = dict(story=story_diff(s0, self.story(r)), inv=(i0, self.inventory(r)) if self.inventory(r) != i0 else None,
+               room=(room0, self.w(0xFF06AC, r)) if self.w(0xFF06AC, r) != room0 else None)
+    print(f"{verb} {self.name(item)} (inventory):", out["story"] or "", out["inv"] or "", out["room"] or "")
+    return out
+
+
+Game.pick_item = pick_item
+Game.act_inv = act_inv
 
 
 def use(self, item, tid, verb="Use", wait=30, restore=False, dbg=False):
@@ -575,18 +975,26 @@ def use(self, item, tid, verb="Use", wait=30, restore=False, dbg=False):
     res = {}
 
     def act_():
-        self.select_verb(verb)
-        self.press("C", 3, 24)                       # inventory view
-        page, slot = divmod(idx, 8)
-        row, col = divmod(slot, 4)
-        self.set_pointer(40 * (col + 1) + 20, 176 if row == 0 else 200)
-        res["tgt1"] = self.w(0xFF06AE)
-        self.press("B", 4, 6)
-        res["wait2"] = self.w(0xFF09DE) & 1
+        for attempt in range(3):
+            self.select_verb(verb)
+            self.press("C", 3, 24)                   # inventory view
+            self.pick_item(item, res)
+            res["wait2"] = self.w(0xFF09DE) & 1
+            if res["wait2"]:                         # two-object mode started: now waiting for the target
+                break
+            self.press("C", 3, 24) if self.b(0xFF09DC) & 0x10 else None
+            self.run(30)
         self.press("C", 3, 24)                       # back to the verb view
-        self.set_pointer(*pt)
-        res["tgt2"] = self.w(0xFF06B6)
-        self.press("B", 4, 10)
+        for attempt in range(3):
+            self.set_pointer(*pt)
+            for _ in range(8):
+                if self.w(0xFF06B6) == tid:
+                    break
+                self.run(3)
+            res["tgt2"] = self.w(0xFF06B6)
+            self.press("B", 4, 10)
+            if not (self.w(0xFF09DE) & 1):           # the click was consumed
+                break
         self.settle()
 
     texts = [(f, t) for f, t, a in self.said(act_, frames=wait) if a >= 0x141000]
@@ -598,6 +1006,63 @@ def use(self, item, tid, verb="Use", wait=30, restore=False, dbg=False):
     if restore:
         self.back("_try")
     return out
+
+
+def use_on(self, tid1, tid2, verb="Use", wait=30):
+    """two-object verb where both objects are in the room (Use hose with gas...): verb, click tid1, click tid2"""
+    s0, i0, room0 = self.story(), self.inventory(), self.w(0xFF06AC)
+    done = False
+    for attempt in range(3):
+        self.leave_pointer()
+        p1 = self.locate(tid1)
+        if p1 is None:
+            print(f"!! {self.name(tid1)} ({tid1}) not under the crosshair")
+            return None
+        self.select_verb(verb)
+        self.set_pointer(*p1)
+        for _ in range(15):
+            if self.w(0xFF06AE) == tid1:
+                break
+            self.run(4)
+        if self.w(0xFF06AE) != tid1:
+            self.run(30)
+            continue
+        self.press("B", 4, 6)
+        for _ in range(10):                          # two-object mode ($FF09DE bit 0) starts a few frames after the click
+            if self.w(0xFF09DE) & 1:
+                break
+            self.run(3)
+        if not self.w(0xFF09DE) & 1:
+            continue
+        rc = self.hot_rect(tid2)
+        p2 = self.probe_rect(tid2, rc, 0xFF06B6) if rc else None
+        if p2 is None:
+            print(f"!! {self.name(tid2)} ({tid2}) not found as second object")
+            self.leave_pointer()
+            return None
+        for click in range(3):
+            self.set_pointer(*p2)
+            for _ in range(15):
+                if self.w(0xFF06B6) == tid2:
+                    break
+                self.run(4)
+            self.press("B", 4, 10)
+            if not self.w(0xFF09DE) & 1:
+                done = True
+                break
+        break
+    if not done:
+        print(f"!! {verb} {self.name(tid1)} on {self.name(tid2)}: the second click was not consumed")
+    self.settle()
+    self.run(wait)
+    r = self.ram()
+    out = dict(story=story_diff(s0, self.story(r)), inv=(i0, self.inventory(r)) if self.inventory(r) != i0 else None,
+               room=(room0, self.w(0xFF06AC, r)) if self.w(0xFF06AC, r) != room0 else None)
+    print(f"{verb} {self.name(tid1)} on {self.name(tid2)}:", out["story"] or "", out["inv"] or "", out["room"] or "")
+    return out
+
+
+Game.use_on = use_on
 
 
 def brute_use(self, verbs=("Use", "Give"), items=None, targets=None):
@@ -659,5 +1124,5 @@ def _wrap(name):
 
 
 Game.checkpoint = checkpoint
-for _n in ("act", "use", "exit_via", "boot"):
+for _n in ("act", "talk_to", "use", "use_on", "use_inv", "act_inv", "exit_via", "boot"):
     _wrap(_n)
