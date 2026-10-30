@@ -1,0 +1,146 @@
+# Natural route (random-play discovered, no password/cheat) to mystery 0 room 13; ends with save natural_w0_r13
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+press UL 73
+run 22
+press U 71
+run 37
+press C 6
+run 30
+press B 5
+run 41
+press D 7
+run 36
+press UL 12
+run 29
+press L 19
+run 18
+press DL 24
+run 43
+press L 19
+run 11
+press C 3
+run 22
+press B 4
+run 48
+press UR 17
+run 6
+press B 4
+run 40
+press UL 4
+run 31
+press B 4
+run 51
+press R 3
+run 44
+press B 6
+run 15
+press A 5
+run 43
+press L 5
+run 20
+press B 5
+run 49
+press R 25
+run 12
+press B 3
+run 34
+press UL 21
+run 27
+press B 4
+run 50
+press D 5
+run 30
+press R 21
+run 59
+press U 19
+run 8
+press L 17
+run 25
+press A 5
+run 23
+press D 17
+run 34
+press DL 23
+run 10
+press D 68
+run 21
+press D 14
+run 59
+press U 31
+run 28
+press U 68
+run 60
+press DL 87
+run 36
+press UR 30
+run 28
+press R 90
+run 18
+press L 38
+run 23
+press B 4
+run 25
+press DR 72
+run 51
+press C 4
+run 26
+press R 54
+run 42
+press B 6
+run 27
+press DL 27
+run 11
+press R 14
+run 29
+press L 15
+run 5
+press U 30
+run 9
+press L 59
+run 58
+press L 27
+run 53
+press DR 59
+run 33
+press DL 11
+run 12
+press DL 57
+run 13
+press C 5
+run 35
+press R 79
+run 7
+press DL 15
+run 16
+press A 6
+run 16
+press R 66
+run 32
+press DR 46
+run 47
+press UR 62
+run 34
+press A 3
+run 33
+press DR 16
+run 55
+press R 15
+run 5
+peek myst FF06AA 2
+peek room FF06AC 2
+save natural_w0_r13

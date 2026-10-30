@@ -42,3 +42,22 @@ state by default); `decode PASSWORD` reverses it and reports validity.
 
 Note: Carnival room 8 (The Roller Coaster, 64x19) did not start from a password with the initial state (the game came up
 in room 2); possibly the start room is overridden by a flag combination.
+
+## Pause menu and the hidden DEBUG menu
+
+Start in-game opens the same menu builder (`loc_00851E`, `$FF09ED` bit 0 set once a game started): the current password
+is shown at the top (`loc_008660` generates it from `$FF06AC` + `$FF2A00`), then CONTINUE / QUIT MYSTERY. QUIT MYSTERY
+asks for confirmation ("NO! DONT DO IT!" replaces CONTINUE; select with Start only).
+
+Cheat code, checked in the menu input loop `loc_008DA6` against the 11-byte table at ROM `$010118`:
+**A, B, A, C, A, B, Left, Right, A, B, Left** (each alone, released in between; hold at least ~8 frames). It sets bit 1
+of `$FF09ED` and plays sound 3. Close (CONTINUE) and reopen the pause menu: it now has 4 items with "DEBUG" labels:
+CONTINUE / QUIT MYSTERY / **ROOMS** (`loc_0088A2`: list of this mystery's rooms via `loc_0088D8`; D-pad moves the red bar, **B**
+selects and returns to the pause menu, then CONTINUE loads the room: `$FF000A` -> `$FF06AC`) / **OBJECTS**
+(`loc_008C40`: object editor, `loc_008AB4`). `tools/scripts/debug_menu_w0.txt` / `_w1.txt` do this from a warp state.
+The first d-pad press after a savestate load is sometimes ignored; give the menu 250 frames to initialise first.
+
+## In-game controls (observed)
+
+D-pad walks Shaggy. **C** toggles pointer mode (arrow icons at the bottom corners); in pointer mode the d-pad moves a
+crosshair, which highlights verbs when over the verb bar and names objects under it ("Outside Door"), and **B** clicks.

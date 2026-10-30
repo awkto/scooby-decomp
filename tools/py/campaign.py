@@ -11,6 +11,7 @@ Savestates (gitignored, regenerated): runs/states/*.state; index runs/states/ind
 """
 import concurrent.futures as cf
 import fnmatch
+import glob
 import json
 import os
 import random
@@ -158,6 +159,104 @@ def cmd_debug():
         save_index(ix)
 
 
+def route_lines(path):
+    """The input lines (run/press) of a route script, without peeks/shots/saves/comments."""
+    return [l.rstrip("\n") for l in open(path) if l.split()[:1] in (["run"], ["press"])]
+
+
+def cut(lines, total):
+    """First `total` frames of a list of run/press lines."""
+    out, t = [], 0
+    for l in lines:
+        n = int(l.split()[-1])
+        if t + n <= total:
+            out.append(l)
+            t += n
+        else:
+            out.append(" ".join(l.split()[:-1] + [str(total - t)]))
+            t = total
+        if t >= total:
+            break
+    return out
+
+
+def nat_job(key, route, seed, frames):
+    """Replay the flat route to `key` from boot, then random play; every first-seen room gets a flat route.
+    (Loading savestates is NOT used here: a loaded state does not replay bit-exactly against a continuous run
+    over long distances, so routes are always continuous scripts from boot.)"""
+    w, r = key
+    pointer, bias = seed % 3 == 0, seed % 3 == 1
+    out = f"runs/nat/nat_w{w}_r{r}_s{seed}"
+    body = [l for l in fuzzscript.gen("start", frames, seed, no_pause=True, peek=0, bias=bias, roomsave=False,
+                                      pointer=pointer) if l.split()[0] in ("run", "press")]
+    lines = list(route) + ["roomsave rs"] + body
+    pk = run_job(out, lines)
+    found = {}
+    for l in pk:
+        f = l.split()
+        if len(f) == 4 and f[1] == "roomchange":
+            k = (int(f[2][1:]), int(f[3][1:]))
+            found.setdefault(k, int(f[0]))
+    allin = list(route) + body
+    res = {}
+    for k, fr in found.items():
+        res[k] = cut(allin, fr + 90)
+    for f in glob.glob(f"{out}/*.state"):
+        os.remove(f)
+    return key, seed, res
+
+
+def cmd_natural(rounds, frames, seeds):
+    """Go-explore from the natural starts: random play, remember the first route into each new room, recurse."""
+    boot = {w: route_lines(f"tools/scripts/natural_w{w}.txt") for w in (0, 1)}
+    routes = {(0, 16): boot[0], (1, 12): boot[1]}
+    todo = list(routes)
+
+    def length(ls):
+        return sum(int(l.split()[-1]) for l in ls)
+    for rd in range(rounds):
+        jobs = [(k, routes[k], sd + 1000 * rd + 17 * k[1], frames) for k in todo for sd in range(1, seeds + 1)]
+        todo = []
+        with cf.ThreadPoolExecutor(4) as ex:
+            for key, seed, res in ex.map(lambda j: nat_job(*j), jobs):
+                for k, full in res.items():
+                    if k not in routes:
+                        todo.append(k)
+                        routes[k] = full
+                    elif length(full) < length(routes[k]):
+                        routes[k] = full
+        print("round", rd, "rooms with natural routes:", len(routes), sorted(routes), flush=True)
+    os.makedirs("tools/scripts/natural", exist_ok=True)
+    for f in glob.glob("tools/scripts/natural/*.txt"):
+        os.remove(f)
+    for (w, r), lines in sorted(routes.items()):
+        name = f"natural_w{w}_r{r:02d}"
+        txt = [f"# Natural route (random-play discovered, no password/cheat) to mystery {w} room {r}; ends with save {name}"] + lines
+        txt += ["peek myst FF06AA 2", "peek room FF06AC 2", f"save {name}"]
+        open(f"tools/scripts/natural/{name}.txt", "w").write("\n".join(txt) + "\n")
+    print(len(routes), "route scripts written")
+
+
+def cmd_verify_natural():
+    ok = {}
+    names = sorted(glob.glob("tools/scripts/natural/natural_w*_r*.txt"))
+
+    def one(path):
+        base = os.path.basename(path)[:-4]
+        w, r = int(base.split("_")[1][1:]), int(base.split("_")[2][1:])
+        pk = run_job(f"runs/natv/{base}", [l.rstrip("\n") for l in open(path) if not l.startswith("#")])
+        got = {l.split()[1]: int(l.split()[2], 16) for l in pk if len(l.split()) == 3 and l.split()[1] in ("room", "myst")}
+        return base, got.get("myst") == w and got.get("room") == r
+    with cf.ThreadPoolExecutor(4) as ex:
+        for b, good in ex.map(one, names):
+            ok[b] = good
+    json.dump(ok, open("runs/natural_verified.json", "w"), indent=1, sort_keys=True)
+    print(sum(ok.values()), "/", len(ok), "natural routes verified")
+    for b, g in sorted(ok.items()):
+        if not g:
+            print("MISMATCH", b)
+
+
 def arg(name, default):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
 
@@ -170,6 +269,10 @@ if __name__ == "__main__":
         cmd_warp(arg("--variants", "init").split(","))
     elif c == "fuzz":
         cmd_fuzz(int(arg("--frames", 10000)), int(arg("--seeds", 2)), arg("--from", "pw_*_init"), "--all" in sys.argv, "--pause" in sys.argv, "--pointer" in sys.argv)
+    elif c == "natural":
+        cmd_natural(int(arg("--rounds", 3)), int(arg("--frames", 8000)), int(arg("--seeds", 3)))
+    elif c == "verify-natural":
+        cmd_verify_natural()
     elif c == "debug":
         cmd_debug()
     elif c == "stat":

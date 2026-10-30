@@ -29,6 +29,8 @@ def init_state(rom, world):
 def main():
     okf = sys.argv[sys.argv.index("--ok-file") + 1] if "--ok-file" in sys.argv else None
     ok = json.load(open(okf)) if okf and os.path.exists(okf) else {}
+    nv = sys.argv[sys.argv.index("--natural-verified") + 1] if "--natural-verified" in sys.argv else None
+    natv = json.load(open(nv)) if nv and os.path.exists(nv) else {}
     rom = gfx.rom()
     boot = [l.rstrip("\n") for l in open(os.path.join(ROOT, "tools/scripts/boot_title.txt"))
             if l.strip() and not l.startswith("#") and not l.startswith("save")]
@@ -49,7 +51,13 @@ def main():
             lines.append(f"save room_{name}")
             open(os.path.join(ROOT, f"tools/scripts/rooms/{name}.txt"), "w").write("\n".join(lines) + "\n")
             res = ok.get(f"pw_w{w}_r{r}_{VARIANT}", {}).get("ok")
-            rows.append((w, r, room.name, f"{room.map_w}x{room.map_h}", pw, name, res))
+            nat = f"natural_w{w}_r{r:02d}"
+            natf = os.path.join(ROOT, f"tools/scripts/natural/{nat}.txt")
+            natfr = None
+            if os.path.exists(natf):
+                natfr = sum(int(l.split()[-1]) for l in open(natf) if l.split()[:1] in (["run"], ["press"]))
+            rows.append((w, r, room.name, f"{room.map_w}x{room.map_h}", pw, name, res,
+                         (nat, natfr, natv.get(nat)) if natfr else None))
     os.makedirs(os.path.join(ROOT, "states"), exist_ok=True)
     with open(os.path.join(ROOT, "states/INDEX.md"), "w") as f:
         f.write("# Savestate route index\n\n")
@@ -62,10 +70,22 @@ def main():
                 "`docs/passwords.md` for the password format. The state is the world's initial game-state block, so these\n"
                 "are fresh-game states placed at each room. `Verified` = after the script `$FF06AA/$FF06AC` held the\n"
                 "expected mystery/room.\n\n")
-        f.write("| mystery | room | name | map | script | password | verified |\n|---|---|---|---|---|---|---|\n")
-        for w, r, nm, mp, pw, name, res in rows:
+        f.write("## Room -> script\n\n"
+                "* *password script*: fastest, always available (state = fresh game).\n"
+                "* *natural route*: found by random play from the real start (no password, no cheat), so story flags are\n"
+                "  whatever play produced; absent where random play did not reach the room. Frames = length of the route.\n\n")
+        f.write("| mystery | room | name | map | password script | password | ok | natural route (frames) | ok |\n|---|---|---|---|---|---|---|---|---|\n")
+        for w, r, nm, mp, pw, name, res, nat in rows:
+            ntxt = f"`tools/scripts/natural/{nat[0]}.txt` ({nat[1]})" if nat else "-"
+            nok = ("yes" if nat[2] else ("NO" if nat[2] is False else "?")) if nat else ""
             f.write(f"| {w} | {r} | {nm} | {mp} | `tools/scripts/rooms/{name}.txt` | `{pw}` | "
-                    f"{'yes' if res else ('NO' if res is False else '?')} |\n")
+                    f"{'yes' if res else ('NO' if res is False else '?')} | {ntxt} | {nok} |\n")
+        f.write("\n## Other scripts\n\n"
+                "* `tools/scripts/boot_title.txt` - boot to the title menu (state `titlemenu`).\n"
+                "* `tools/scripts/natural_w0.txt`, `natural_w1.txt` - real start of each mystery (lobby / first carnival room).\n"
+                "* `tools/scripts/debug_menu_w0.txt`, `debug_menu_w1.txt` - enter the pause-menu cheat code (A B A C A B Left Right A B Left)\n"
+                "  to unlock the DEBUG entries ROOMS / OBJECTS (see docs/passwords.md section Debug menu).\n"
+                "* `tools/scripts/test_replay.sh` - record/replay determinism check.\n")
     print(len(rows), "room scripts written")
 
 
