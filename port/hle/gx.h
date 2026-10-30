@@ -24,6 +24,7 @@ void gx_m68k_set_usp(uint32_t v);      /* move An,usp */
 int gx_m68k_cycles(void);        /* master clocks (7 per 68k cycle) */
 void gx_m68k_set_cycles(int c);  /* rewind/advance the CPU clock (room.c: nested heavy 68k calls) */
 void gx_m68k_clear_irq(void);
+void gx_m68k_resync_irq(void);   /* int level = what the VDP asserts (after holding it off) */
 
 /* VDP / Z80 */
 uint32_t gx_dma_length(void);
@@ -34,6 +35,8 @@ uint32_t gx_zbank(void);
 void gx_z80_freeze(void);        /* make bus requests not run the Z80 (sandbox) */
 void gx_vdp_untimed_begin(void); /* bracket a VDP data port write made by C code */
 void gx_vdp_untimed_end(void);
-void gx_vdp_follow_cpu(void);    /* sandbox: advance the VDP line base to the CPU time */
+void gx_vdp_follow_cpu(void);
+unsigned gx_vdp_line_base(void);         /* mcycles_vdp */
+void gx_vdp_set_line_base(unsigned v);    /* sandbox: advance the VDP line base to the CPU time */
 
 #endif
