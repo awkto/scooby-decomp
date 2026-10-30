@@ -1,0 +1,237 @@
+# Natural route (random-play discovered, no password/cheat) to mystery 1 room 29; ends with save natural_w1_r29
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press D 4
+run 20
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+press U 77
+run 54
+press DL 13
+press C 6
+run 30
+press DR 6
+run 5
+press B 4
+run 20
+press DR 24
+run 38
+press DL 18
+run 47
+press B 3
+run 47
+press D 18
+run 40
+press R 24
+run 45
+press UL 5
+run 5
+press UR 9
+run 43
+press B 3
+run 34
+press B 4
+run 16
+press B 6
+run 42
+press DL 4
+run 41
+press DL 11
+run 17
+press B 6
+run 33
+press U 12
+run 10
+press L 8
+run 56
+press D 13
+run 34
+press D 3
+run 32
+press DR 10
+run 29
+press U 15
+run 17
+press D 22
+run 36
+press A 3
+run 53
+press R 3
+run 47
+press U 10
+run 26
+press L 22
+run 19
+press D 11
+run 28
+press B 5
+run 11
+press DR 25
+run 36
+press B 5
+run 26
+press UL 12
+run 42
+press R 16
+run 50
+press B 5
+run 38
+press R 22
+run 55
+press R 23
+run 26
+press U 19
+run 11
+press DR 24
+run 39
+press D 25
+run 46
+press B 3
+run 43
+press R 22
+run 33
+press UL 15
+run 59
+press C 3
+run 5
+press C 5
+run 18
+press DL 18
+run 25
+press L 5
+run 6
+press A 3
+run 16
+press D 9
+run 29
+press B 6
+run 19
+press U 24
+run 25
+press C 6
+run 35
+press A 3
+run 37
+press DL 6
+run 9
+press DL 7
+run 11
+press D 9
+run 39
+press C 3
+run 10
+press B 6
+run 22
+press B 4
+run 6
+press B 4
+run 57
+press D 9
+run 49
+press A 3
+run 30
+press UR 9
+run 33
+press B 4
+run 50
+press B 3
+run 32
+press UL 18
+run 27
+press UR 7
+run 38
+press D 16
+run 12
+press A 4
+run 13
+press DR 10
+run 12
+press UL 13
+run 9
+press B 5
+run 21
+press B 6
+run 20
+press C 4
+run 51
+press DR 7
+run 9
+press DR 9
+run 6
+press C 6
+run 19
+press B 3
+run 15
+press L 12
+run 12
+press R 8
+run 29
+press B 4
+run 54
+press U 24
+run 17
+press R 15
+run 60
+press B 5
+run 39
+press B 3
+run 54
+press B 5
+run 59
+press A 4
+run 6
+press L 6
+run 27
+press R 5
+run 49
+press B 5
+run 36
+press UR 21
+run 42
+press B 3
+run 36
+press A 5
+run 41
+press B 6
+run 54
+press R 18
+run 23
+press L 19
+run 30
+press L 6
+run 19
+press DL 24
+run 11
+press B 6
+run 16
+press A 5
+run 46
+press A 5
+run 56
+press D 20
+run 15
+press DL 14
+run 33
+press UL 14
+run 42
+press B 5
+run 26
+press B 5
+run 56
+press R 7
+run 58
+peek myst FF06AA 2
+peek room FF06AC 2
+save natural_w1_r29

@@ -8,3 +8,4 @@ tools/harness/harness
 __pycache__/
 .claude/
 .vm/
+states/*.state

@@ -45,6 +45,15 @@ decompiling a function.
 - Graphics: rooms are LZSS-packed tiles + 3 LZSS name/zone maps per room, indexed from two
   mystery headers at `$031AF2`; title uses an RLE (PackBits-like) format. Details in `docs/formats.md`.
 
+## Coverage / playthrough tooling (issue #7)
+- `tools/harness/harness.c` also has `record`/`replay` (per-frame input log), `peek`/`echo` (RAM words to `peek.log`),
+  `roomsave` (auto-savestate on first entry to each room); see the header comment.
+- `tools/py/password.py`: codec + input generator for the CONTINUE password screen (`docs/passwords.md`) - warps to any room.
+- `tools/py/campaign.py` (via `tools/py/vmjob.sh`, on a VM): `boot`, `warp` (all 51 rooms), `fuzz` (random no-pause play),
+  accumulating coverage into `runs/cov_acc.bin`; `tools/py/mergecov.py` merges cov.bin files into `data/exec_starts.txt` and
+  `data/rom_data_reads.txt`; `tools/py/covreport.py --md docs/coverage.md` writes the coverage report.
+- `states/INDEX.md` + `tools/scripts/rooms/*.txt`: room name -> script that regenerates the savestate (states are gitignored).
+
 ## Heavy work runs on remote VMs
 Remote test machines each have the toolchain, the ROM in `/opt/scooby/rom`, and GPGX built with both patches in `/opt/scooby/ext/gpgx`.
 
