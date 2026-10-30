@@ -8,6 +8,15 @@
  *   shot NAME             write outdir/NAME.ppm of the current frame
  *   ram NAME              write outdir/NAME.ram (64 KiB 68k work RAM)
  *   save NAME / load NAME savestates
+ *   vdp NAME              write outdir/NAME.{vram,cram,vsram,reg}: VRAM (64 KiB, big-endian
+ *                         words as on hardware), CRAM (64 words, hardware 0000BBB0GGG0RRR0),
+ *                         VSRAM (40 words), VDP registers (32 bytes)   [needs vdptrace core]
+ *   trace NAME / untrace  start/stop writing outdir/NAME.trace, one text line per event:
+ *                           W <frame> <V|C|S> <vdpaddr> <data> D <src>          (DMA from 68k bus)
+ *                           W <frame> <V|C|S> <vdpaddr> <data> P <pc> <lastrom> (CPU port write)
+ *                           R <frame> <pc> <romaddr> <width>                    (68k ROM data read)
+ *                         <lastrom> = most recent ROM data read address (or -1).
+ *                         VDP events need a core built with tools/patches/gpgx-vdptrace.patch.
  *
  * At exit writes outdir/cov.bin: one byte per ROM byte,
  *   bit0 = instruction start executed, bit1 = read as data by the 68k,
@@ -34,12 +43,33 @@ static size_t fb_pitch;
 static enum retro_pixel_format pixfmt = RETRO_PIXEL_FORMAT_0RGB1555;
 static uint16_t pad;   /* bitmask of RETRO_DEVICE_ID_JOYPAD_* */
 
-enum { HOOK_M68K_E = 1, HOOK_M68K_R = 2, HOOK_M68K_W = 4 }; /* from gpgx core/debug/cpuhook.h */
+enum { HOOK_M68K_E = 1, HOOK_M68K_R = 2, HOOK_M68K_W = 4,
+       HOOK_VRAM_W = 16, HOOK_CRAM_W = 64, HOOK_VSRAM_W = 256 }; /* from gpgx core/debug/cpuhook.h */
+
+/* optional symbols exported by the vdptrace core patch */
+static unsigned int *p_hook_dma_src;
+static uint8_t *p_vram, *p_cram, *p_vsram, *p_reg;
+static FILE *tracef;
+static long frame;
+static unsigned cur_pc;
+static long last_rom = -1;
 
 static void hook(int type, int width, unsigned int addr, unsigned int value)
 {
-	(void)value;
+	if (type == HOOK_VRAM_W || type == HOOK_CRAM_W || type == HOOK_VSRAM_W) {
+		if (!tracef)
+			return;
+		char k = type == HOOK_VRAM_W ? 'V' : type == HOOK_CRAM_W ? 'C' : 'S';
+		unsigned src = p_hook_dma_src ? *p_hook_dma_src : 0xFFFFFFFFu;
+		if (src != 0xFFFFFFFFu)
+			fprintf(tracef, "W %ld %c %04x %04x D %06x\n", frame, k, addr & 0xFFFF, value & 0xFFFF, src & 0xFFFFFF);
+		else
+			fprintf(tracef, "W %ld %c %04x %04x P %06x %lx\n", frame, k, addr & 0xFFFF, value & 0xFFFF, cur_pc, last_rom);
+		return;
+	}
 	addr &= 0xFFFFFF;
+	if (type == HOOK_M68K_E)
+		cur_pc = addr;
 	if (type == HOOK_M68K_E && addr >= 0xFF0000) {
 		ramexec[addr & 0xFFFF] = 1;
 		return;
@@ -52,6 +82,9 @@ static void hook(int type, int width, unsigned int addr, unsigned int value)
 		if (addr + 1 < (unsigned)rom_size)
 			cov[addr + 1] |= 4;
 	} else if (type == HOOK_M68K_R) {
+		last_rom = addr;
+		if (tracef)
+			fprintf(tracef, "R %ld %06x %06x %d\n", frame, cur_pc, addr, width);
 		for (int i = 0; i < width && addr + i < (unsigned)rom_size; i++)
 			cov[addr + i] |= 2;
 	}
@@ -190,6 +223,9 @@ int main(int argc, char **argv)
 	SYM(retro_set_audio_sample_batch); SYM(retro_set_input_poll); SYM(retro_set_input_state);
 	SYM(retro_init); SYM(retro_load_game); SYM(retro_run); SYM(retro_get_memory_data);
 	SYM(retro_serialize_size); SYM(retro_serialize); SYM(retro_unserialize); SYM(set_cpu_hook);
+	p_hook_dma_src = dlsym(core, "hook_dma_src");
+	p_vram = dlsym(core, "vram"); p_cram = dlsym(core, "cram");
+	p_vsram = dlsym(core, "vsram"); p_reg = dlsym(core, "reg");
 
 	FILE *rf = fopen(argv[2], "rb");
 	if (!rf) { perror(argv[2]); return 1; }
@@ -211,7 +247,6 @@ int main(int argc, char **argv)
 	FILE *sf = fopen(argv[3], "r");
 	if (!sf) { perror(argv[3]); return 1; }
 	char line[512];
-	long frame = 0;
 	while (fgets(line, sizeof line, sf)) {
 		char cmd[32], arg[256];
 		int n;
@@ -231,7 +266,10 @@ int main(int argc, char **argv)
 			char path[1024];
 			snprintf(path, sizeof path, "%s/%s.ram", outdir, arg);
 			FILE *f = fopen(path, "wb");
-			fwrite(p_retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM), 1, 0x10000, f);
+			/* GPGX keeps 68k work RAM byte-swapped within 16-bit words on little-endian hosts */
+			const uint8_t *wram = p_retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+			for (unsigned a = 0; a < 0x10000; a++)
+				fputc(wram[a ^ 1], f);   /* natural 68k byte order */
 			fclose(f);
 		} else if ((!strcmp(cmd, "save") || !strcmp(cmd, "load")) && sscanf(line, "%*s %255s", arg) == 1) {
 			char path[1024];
@@ -246,6 +284,46 @@ int main(int argc, char **argv)
 				if (f) { if (fread(buf, 1, sz, f) == sz) p_retro_unserialize(buf, sz); fclose(f); }
 			}
 			free(buf);
+		} else if (!strcmp(cmd, "trace") && sscanf(line, "%*s %255s", arg) == 1) {
+			char path[1024];
+			snprintf(path, sizeof path, "%s/%s.trace", outdir, arg);
+			if (tracef) fclose(tracef);
+			tracef = fopen(path, "w");
+			if (!p_hook_dma_src)
+				fprintf(stderr, "warning: core lacks hook_dma_src (vdptrace patch)\n");
+		} else if (!strcmp(cmd, "untrace")) {
+			if (tracef) fclose(tracef);
+			tracef = NULL;
+		} else if (!strcmp(cmd, "vdp") && sscanf(line, "%*s %255s", arg) == 1) {
+			if (!p_vram || !p_cram || !p_vsram || !p_reg) {
+				fprintf(stderr, "vdp: core lacks vram/cram/vsram/reg exports\n");
+				continue;
+			}
+			char path[1024];
+			static uint8_t buf[0x10000];
+			/* GPGX keeps VRAM as native-endian 16-bit words */
+			for (int i = 0; i < 0x10000; i += 2) {
+				uint16_t w = *(uint16_t *)(p_vram + i);
+				buf[i] = w >> 8; buf[i + 1] = w;
+			}
+			snprintf(path, sizeof path, "%s/%s.vram", outdir, arg);
+			FILE *f = fopen(path, "wb"); fwrite(buf, 1, 0x10000, f); fclose(f);
+			/* CRAM is stored packed as 9-bit BBBGGGRRR */
+			for (int i = 0; i < 64; i++) {
+				uint16_t c = *(uint16_t *)(p_cram + 2 * i);
+				uint16_t w = ((c & 0x1C0) << 3) | ((c & 0x038) << 2) | ((c & 0x007) << 1);
+				buf[2 * i] = w >> 8; buf[2 * i + 1] = w;
+			}
+			snprintf(path, sizeof path, "%s/%s.cram", outdir, arg);
+			f = fopen(path, "wb"); fwrite(buf, 1, 128, f); fclose(f);
+			for (int i = 0; i < 0x80; i += 2) {
+				uint16_t w = *(uint16_t *)(p_vsram + i);
+				buf[i] = w >> 8; buf[i + 1] = w;
+			}
+			snprintf(path, sizeof path, "%s/%s.vsram", outdir, arg);
+			f = fopen(path, "wb"); fwrite(buf, 1, 0x50, f); fclose(f);
+			snprintf(path, sizeof path, "%s/%s.reg", outdir, arg);
+			f = fopen(path, "wb"); fwrite(p_reg, 1, 0x20, f); fclose(f);
 		} else {
 			fprintf(stderr, "bad script line: %s", line);
 		}
