@@ -21,3 +21,8 @@ press R 60
 run 4
 peek kptr FF09DC 1
 peek x1 FF04DC
+# a 1-px bump of the mouse does not take control back from the pad
+run 30
+mouse 129 100
+run 10
+peek bump FF09DC 1

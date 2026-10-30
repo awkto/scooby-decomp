@@ -19,6 +19,7 @@
 /* pad bits (emu.h) */
 #define DIRS (PAD_UP | PAD_DOWN | PAD_LEFT | PAD_RIGHT)
 #define SETTLE_FRAMES 3      /* pointer written -> pointer_update + main-loop hit test ran */
+#define ACTIVATE_DRIFT 4     /* game px of movement that hand control to the mouse */
 #define SETTLE_TIMEOUT 40    /* frames: the main loop can lag behind (scripts, Scooby) */
 #define HOLD_TIMEOUT 30
 #define OPEN_TIMEOUT 8
@@ -59,6 +60,7 @@ static struct {
 	int ox, oy;
 	int still;            /* frames run with the same crosshair position written */
 	int wx, wy;           /* position written last */
+	int drift;            /* movement while passive (see ACTIVATE_DRIFT) */
 	const char *status;
 } M = { .enabled = true, .status = "idle" };
 
@@ -108,12 +110,25 @@ void mouse_move(int gx, int gy)
 {
 	if (!M.enabled)
 		return;
+	if (!M.active) {
+		/* a bumped mouse must not grab control from a pad player: take over only after
+		 * a few pixels of real movement */
+		M.drift += (gx > M.mx ? gx - M.mx : M.mx - gx) + (gy > M.my ? gy - M.my : M.my - gy);
+		M.mx = gx;
+		M.my = gy;
+		M.inside = true;
+		if (M.drift < ACTIVATE_DRIFT)
+			return;
+		M.drift = 0;
+		M.active = true;
+		M.hover = true;
+		return;
+	}
 	if (gx != M.mx || gy != M.my || !M.inside)
 		M.hover = true;
 	M.mx = gx;
 	M.my = gy;
 	M.inside = true;
-	M.active = true;
 }
 
 void mouse_leave(void) { M.inside = false; }
@@ -503,7 +518,14 @@ unsigned mouse_frame(unsigned pad_in)
 {
 	if (!M.enabled)
 		return pad_in;
-	walk_tick();
+	walk_event ev = walk_tick();
+	if (ev != WALK_NONE) {
+		static const char *const what[] = { "", "arrived", "stopped", "superseded", "new room" };
+		int x, y;
+		walk_point g = walk_goal();
+		mg_shaggy_pos(&x, &y);
+		mlog("walk %s at (%d,%d), goal (%d,%d)", what[ev], x, y, g.x, g.y);
+	}
 	mg_mode mode = mg_mode_get();
 	if (mode != MG_POINTER && !busy())
 		M.opened = false;
@@ -514,6 +536,7 @@ unsigned mouse_frame(unsigned pad_in)
 		if (M.active && M.opened && mode == MG_POINTER && (pad_in & DIRS) && !busy())
 			inject = PAD_A;
 		M.active = false;
+		M.drift = 0;
 		M.hover = false;
 		M.opened = false;
 		plan_clear();

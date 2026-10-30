@@ -31,6 +31,17 @@ for hle in all none; do
 	mkdir -p "$d"
 	{ echo "load $out/lobby.state"; cat port/scripts/mouse/exit.txt; } > "$d/script.txt"
 	$P --hle "$hle" --no-mouse --script "$d/script.txt" --outdir "$d" --frames 0 >"$d/log.txt" 2>&1
+	# soak: 60 random left clicks on the room view (walks, Looks at things, exits, text)
+	d="$out/$hle/soak"
+	mkdir -p "$d"
+	{ echo "load $out/lobby.state"; python3 -c "
+import random
+r = random.Random(23)
+for i in range(60):
+    print('click L %d %d' % (r.randrange(256), r.randrange(16, 168)))
+    print('run %d' % r.choice((60, 200, 400)))
+print('peek room FF06AC')"; } > "$d/script.txt"
+	SCOOBY_MOUSE_DEBUG=1 $P --hle "$hle" --script "$d/script.txt" --outdir "$d" --frames 0 >"$d/log.txt" 2>&1
 	# title -> Lobby by clicking, then the host cursor in a window shot (--scale 3)
 	d="$out/$hle/title"
 	mkdir -p "$d"
@@ -97,10 +108,27 @@ for hle in ("all", "none"):
     check(f"[{hle}] D-pad takes over from the mouse", bool(p.get("ptr", 0) & 8) and not (p.get("kptr", 8) & 8)
           and s16(p.get("x1", 0)) > s16(p.get("x0", 0)) + 10,
           f"pointer {p.get('ptr', 0):02x} -> {p.get('kptr', 0):02x}, x {s16(p.get('x0', 0))} -> {s16(p.get('x1', 0))}")
+    check(f"[{hle}] a 1-px mouse bump does not take over", "bump" in p and not (p["bump"] & 8),
+          f"$FF09DC={p.get('bump', 0):02x}")
 
     p = peeks(f"{out}/{hle}/nomouse/peek.log")
     check(f"[{hle}] --no-mouse ignores the mouse", p.get("room") == 16 and not (p.get("moving", 0) & 1),
           f"room {p.get('room')}")
+
+    # soak: every walk that ends by itself ends on its goal; none is lost
+    import re
+    ev = {}
+    bad = []
+    for line in open(f"{out}/{hle}/soak/log.txt"):
+        m = re.match(r"mouse \d+: walk (\w+(?: room)?) at \((-?\d+),(-?\d+)\), goal \((-?\d+),(-?\d+)\)", line)
+        if m:
+            k = m.group(1)
+            ev[k] = ev.get(k, 0) + 1
+            x, y, gx, gy = map(int, m.groups()[1:])
+            if k == "arrived" and (abs(x - gx) > 2 or abs(y - gy) > 2):
+                bad.append(line.strip())
+    check(f"[{hle}] soak: 60 random clicks", ev.get("arrived", 0) >= 10 and not bad and not ev.get("superseded"),
+          f"walk events {ev}" + (f"; off target: {bad[:3]}" if bad else ""))
 
     p = peeks(f"{out}/{hle}/title/peek.log")
     check(f"[{hle}] title -> Lobby with clicks", p.get("room") == 16 and bool(p.get("ptr", 0) & 8),

@@ -562,29 +562,38 @@ void walk_cancel(void)
 		drop(bit8(ACTORS_MOVING, 0));
 }
 
-void walk_tick(void)
+walk_event walk_tick(void)
 {
 	if (!wd.active)
-		return;
+		return WALK_NONE;
 	if (RAM16(ROOM_INDEX) != wd.room || RAM16(MYSTERY_INDEX) != wd.mystery) {
 		wd.active = false;                  /* new room: the room loader owns everything */
-		return;
+		return WALK_NEW_ROOM;
 	}
 	/* which of our legs is Shaggy walking?  (the game pops the queue on arrival) */
 	int tx = (int16_t)RAM16(ACTOR_TARGET_X(0)), ty = (int16_t)RAM16(ACTOR_TARGET_Y(0));
 	int k = wd.cur;
 	while (k < wd.n && !(wd.leg[k].x == tx && wd.leg[k].y == ty))
 		k++;
-	bool ours = k < wd.n;
-	if (!bit8(ACTORS_MOVING, 0) || !ours) {
-		drop(false);                        /* arrived, or the D-pad / a slide took over */
-		return;
+	if (k == wd.n) {
+		drop(false);                        /* the D-pad wall slide set its own target */
+		return WALK_SUPERSEDED;
+	}
+	if (!bit8(ACTORS_MOVING, 0)) {
+		drop(false);                        /* arrived, or the D-pad stopped him */
+		return k == wd.n - 1 ? WALK_ARRIVED : WALK_SUPERSEDED;
 	}
 	if (bit8(VBLANK_FLAGS, 7) || bit8(VBLANK_FLAGS, 3)) {
 		drop(true);                         /* a script (e.g. a walk-on trigger) or the
 		                                     * pointer took over: stand still, like the D-pad */
-		return;
+		return WALK_STOPPED;
 	}
 	wd.cur = k;
 	wp_refill();
+	return WALK_NONE;
+}
+
+walk_point walk_goal(void)
+{
+	return wd.n ? wd.leg[wd.n - 1] : (walk_point){ 0, 0 };
 }

@@ -49,8 +49,16 @@ bool walk_line_is_clear(int x0, int y0, int x1, int y1);
  * (SHAGGY_WP_*) as it drains; call walk_tick() once per frame before the frame runs.
  * The walk ends by itself on arrival, and is dropped (Shaggy stops) when a script
  * starts, pointer mode opens, the room changes, or the D-pad takes over. */
+typedef enum {
+	WALK_NONE,          /* nothing happened (or no walk) */
+	WALK_ARRIVED,       /* reached the last leg */
+	WALK_STOPPED,       /* a script started or pointer mode opened: Shaggy was stopped */
+	WALK_SUPERSEDED,    /* the D-pad (or its wall slide) took over */
+	WALK_NEW_ROOM,      /* the room changed (an exit) */
+} walk_event;
 bool walk_start(const walk_point *legs, int n);
-void walk_tick(void);
+walk_event walk_tick(void);
+walk_point walk_goal(void);                   /* last leg of the current/last walk */
 void walk_cancel(void);                       /* stop Shaggy where he is */
 bool walk_active(void);
 /* shaggy_set_dir ($00548E) with speed 1: 8.8 direction and facing (0 R 1 L 2 U 3 D) */
