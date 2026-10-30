@@ -8,7 +8,9 @@ Tracking: https://github.com/awkto/scooby-decomp
 - `src/scooby.s` – generated disassembly; `make` rebuilds a byte-identical ROM
 - `tools/py/disasm.py` – recursive-descent disassembler (vectors + `data/exec_starts.txt` + gap fill)
 - `tools/harness/` – headless libretro harness (GPGX core built with `tools/patches/gpgx-cpuhook.patch`, `HOOK_CPU=1`)
-- `data/` – runtime coverage (executed instruction starts, ROM bytes read as data)
+- `data/` – runtime coverage (executed instruction starts, ROM bytes read as data), `assets.txt` (ROM graphics map)
+- `tools/py/gfx.py` – LZSS/RLE decompressors, tile/palette dumps, room + title screen reconstruction (see `docs/formats.md`)
+- `tools/patches/gpgx-vdptrace.patch` – optional core patch for the harness `trace`/`vdp` commands
 
 ## Setup
     sudo apt install binutils-m68k-linux-gnu
@@ -24,3 +26,5 @@ Tracking: https://github.com/awkto/scooby-decomp
 - Pad read routine $9D3A → $FF09E0 (pad1), $FF09E1 (pad2), edge bits $FF09E6/7.
 - D-pad walks Shaggy directly (no cursor): X $FF04DC, Y $FF04F4 (16.16 fixed). Verb bar:
   TAKE LOOK OPEN PUSH EAT / GIVE TALK SHUT PULL USE.
+- Graphics: rooms are LZSS-packed tiles + 3 LZSS name/zone maps per room, indexed from two
+  mystery headers at `$031AF2`; title uses an RLE (PackBits-like) format. Details in `docs/formats.md`.
