@@ -56,7 +56,7 @@ def write_text(cov, ex_hdr, rd_hdr):
         for h in ex_hdr:
             f.write(h + "\n")
         for i in range(n):
-            if cov[i] & 1:
+            if cov[i] & 1 and i >= 0x200:   # below $200 is the vector table; reset fetch artefacts
                 f.write(f"{i:06x}\n")
     with open(READS, "w") as f:
         for h in rd_hdr:

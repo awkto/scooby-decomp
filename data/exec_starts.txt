@@ -1,5 +1,4 @@
 # 68k instruction starts observed executing in GPGX traces (tools/harness)
-000000
 000200
 000206
 000208
