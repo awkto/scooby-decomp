@@ -13,9 +13,9 @@
 00175c sub_00175C -> -
 0017ae sub_0017AE -> vdp_dma_vram
 00197e sub_00197E -> -
-0019b0 action_execute -> sub_001BDA sub_001C0C script_run_nested script_run script_run_frame strcpy sub_00A130
+0019b0 action_execute -> sub_001BDA sub_001C0C script_run_nested script_run script_run_frame strcpy text_show
 001bda sub_001BDA -> verb_label_redraw
-001c0c sub_001C0C -> sub_0020DA sub_0022F2 script_run_nested script_run_frame inventory_arrows_update inventory_refresh font_tiles_load wait_vblank vram_read_word vdp_dma_vram draw_text_wrapped draw_status_line sub_00A130 sub_00A18C actor_animate
+001c0c sub_001C0C -> sub_0020DA sub_0022F2 script_run_nested script_run_frame inventory_arrows_update inventory_refresh font_tiles_load wait_vblank vram_read_word vdp_dma_vram draw_text_wrapped draw_status_line text_show text_wait actor_animate
 0020d2 sub_0020D2 -> -
 0020da sub_0020DA -> rng_next
 002138 room_load -> run_load_script inventory_arrows_update sub_00758A wait_vblank actor_animate
@@ -134,7 +134,7 @@
 004c4e sub_004C4E -> sub_004D78^
 004d78 sub_004D78 -> -
 004d7a sub_004D7A -> -
-004d80 script_op_10_say -> font_tiles_load sub_00A130 sub_00A172 actor_animate
+004d80 script_op_10_say -> font_tiles_load text_show text_clear actor_animate
 004ee4 script_op_18_goto_room_cut -> room_load
 004f0e script_op_11_goto_room -> room_reload palette_read_cram
 004f50 script_op_12_set_hotspot -> -
@@ -258,12 +258,12 @@
 009f46 draw_text_labelled -> draw_text_plane_a_hi
 009f58 draw_text_plane_a_hi -> draw_text_plane_a
 009f72 draw_text_plane_a -> vdp_write_word
-009fa2 draw_text_wrapped -> vdp_write_word strlen
-00a054 draw_status_line -> vdp_reg_set vdp_write_word strlen
-00a130 sub_00A130 -> draw_status_line sub_00A172 sub_00A18C
-00a172 sub_00A172 -> draw_status_line
-00a18c sub_00A18C -> sub_0020DA wait_vblank run_object_events actor_animate
-00a236 strlen -> -
+009fa2 draw_text_wrapped -> vdp_write_word str_length
+00a054 draw_status_line -> vdp_reg_set vdp_write_word str_length
+00a130 text_show -> draw_status_line text_clear text_wait
+00a172 text_clear -> draw_status_line
+00a18c text_wait -> sub_0020DA wait_vblank run_object_events actor_animate
+00a236 str_length -> -
 00a248 game_init -> rng_next
 00a27a game_reset -> -
 00a38c vblank_title_fade -> rng_next title_anim vdp_dma_vram vdp_dma_cram

@@ -147,4 +147,9 @@ void logo5_frame(hle_ctx *ctx);        /* $000BC8 */
 #define ZONE_MAP         0xFFE000
 #define FONT_BASE        0xFF068C
 
+/* ---- text.c (#20: text/dialogue rendering, docs/subsystems/text.md) */
+void str_length(hle_ctx *ctx);          /* $00A236 */
+void text_clear(hle_ctx *ctx);          /* $00A172 */
+void status_line_update(hle_ctx *ctx);  /* $00A828 */
+
 #endif

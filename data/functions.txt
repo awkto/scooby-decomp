@@ -261,10 +261,10 @@
 009f72    48 draw_text_plane_a  # 15 insns
 009fa2   178 draw_text_wrapped  # 55 insns
 00a054   220 draw_status_line  # 63 insns
-00a130    66 sub_00A130  # 13 insns
-00a172    16 sub_00A172  # 4 insns
-00a18c   170 sub_00A18C  # 31 insns
-00a236    18 strlen  # 8 insns
+00a130    66 text_show  # 13 insns
+00a172    16 text_clear  # 4 insns
+00a18c   170 text_wait  # 31 insns
+00a236    18 str_length  # 8 insns
 00a248    50 game_init  # 8 insns
 00a27a   268 game_reset  # 43 insns
 00a38c   280 vblank_title_fade  # 62 insns

@@ -138,6 +138,7 @@
 	.equ ram_hscroll_verb, 0xff0800
 	.equ ram_ui_tile_base_e, 0xff0802
 	.equ ram_text_count, 0xff080a
+	.equ ram_text_speed, 0xff080c
 	.equ ram_talk_count, 0xff080e
 	.equ ram_title_piece_vram, 0xff0810
 	.equ ram_title_piece_w, 0xff0812
@@ -157,7 +158,7 @@
 	.equ ram_hblank_hv, 0xff08b2
 	.equ ram_ui_tile_base_f, 0xff08b8
 	.equ ram_cheat_progress, 0xff08ba
-	.equ ram_08bc, 0xff08bc
+	.equ ram_text_buf, 0xff08bc
 	.equ ram_vblank_flags, 0xff09dc
 	.equ ram_vblank_flags_prev, 0xff09dd
 	.equ ram_verb_state, 0xff09de
@@ -1657,7 +1658,7 @@ loc_001B1E:
 	subq.w #0x1,d7
 	lsl.w #0x2,d7
 	movea.l (0x0,a0,d7.w),a2
-	lea.l (ram_08bc).l,a1
+	lea.l (ram_text_buf).l,a1
 loc_001B46:
 	move.b (a2)+,(a1)+
 	beq.w loc_001B94
@@ -1680,8 +1681,8 @@ loc_001B8A:
 	tst.b -(a1)
 	bra.w loc_001B46
 loc_001B94:
-	lea.l (ram_08bc).l,a0
-	jsr (sub_00A130).l
+	lea.l (ram_text_buf).l,a0
+	jsr (text_show).l
 loc_001BA0:
 	move.w (ram_verb_cur).l,d0
 	cmp.w (ram_action_verb).l,d0
@@ -1714,8 +1715,8 @@ sub_001C0C:
 	bne.w loc_001C1C
 	rts
 loc_001C1C:
-	move.b #0x0,(ram_08bc).l
-	lea.l (ram_08bc).l,a0
+	move.b #0x0,(ram_text_buf).l
+	lea.l (ram_text_buf).l,a0
 	jsr (draw_status_line).l
 	move.w #0xffff,(0xff06ee).l
 	bset.b #0x2,(ram_verb_state).l
@@ -1896,7 +1897,7 @@ loc_001E72:
 	movem.l (sp)+,d2-d7/a0-a6
 	bsr.w sub_0020DA
 	bset.b #0x4,(ram_verb_state).l
-	jsr (sub_00A18C).l
+	jsr (text_wait).l
 	bclr.b #0x4,(ram_verb_state).l
 	move.w (ram_shaggy_facing).l,d0
 	addq.w #0x4,d0
@@ -1916,8 +1917,8 @@ loc_001E72:
 	move.l #script_run_frame,(ram_script_cb).l
 	movea.l (0x0,a0,d3.w),a0
 	movem.l d0-d7/a0-a6,-(sp)
-	move.b #0x0,(ram_08bc).l
-	lea.l (ram_08bc).l,a0
+	move.b #0x0,(ram_text_buf).l
+	lea.l (ram_text_buf).l,a0
 	jsr (draw_status_line).l
 	move.b (ram_obj_script_hdr2+1).l,d0
 	move.w d0,d1
@@ -1950,9 +1951,9 @@ loc_001E72:
 	bset.b d0,(ram_actors_anim_new).l
 loc_001FB8:
 	movem.l (sp)+,d0-d7/a0-a6
-	jsr (sub_00A130).l
-	move.b #0x0,(ram_08bc).l
-	lea.l (ram_08bc).l,a0
+	jsr (text_show).l
+	move.b #0x0,(ram_text_buf).l
+	lea.l (ram_text_buf).l,a0
 	jsr (draw_status_line).l
 	move.b #0x0,(ram_script_flags).l
 	move.l a5,-(sp)
@@ -3189,7 +3190,7 @@ script_subop_34_flag09eb_0_off:
 script_subop_32_minigame_tug:
 	move.w #0x8a94,(vdp_ctrl).l
 	move.w (ram_shaggy_facing).l,-(sp)
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	dc.w 0x223c,0xffff,0xffff	| move.l #$ffffffff, d1
 	move.l #0xff,(a0)+
 	move.w #0x5,d0
@@ -3203,7 +3204,7 @@ loc_00317C:
 	move.l #0x0,(a0)+
 	dbra d0,loc_00317C
 	move.l d1,(a0)+
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	move.w #0xff00,d0
 	move.w #0x20,d1
 	bsr.w vdp_dma_vram
@@ -3212,7 +3213,7 @@ loc_00317C:
 	beq.s loc_0031AC
 	addi.w #0x40,d0
 loc_0031AC:
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	move.w #0x1,d2
 loc_0031B6:
 	move.w #0x7f8,(a0)+
@@ -3226,7 +3227,7 @@ loc_0031BE:
 	move.w d1,(a0)+
 	dbra d2,loc_0031B6
 	move.w #0x18,d1
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	bsr.w vdp_dma_vram
 	lea.l (dat_01900C).l,a0
 	move.w #0x1c0,d1
@@ -3279,7 +3280,7 @@ loc_00324A:
 	move.b #0x0,(0xff0aa4).l
 	move.w #0xffff,(0xff0a9c).l
 	bsr.w sub_00393A
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	move.w #0xa300,d0
 	move.w #0x80,d1
 	bsr.w vdp_copy_to_vram
@@ -3336,7 +3337,7 @@ loc_0033C0:
 	bsr.w sound_play
 	jsr (sound_cmd_unpause).l
 loc_0033D8:
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	move.w #0xa300,d0
 	move.w #0x80,d1
 	bsr.w vdp_copy_to_vram
@@ -3643,7 +3644,7 @@ loc_0038DC:
 	bclr.b #0x2,(ram_09e8).l
 	rts
 sub_00393A:
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	move.w (0xff0a98).l,d4
 	move.w #0x7,d3
 loc_00394A:
@@ -4479,7 +4480,7 @@ loc_004676:
 	addi.w #0x40,d0
 	dbra d2,loc_004676
 	lea.l (dat_02F8FA).l,a0
-	lea.l (ram_08bc).l,a1
+	lea.l (ram_text_buf).l,a1
 	move.w #0x1f,d0
 loc_00469E:
 	move.l (a0)+,(a1)+
@@ -4499,7 +4500,7 @@ loc_0046BE:
 	bchg.b #0x0,(ram_camera_x).l
 loc_0046E6:
 	move.w d0,-(sp)
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	moveq #0x0,d0
 	move.w #0x40,d1
 	bsr.w wait_vblank
@@ -5032,7 +5033,7 @@ loc_004DEA:
 	move.w d0,(ram_actor_anim).l
 	bset.b #0x0,(ram_actors_anim_new).l
 loc_004E12:
-	bsr.w sub_00A172
+	bsr.w text_clear
 	move.w (ram_font_base).l,d2
 	move.w d2,-(sp)
 	move.w (0x2,a5),d0
@@ -5049,7 +5050,7 @@ loc_004E12:
 	movea.l (ram_mystery_hdr).l,a0
 	movea.l (0x20,a0),a0
 	adda.l (0x4,a5),a0
-	bsr.w sub_00A130
+	bsr.w text_show
 	bclr.b #0x4,(ram_verb_state).l
 	move.w (sp)+,d2
 	move.w d2,(ram_font_base).l
@@ -8750,7 +8751,7 @@ loc_008588:
 	bsr.w vdp_dma_vram
 	btst.b #0x0,(ram_09ed).l
 	beq.s loc_0085CC
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	moveq #0x7,d2
 	moveq #0x1,d1
 	bsr.w draw_text_plane_a
@@ -8816,7 +8817,7 @@ loc_0086D4:
 loc_0086D6:
 	move.b d3,(a0)+
 	dbra d0,loc_0086B2
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	lea.l (ram_pw_sym).l,a1
 	moveq #0x1,d3
 loc_0086EA:
@@ -9588,7 +9589,7 @@ loc_0091AA:
 	addq.w #0x1,d1
 	bra.s loc_0091AA
 loc_0091B2:
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	move.b d0,(0x0,a0,d1.w)
 	addq.w #0x1,d4
 	cmpi.w #0x18,d4
@@ -9632,7 +9633,7 @@ loc_00920A:
 	move.w #0x7d0,(vdp_data).l
 	move.w d0,(vdp_data).l
 	move.w #0x2000,sr
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	moveq #0x7,d2
 	moveq #0x1,d1
 	bsr.w draw_text_plane_a_hi
@@ -9647,7 +9648,7 @@ password_cancel:
 	bra.w menu_open
 password_check:
 	move.w d4,-(sp)
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	lea.l (ram_pw_sym).l,a1
 	lea.l (password_alphabet).l,a2
 	moveq #0x1,d2
@@ -10622,7 +10623,7 @@ draw_text_wrapped:
 	lsl.w #0x7,d4
 	lsl.w #0x1,d1
 	add.w d1,d4
-	bsr.w strlen
+	bsr.w str_length
 	move.w d0,d2
 	move.w #0xaa82,d3
 	add.w d4,d3
@@ -10688,7 +10689,7 @@ loc_00A062:
 	bsr.w vdp_write_word
 	addq.w #0x2,d0
 	dbra d2,loc_00A062
-	bsr.w strlen
+	bsr.w str_length
 	move.w d0,d2
 	move.w d2,(ram_text_count).l
 	move.w #0xd042,d3
@@ -10753,29 +10754,29 @@ loc_00A110:
 	lsl.w #0x4,d4
 	move.w d4,(ram_text_count).l
 	rts
-sub_00A130:
+text_show:
 	move.b (ram_vblank_flags).l,d0
 	andi.b #0x8,d0
 	move.w d0,-(sp)
 	bclr.b #0x3,(ram_vblank_flags).l
 	bsr.w draw_status_line
-	bsr.w sub_00A18C
-	bsr.w sub_00A172
+	bsr.w text_wait
+	bsr.w text_clear
 	move.w #0x9202,(vdp_ctrl).l
 	move.b #0x2,(ram_verb_bar_window).l
 	move.w (sp)+,d0
 	or.b d0,(ram_vblank_flags).l
 	bset.b #0x1,(ram_verb_state).l
 	rts
-sub_00A172:
-	lea.l (ram_08bc).l,a0
+text_clear:
+	lea.l (ram_text_buf).l,a0
 	move.b #0x0,(a0)
 	bsr.w draw_status_line
 	rts
 | data 0x00A182-0x00A18C
 dat_00A182:
 	.incbin "baserom.md",0xA182,0xA
-sub_00A18C:
+text_wait:
 	lsr.w (ram_text_count).l
 loc_00A192:
 	btst.b #0x6,(ram_pad1).l
@@ -10797,7 +10798,7 @@ loc_00A1CA:
 	jsr (sub_0020DA).l
 loc_00A1E8:
 	bsr.w wait_vblank
-	move.w (0xff080c).l,d0
+	move.w (ram_text_speed).l,d0
 	move.w (dat_00A182,pc,d0.w),d0
 	sub.w d0,(ram_text_count).l
 	bcs.w loc_00A234
@@ -10815,7 +10816,7 @@ loc_00A228:
 	beq.w loc_00A228
 loc_00A234:
 	rts
-strlen:
+str_length:
 	move.l a0,-(sp)
 	moveq #0x0,d0
 loc_00A23A:
@@ -10847,7 +10848,7 @@ game_reset:
 	move.b #0xff,(ram_pad_last).l
 	move.b #0xff,(ram_pad2).l
 	move.b #0xff,(ram_pad_last+1).l
-	move.w #0x4,(0xff080c).l
+	move.w #0x4,(ram_text_speed).l
 	clr.l (ram_room_depth_rows).l
 	clr.w (ram_camera_x).l
 	clr.w (ram_camera_y).l
@@ -11162,10 +11163,10 @@ loc_00A88C:
 loc_00A8E4:
 	tst.w (ram_target_obj).l
 	bne.w loc_00A8FA
-	move.b #0x0,(ram_08bc).l
+	move.b #0x0,(ram_text_buf).l
 	bra.w loc_00A978
 loc_00A8FA:
-	lea.l (ram_08bc).l,a1
+	lea.l (ram_text_buf).l,a1
 	lea.l (verb_names).l,a0
 	move.w (ram_verb_cur).l,d0
 	beq.w loc_00A91C
@@ -11201,7 +11202,7 @@ loc_00A95C:
 	movea.l a2,a1
 	bsr.w strcpy
 loc_00A978:
-	lea.l (ram_08bc).l,a0
+	lea.l (ram_text_buf).l,a0
 	bsr.w draw_status_line
 	rts
 sprite_build:

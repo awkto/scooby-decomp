@@ -35,7 +35,7 @@ All addresses were checked in `src/scooby.s` and by driving the game in the harn
 | $005E4A | pointer_update | per-frame (from VBlank_main $00A6B0): walking, entering/leaving pointer mode, pointer movement, bar slide animation, pointer -> bar slot mapping, B-click | 68k, 2800 bytes, shared with Shaggy walking (another subsystem) |
 | $00A984 | sprite_build | builds the SAT in `ram_sat_buf` incl. the crosshair | 68k, belongs to the sprite subsystem |
 | $0019B0 | action_execute | runs the object's script for the chosen verb | 68k (script subsystem) |
-| $00A828 | status_line_update | builds "Verb object [with object2]" in $FF08BC, prints with $00A054 | 68k |
+| $00A828 | status_line_update | builds "Verb object [with object2]" in $FF08BC, prints with $00A054 | C (text.c, #20: docs/subsystems/text.md) |
 | main loop $000E94-$0013B0 (inside `Reset`) | pointer hit-test of objects and verb bar slots, verb select | 68k, not a separate function |
 
 Honest scope: the pointer-mode state machine lives in $005E4A and the main loop (inside `Reset`),

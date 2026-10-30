@@ -84,7 +84,7 @@ FF0802 2    ram_ui_tile_base_e
 FF0878 4    ram_script_cb    # script callback (script_run / script_run_frame)
 FF08AE 2    ram_frame_countdown # decremented every VBlank while >= 0; title/menu pacing (#12)
 FF08B8 2    ram_ui_tile_base_f
-FF08BC 2    ram_08bc
+FF08BC 2    ram_text_buf     # NUL-terminated string shown by text_box_print: status line, failure text, empty (#20)
 
 # ---- input / flags
 FF09DC 1    ram_vblank_flags # bit0 wait_vblank handshake, 2 object timers, 3 pointer mode, 4 inventory bar, 5 HUD DMA request, 6 VBlank frame work, 7 script running (#12, game.h VBF_*)
@@ -207,6 +207,8 @@ FF0876 2    ram_bar_saved    # plane address of the verb bar saved by sys bar_hi
 FF087C 40   ram_palcyc       # palette cycling slots (op pal_cycle): w[5] first, +$A last, +$14 timer, +$1E speed
 FF0ACD 1    ram_palcyc_on    # bit n: cycling slot n on
 FF0ABF 1    ram_actors_frozen # bit n: actor n frozen by a script (op freeze / unfreeze_wait)
+# ---- text (#20) ----
+FF080C 2    ram_text_speed   # byte offset into the pacing table $00A182 (5 words 10,5,2,1,0); game_reset sets 4 (2 per frame), never changed
 
 # ---- #15 sprite / actor animation (port/src/game/sprite.[ch], docs/subsystems/sprite.md)
 FF0494 12   ram_actor_script_pos # w[6] offset (in the set) of the next animation script command
