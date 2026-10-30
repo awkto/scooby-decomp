@@ -1,0 +1,142 @@
+--- a/core/m68k/m68kcpu.c
++++ b/core/m68k/m68kcpu.c
+@@ -31,6 +31,18 @@
+ 
+ m68ki_cpu_core m68k;
+ 
++#ifdef HOOK_HLE
++/* scooby-decomp: high-level emulation (function override) hook.
++ * m68k_hle_bitmap has one bit per even address below 0x400000 (256 KiB). When the bit
++ * for REG_PC is set, m68k_hle_handler(pc) is called before the instruction is fetched;
++ * it returns the number of 68k cycles to charge (the handler has already updated
++ * registers / PC), or -1 to execute the instruction normally. */
++unsigned char *m68k_hle_bitmap = NULL;
++int (*m68k_hle_handler)(unsigned int pc) = NULL;
++unsigned int m68k_hle_skip_pc = 0xFFFFFFFF;
++static int m68k_hle_try(void);
++#endif
++
+ 
+ /* ======================================================================== */
+ /* =============================== CALLBACKS ============================== */
+@@ -296,6 +308,11 @@
+       cpu_hook(HOOK_M68K_E, 0, REG_PC, 0);
+ #endif
+ 
++#ifdef HOOK_HLE
++    if (UNLIKELY(m68k_hle_bitmap != NULL) && m68k_hle_try())
++      continue;
++#endif
++
+     /* Decode next instruction */
+     REG_IR = m68ki_read_imm_16();
+ 
+@@ -412,3 +429,89 @@
+ /* ======================================================================== */
+ /* ============================== END OF FILE ============================= */
+ /* ======================================================================== */
++
++#ifdef HOOK_HLE
++/* ======================================================================== */
++/* =============== scooby-decomp HLE / differential test API =============== */
++/* ======================================================================== */
++
++static int m68k_hle_try(void)
++{
++  uint pc = REG_PC;
++  if (pc < 0x400000 && (m68k_hle_bitmap[pc >> 4] & (1 << ((pc >> 1) & 7))))
++  {
++    int c = m68k_hle_handler(pc);
++    if (c >= 0)
++    {
++      /* not USE_CYCLES(): with M68K_OVERCLOCK_SHIFT it overflows for long HLE calls */
++#ifdef M68K_OVERCLOCK_SHIFT
++      m68ki_cpu.cycles += (sint)(((long long)c * MUL * m68ki_cpu.cycle_ratio) >> M68K_OVERCLOCK_SHIFT);
++#else
++      m68ki_cpu.cycles += c * MUL;
++#endif
++      return 1;
++    }
++  }
++  return 0;
++}
++
++/* Bus accesses exactly as the CPU performs them (memory map handlers, cpu_hook). */
++unsigned int m68k_bus_read8(unsigned int address)  { return m68ki_read_8(address & 0xffffff); }
++unsigned int m68k_bus_read16(unsigned int address) { return m68ki_read_16(address & 0xffffff); }
++unsigned int m68k_bus_read32(unsigned int address) { return m68ki_read_32(address & 0xffffff); }
++void m68k_bus_write8(unsigned int address, unsigned int value)  { m68ki_write_8(address & 0xffffff, value & 0xff); }
++void m68k_bus_write16(unsigned int address, unsigned int value) { m68ki_write_16(address & 0xffffff, value & 0xffff); }
++void m68k_bus_write32(unsigned int address, unsigned int value) { m68ki_write_32(address & 0xffffff, value); }
++
++/* SR / CCR access (set_ccr has no side effects; set_sr may switch stacks / take an IRQ) */
++unsigned int m68k_hle_get_sr(void) { return m68ki_get_sr(); }
++void m68k_hle_set_ccr(unsigned int value) { m68ki_set_ccr(value); }
++void m68k_hle_set_sr(unsigned int value) { m68ki_set_sr(value); }
++
++/* Execute exactly one instruction (or one HLE handler call), without polling interrupts
++ * first. Safe to call from inside an HLE handler (nested 68k calls): the address error
++ * trap of an enclosing m68k_run is saved and restored.
++ * Returns 0 = instruction executed, 1 = HLE handler ran, -1 = address error taken. */
++int m68k_step_one(void)
++{
++  volatile int ret = 0;
++  jmp_buf saved;
++  __builtin_memcpy(saved, m68ki_cpu.aerr_trap, sizeof(jmp_buf));
++  if (setjmp(m68ki_cpu.aerr_trap) != 0)
++  {
++    m68ki_exception_address_error();
++    ret = -1;
++    goto out;
++  }
++
++  m68ki_trace_t1() /* auto-disable (see m68kcpu.h) */
++  m68ki_use_data_space() /* auto-disable (see m68kcpu.h) */
++
++#ifdef HOOK_CPU
++  if (UNLIKELY(cpu_hook))
++    cpu_hook(HOOK_M68K_E, 0, REG_PC, 0);
++#endif
++
++  if (REG_PC == m68k_hle_skip_pc)
++    m68k_hle_skip_pc = 0xFFFFFFFF;
++  else if (m68k_hle_bitmap != NULL && m68k_hle_try())
++  {
++    ret = 1;
++    goto out;
++  }
++
++  REG_IR = m68ki_read_imm_16();
++  if (m68k.cycles >= m68k.refresh_cycles)
++  {
++    m68k.refresh_cycles = m68k.cycles + (128*7);
++    m68k.cycles += (2*7);
++  }
++  m68ki_instruction_jump_table[REG_IR]();
++  USE_CYCLES(CYC_INSTRUCTION[REG_IR]);
++  m68ki_exception_if_trace(); /* auto-disable (see m68kcpu.h) */
++
++out:
++  __builtin_memcpy(m68ki_cpu.aerr_trap, saved, sizeof(jmp_buf));
++  return ret;
++}
++#endif /* HOOK_HLE */
+--- a/core/vdp_ctrl.c
++++ b/core/vdp_ctrl.c
+@@ -3360,3 +3360,16 @@
+     }
+   }
+ }
++
++#ifdef HOOK_HLE
++/* scooby-decomp: expose VDP port latch state for differential testing */
++void vdp_hle_get_internal(int out[6])
++{
++  out[0] = addr;
++  out[1] = code;
++  out[2] = pending;
++  out[3] = addr_latch;
++  out[4] = dmafill;
++  out[5] = cached_write;
++}
++#endif
