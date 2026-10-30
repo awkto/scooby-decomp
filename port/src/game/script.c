@@ -1887,3 +1887,20 @@ HLE_RANGE(0x001E5A, talk_menu_pick, 60, 0x001DB2, 0x001E7A)
 	cc_logic16(ctx, 0xFFFF);
 	hle_jump(ctx, 0x001E7A);
 }
+
+/* ------------------------------------------------------------------ sys wait_button */
+/* sub $04 wait_button ($004568): run_object_events, one actor frame, repeat until A is
+ * pressed (edge: down now, up last frame) - or, while A is up, until B is pressed. The two
+ * calls stay 68k; this is the test after them. */
+HLE_RANGE(0x004570, script_sys_wait_button_test, 60, 0x004568, 0x004588, 0x0045A2)
+{
+	if (!bit_test(ctx, PAD1_CUR, 6)) {                     /* A down */
+		hle_jump(ctx, bit_test(ctx, PAD1_PREV, 6) ? 0x004588 : 0x004568);
+		return;
+	}
+	if (bit_test(ctx, PAD1_CUR, 4)) {                      /* B up */
+		hle_jump(ctx, 0x004568);
+		return;
+	}
+	hle_jump(ctx, bit_test(ctx, PAD1_PREV, 4) ? 0x0045A2 : 0x004568);
+}
