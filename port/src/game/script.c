@@ -24,7 +24,9 @@
 /* ---- RAM ---- */
 #define RAM_MYSTERY_HDR     0xFF068E   /* long: active mystery header (ROM) */
 #define RAM_OBJECTS         0xFF1200   /* object records, 26 bytes; script "who" n >= 3 = record n-3 */
+#ifndef OBJ_SIZE
 #define OBJ_SIZE            26
+#endif
 #define   OBJ_ROOM            0x06
 #define   OBJ_HOTSPOT         0x02
 #define   OBJ_VERBS           0x16       /* default verb bytes */
@@ -1557,4 +1559,85 @@ HLE_RANGE(0x0029EA, script_op_move_obj_wait, 60, 0x0029E4, MO_RTS)
 HLE_RANGE(0x002A2C, script_op_move_obj_static, 200, 0x002ABA, MO_RTS)
 {
 	move_obj_tail(ctx);
+}
+
+/* ------------------------------------------------------------------ anim_wait */
+/* $002B5A op $06 anim_wait [06][who][anim]: start an animation and wait for it.
+ *   Shaggy / Scooby: animation word ($FF0488 / $FF048A), start bit in $FF0AB5, then actor
+ *   frames (jsr sub_00B0B8 at $002B8C) until VBlank has taken the start bit;
+ *   object actors: animation $FF048C+2*slot, timer $FF061C+2*slot = -1, start bit, frames
+ *   ($002BDC) until the animation looped.
+ * Quirk: for objects the original then stores the animation into the state word of the
+ * FIRST object record ($FF1200, `move.w 4(a5),0(a0)` without the index), not the target's;
+ * an object without an actor slot only gets that store. */
+#define RAM_ACTOR_TIMER2 0xFF061C
+static void anim_wait_store(hle_ctx *ctx)
+{
+	uint16_t a = opw(ctx, 4);
+	RAM16(ctx->a[0]) = a;                                  /* record 0, see above */
+	cc_logic16(ctx, a);
+	ctx->a[5] += 6;
+	hle_jump(ctx, 0x002BF6);
+}
+HLE_RANGE(0x002B5A, script_op_anim_wait, 120, 0x002B8C, 0x002BDC, 0x002BF6)
+{
+	if (!exec_mode(ctx)) {
+		ctx->a[5] += 6;
+		hle_jump(ctx, 0x002BF6);
+		return;
+	}
+	set_w(&ctx->d[0], opw(ctx, 2));
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
+	uint16_t anim = opw(ctx, 4);
+	if ((uint16_t)ctx->d[0] == 0) {                        /* Shaggy */
+		RAM16(RAM_ACTOR_ANIM) = anim;
+		ctx->d[1] = 0;
+		cc_logic32(ctx, 0);
+	} else {
+		set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
+		if ((uint16_t)ctx->d[0] != 0) {                    /* an object */
+			ctx->d[0] = obj_mul(ctx, ctx->d[0], 1);
+			ctx->a[0] = RAM_OBJECTS;
+			uint8_t slot = RAM8(RAM_OBJECTS + (int16_t)ctx->d[0] + OBJ_ACTOR);
+			set_b(&ctx->d[1], slot);
+			cc_logic8(ctx, slot);
+			if (slot & 0x80) {                             /* no actor */
+				anim_wait_store(ctx);
+				return;
+			}
+			set_w(&ctx->d[1], slot);
+			ctx->a[1] = RAM_ACTOR_ANIM + 4;
+			set_w(&ctx->d[2], slot);
+			set_w(&ctx->d[2], cc_add(ctx, ctx->d[2], ctx->d[2], 16));
+			RAM16(RAM_ACTOR_ANIM + 4 + (int16_t)ctx->d[2]) = anim;
+			ctx->a[1] = RAM_ACTOR_TIMER2;
+			RAM16(RAM_ACTOR_TIMER2 + (int16_t)ctx->d[2]) = 0xFFFF;
+			set_w(&ctx->d[1], cc_add(ctx, ctx->d[1], 2, 16));
+			bit_set(ctx, RAM_ACTOR_START, ctx->d[1]);
+			hle_jump(ctx, 0x002BDC);
+			return;
+		}
+		RAM16(RAM_ACTOR_ANIM + 2) = anim;                  /* Scooby */
+		ctx->d[1] = 1;
+		cc_logic32(ctx, 1);
+	}
+	bit_set(ctx, RAM_ACTOR_START, ctx->d[1]);
+	hle_jump(ctx, 0x002B8C);
+}
+HLE_RANGE(0x002B92, script_op_anim_wait_started, 40, 0x002B8C, 0x002BF6)
+{
+	if (bit_test(ctx, RAM_ACTOR_START, ctx->d[1])) {       /* not taken yet */
+		hle_jump(ctx, 0x002B8C);
+		return;
+	}
+	ctx->a[5] += 6;
+	hle_jump(ctx, 0x002BF6);
+}
+HLE_RANGE(0x002BE2, script_op_anim_wait_looped, 40, 0x002BDC, 0x002BF6)
+{
+	if (!bit_test(ctx, RAM_ACTORS_LOOPED, ctx->d[1])) {
+		hle_jump(ctx, 0x002BDC);
+		return;
+	}
+	anim_wait_store(ctx);
 }
