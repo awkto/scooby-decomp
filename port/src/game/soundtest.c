@@ -101,6 +101,7 @@ static uint32_t st_poll(hle_ctx *ctx)
 		return ST_POLL;
 	RAM16(FRAME_COUNTDOWN) = 4;
 	menu_refresh_planes(ctx);
+	ctx->cycles += 100;
 	uint16_t sel = (uint16_t)(((uint16_t)ctx->d[6] << 4) | (uint16_t)ctx->d[7]);
 	set_w(&ctx->d[0], sel);
 	if ((uint16_t)ctx->d[5] == sel) {                    /* same sound as before: only the digits */
@@ -121,7 +122,7 @@ static uint32_t st_poll(hle_ctx *ctx)
 
 /* $00940C sound_test: stop the sound, load the screen ($018C72); the spin on the frame countdown
  * at $009444 follows.  Live out: d5-d7. */
-HLE_RANGE(0x00940C, sound_test, 3000, 0x009444)
+HLE_RANGE(0x00940C, sound_test, 500, 0x009444)
 {
 	RAM8(MENU_PAD_PREV) = RAM8(PAD1_PREV);
 	hle_call68k(ctx, A_SPRITES_E40C);
@@ -138,7 +139,7 @@ HLE_RANGE(0x00940C, sound_test, 3000, 0x009444)
 }
 
 /* $00944E: first frame: upload the screen and the planes */
-HLE_RANGE(0x00944E, sound_test_show, 3000, ST_FRAME)
+HLE_RANGE(0x00944E, sound_test_show, 100, ST_FRAME)
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	menu_dma(ctx, 0xC000, 0x380, LZSS_RING);
@@ -154,13 +155,13 @@ HLE_RANGE(0x00946C, sound_test_frame, 400, ST_POLL)
 }
 
 /* $00947C: the pad pass alone (this loop runs between VBlanks) */
-HLE_RANGE(0x00947C, sound_test_poll, 200, ST_SPIN_EXIT, ST_POLL, ST_NAME_WAIT, ST_FRAME)
+HLE_RANGE(0x00947C, sound_test_poll, 360, ST_SPIN_EXIT, ST_POLL, ST_NAME_WAIT, ST_FRAME)
 {
 	hle_jump(ctx, st_poll(ctx));
 }
 
 /* $0096AC: after the VBlank wait: blank row 17, draw the name (a1) centred, then the digits */
-HLE_RANGE(0x0096AC, sound_test_name, 2500, ST_FRAME)
+HLE_RANGE(0x0096AC, sound_test_name, 400, ST_FRAME)
 {
 	ctx->a[0] = 0x02FFF4;                  /* blank line */
 	set_w(&ctx->d[2], 17);
@@ -175,7 +176,7 @@ HLE_RANGE(0x0096AC, sound_test_name, 2500, ST_FRAME)
 
 /* $009648: C pressed and the countdown ran out: leave: refresh, restore the font palette, stop the
  * sound and restart the music that played before the test (ram_cur_music), back to the menu */
-HLE_RANGE(0x009648, sound_test_exit, 300, MENU_OPEN_ADDR)
+HLE_RANGE(0x009648, sound_test_exit, 150, MENU_OPEN_ADDR)
 {
 	menu_refresh_planes(ctx);
 	RAM8(FONT_BASE) &= (uint8_t)~0x80;

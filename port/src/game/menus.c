@@ -53,7 +53,7 @@ static void rle(hle_ctx *ctx, uint32_t stream, uint32_t out)
 /* $00819A: [68k: bsr palette_read_cram at $008196, which waits for VBlank]  Mask interrupts for
  * the set-up.  Split off so that the long set-up below is entered masked (the layer charges its
  * cost at once, as the original lost those VBlanks), not unmasked (sliced). */
-HLE_RANGE(0x00819A, title_mask_irq, 8, 0x00819E)
+HLE_RANGE(0x00819A, title_mask_irq, 16, 0x00819E)
 {
 	ctx->sr = 0x2700;
 	hle_jump(ctx, 0x00819E);
@@ -64,7 +64,7 @@ HLE_RANGE(0x00819A, title_mask_irq, 8, 0x00819E)
  * `jsr palette_fade` ($0083E2, a0 = the palette; it waits for VBlank).
  * Live out: a0 only (palette_fade saves everything else; the next range loads its own). */
 #define TITLE_FADE_IN 0x0083E2
-HLE_RANGE(0x00819E, title_setup, 1200000, TITLE_FADE_IN)
+HLE_RANGE(0x00819E, title_setup, 58000, TITLE_FADE_IN)
 {
 	RAM8(MENU_FLAGS) &= (uint8_t)~(0x04 | MF_BATS_DONE);
 	RAM8(SCREEN_FLAGS) &= (uint8_t)~0x80;
@@ -159,7 +159,7 @@ HLE_RANGE(0x00819E, title_setup, 1200000, TITLE_FADE_IN)
  * $017064 (a6 = next frame pointer, d6 = frames left - 1), scale depth $E0 (full shrink).
  * Ends in front of `bsr wait_vblank` ($00840A).  Live out: d6, a6. */
 #define BATS_WAIT_A 0x00840A
-HLE_RANGE(0x0083E8, title_bats_start, 60, BATS_WAIT_A)
+HLE_RANGE(0x0083E8, title_bats_start, 84, BATS_WAIT_A)
 {
 	RAM8(SCREEN_FLAGS) |= 0x80;
 	RAM16(0xFF0624) = 0xE0;             /* ram_scale_depth_x / _y */
@@ -173,7 +173,7 @@ HLE_RANGE(0x0083E8, title_bats_start, 60, BATS_WAIT_A)
 #define BATS_WAIT  0x0084AA
 
 /* $00840E: after the first VBlank: pace the animation at 5 frames per picture */
-HLE_RANGE(0x00840E, title_bats_first, 12, BATS_FRAME)
+HLE_RANGE(0x00840E, title_bats_first, 20, BATS_FRAME)
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	hle_jump(ctx, BATS_FRAME);
@@ -186,7 +186,7 @@ HLE_RANGE(0x00840E, title_bats_first, 12, BATS_FRAME)
  * 27 and 13 (counting d6 down).  Ends in front of `bsr wait_vblank` ($0084AA).
  * Live out: d6, a6 (d0-d5, a0-a5: the movem pair around the scaler restores them, the rest is
  * scratch that the polling code at $0084AE overwrites). */
-HLE_RANGE(0x008416, title_bats_frame, 12000, BATS_WAIT)
+HLE_RANGE(0x008416, title_bats_frame, 21000, BATS_WAIT)
 {
 	uint16_t d6 = (uint16_t)ctx->d[6];
 	if (d6 == 27 || d6 == 13)
@@ -222,7 +222,7 @@ HLE_RANGE(0x008416, title_bats_frame, 12000, BATS_WAIT)
  * sprites to VRAM) and go for the next one; after the 28th the menu follows.
  * Live out: d6 and a6 on the loop exits ($008416, $0084AA); nothing at $00851E. */
 #define MENU_OPEN 0x00851E
-HLE_RANGE(0x0084AE, title_bats_wait, 4000, BATS_WAIT, BATS_FRAME, MENU_OPEN)
+HLE_RANGE(0x0084AE, title_bats_wait, 300, BATS_WAIT, BATS_FRAME, MENU_OPEN)
 {
 	if ((RAM8(PAD1_CUR) & 0xF0) != 0xF0) {      /* S, A, C or B pressed */
 		hle_jump(ctx, MENU_OPEN);
@@ -285,7 +285,7 @@ HLE_RANGE(0x00851E, menu_open, 400, MENU_PUSH)
  * the dispatch through the action table: lsl.w #2,d0 / movea.l (sp)+,a0 / jmp ([a0+d0])]).
  * Live out: nothing. */
 #define MENU_POP 0x0085CC
-HLE_RANGE(0x008590, menu_show, 4000, MENU_POP)
+HLE_RANGE(0x008590, menu_show, 300, MENU_POP)
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	menu_refresh_planes(ctx);
@@ -308,7 +308,7 @@ HLE_RANGE(0x008590, menu_show, 4000, MENU_POP)
  * item-count pop ($008D68) so that menu_select ($008D6A) follows with d0 = count.
  * Live out: nothing. */
 #define MENU_CHOOSE_POP 0x008D68
-HLE_RANGE(0x008D4A, menu_choose_show, 3000, MENU_CHOOSE_POP)
+HLE_RANGE(0x008D4A, menu_choose_show, 100, MENU_CHOOSE_POP)
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	menu_refresh_planes(ctx);
@@ -354,7 +354,7 @@ static void cheat_step(hle_ctx *ctx, uint8_t pad)
 }
 
 /* $008D6A: start: cheat progress 0, cursor on the first item, y limit from the item count */
-HLE_RANGE(0x008D6A, menu_select, 600, MS_DRAW)
+HLE_RANGE(0x008D6A, menu_select, 148, MS_DRAW)
 {
 	RAM16(CHEAT_PROGRESS) = 0;
 	uint16_t count = (uint16_t)ctx->d[0];
@@ -375,7 +375,7 @@ HLE_RANGE(0x008D6A, menu_select, 600, MS_DRAW)
 }
 
 /* $008D8E: re-arm the pacing countdown, then redraw the sprites */
-HLE_RANGE(0x008D8E, menu_select_frame, 12, MS_DRAW)
+HLE_RANGE(0x008D8E, menu_select_frame, 20, MS_DRAW)
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	hle_jump(ctx, MS_DRAW);
@@ -408,7 +408,7 @@ HLE_RANGE(0x008D96, menu_select_draw, 400, MS_WAIT, MS_CHOSEN)
 }
 
 /* $008DA6: the pad pass alone (countdown not run out yet) */
-HLE_RANGE(0x008DA6, menu_select_pad, 250, MS_WAIT, MS_CHOSEN)
+HLE_RANGE(0x008DA6, menu_select_pad, 200, MS_WAIT, MS_CHOSEN)
 {
 	hle_jump(ctx, menu_select_poll(ctx));
 }
@@ -416,13 +416,14 @@ HLE_RANGE(0x008DA6, menu_select_pad, 250, MS_WAIT, MS_CHOSEN)
 /* $008E78: after a VBlank.  Countdown still running -> poll again.  Run out -> refresh the
  * planes, draw the cursor sprite (VRAM $FC60: y, size/link $0F00, tile, x $A8) and step the
  * blink; then a new pass from $008D8E.  Live out: d4-d7. */
-HLE_RANGE(0x008E78, menu_select_tick, 2500, MS_POLL, MS_FRAME)
+HLE_RANGE(0x008E78, menu_select_tick, 30, MS_POLL, MS_FRAME)
 {
 	if (!(RAM16(FRAME_COUNTDOWN) & 0x8000)) {
 		hle_jump(ctx, MS_POLL);
 		return;
 	}
 	menu_refresh_planes(ctx);
+	ctx->cycles += 300;
 	uint16_t d4 = (uint16_t)ctx->d[4], d5 = (uint16_t)ctx->d[5];
 	uint16_t tile = (uint16_t)(RAM16(MENU_CURSOR_TILE) + ROM16(ROM_CURSOR_BLINK + (d4 & 7)));
 	ctx->sr = 0x2700;
@@ -444,7 +445,7 @@ HLE_RANGE(0x008E78, menu_select_tick, 2500, MS_POLL, MS_FRAME)
 
 /* $008EE6: Start was chosen and the spin at $008EDC (frame countdown) is over: refresh the
  * planes, hide the cursor sprite, return d0 = the chosen item (d5 / $18).  Live out: d0. */
-HLE_RANGE(0x008EE6, menu_select_done, 1500, MS_RTS)
+HLE_RANGE(0x008EE6, menu_select_done, 140, MS_RTS)
 {
 	menu_refresh_planes(ctx);
 	RAM16(FRAME_COUNTDOWN) = 4;
@@ -474,14 +475,14 @@ HLE_RANGE(0x008F8A, quit_confirm, 12, 0x008F90)
 }
 
 /* $008F94: back from the confirmation: item 0 returns to the menu, the other quits */
-HLE_RANGE(0x008F94, quit_confirm_done, 12, MENU_OPEN, 0x008F9A)
+HLE_RANGE(0x008F94, quit_confirm_done, 15, MENU_OPEN, 0x008F9A)
 {
 	hle_jump(ctx, (uint16_t)ctx->d[0] == 0 ? MENU_OPEN : 0x008F9A);
 }
 
 /* $008F9A soft_reset: "quit": [68k: bsr palette_read_cram at $008FA2] then SP and PC are taken
  * from the vectors and the game starts over (stays 68k: the SP change cannot be a range). */
-HLE_RANGE(0x008F9A, soft_reset_begin, 12, 0x008FA2)
+HLE_RANGE(0x008F9A, soft_reset_begin, 24, 0x008FA2)
 {
 	RAM8(VBLANK_FLAGS) &= (uint8_t)~VBF_FRAME_WORK;
 	hle_jump(ctx, 0x008FA2);
@@ -490,7 +491,7 @@ HLE_RANGE(0x008F9A, soft_reset_begin, 12, 0x008FA2)
 /* $008CDA menu_start_game: [68k: bsr palette_read_cram at $008CD6]  Restore the gameplay hooks
  * and return out of title_screen (the caller carries on with game_start).  Entered by the
  * title/pause menus, the password check ($00933E) and the DEBUG editors.  `rts` is $008D34. */
-HLE_RANGE(0x008CDA, menu_start_game, 300, 0x008D34)
+HLE_RANGE(0x008CDA, menu_start_game, 250, 0x008D34)
 {
 	vdp_ctrl_w(0x9001);
 	RAM8(MENU_FLAGS) |= MF_GAME_STARTED;
@@ -509,12 +510,12 @@ HLE_RANGE(0x008CDA, menu_start_game, 300, 0x008D34)
 }
 
 /* $008FB8 / $008FC2: PLAY BLAKE'S HOTEL / PLAY HA HA CARNIVAL: pick the mystery */
-HLE_RANGE(0x008FB8, menu_play_blake, 12, 0x008FCA)
+HLE_RANGE(0x008FB8, menu_play_blake, 30, 0x008FCA)
 {
 	RAM16(MYSTERY_IDX_W) = 0;
 	hle_jump(ctx, 0x008FCA);
 }
-HLE_RANGE(0x008FC2, menu_play_carnival, 12, 0x008FCA)
+HLE_RANGE(0x008FC2, menu_play_carnival, 20, 0x008FCA)
 {
 	RAM16(MYSTERY_IDX_W) = 1;
 	hle_jump(ctx, 0x008FCA);
@@ -524,7 +525,7 @@ HLE_RANGE(0x008FC2, menu_play_carnival, 12, 0x008FCA)
  * CONTINUE / CANCEL (3 items).  Ends in front of `bsr menu_choose` ($008FE6).
  * Live out: a0 = screen stream, d0 = 3. */
 #define MYSTERY_CHOOSE 0x008FE6
-HLE_RANGE(0x008FCA, mystery_menu, 700, MYSTERY_CHOOSE)
+HLE_RANGE(0x008FCA, mystery_menu, 3100, MYSTERY_CHOOSE)
 {
 	hle_call68k(ctx, 0x007F22);              /* game_state_init */
 	ctx->a[0] = RAM16(MYSTERY_IDX_W) ? 0x018B3C : 0x018A56;
@@ -555,7 +556,7 @@ HLE_RANGE(0x008FEA, mystery_menu_done, 400, 0x008CD6, MENU_OPEN, 0x009008)
 /* $008F1C menu_refresh_planes: upload plane A's strip data ($FFE000 -> VRAM $F000, $4B0
  * words) and the plane A names ($FFC400 -> $C800, 512 words), then update the title sprites.
  * Falls into $008F40. */
-HLE_FUNC(0x008F1C, menu_refresh_planes, 100)
+HLE_FUNC(0x008F1C, menu_refresh_planes, 750)
 {
 	menu_dma(ctx, 0xF000, 0x4B0, ZONE_MAP);
 	menu_dma(ctx, 0xC800, 0x200, PLANEA_NAMES);
@@ -566,7 +567,7 @@ HLE_FUNC(0x008F1C, menu_refresh_planes, 100)
  * TITLE_SCROLL / 8) into the sprite table at VRAM $FC00 (every 8th byte: auto-increment 8).
  * SR is saved after `lsr.w #3,d1` and restored at the end: the flags left behind are that
  * shift's (X = C = bit 2 of TITLE_SCROLL, Z = result 0). */
-HLE_FUNC(0x008F40, menu_title_sprites, 250)
+HLE_FUNC(0x008F40, menu_title_sprites, 740)
 {
 	uint16_t d1 = (uint16_t)lsrw(ctx, RAM8(TITLE_SCROLL), 3);   /* the flags saved below */
 	uint16_t sr_in = ctx->sr;

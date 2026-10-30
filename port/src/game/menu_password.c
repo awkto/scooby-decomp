@@ -40,11 +40,11 @@ static uint8_t roxl8(uint8_t v, unsigned *x)
  * between the two registers: d2.msb -> X -> d3.lsb, d3.msb -> X -> d2.lsb).
  * The loop ends on `subq.w #1,d4` reaching zero: Z=1, N=V=C=0 and X=0; with d4 = 0 nothing
  * runs and only Z=1, N=V=C=0 (tst.w). */
-HLE_FUNC(0x008710, password_shift_bits, 20)
+HLE_FUNC(0x008710, password_shift_bits, 30)
 {
 	unsigned x = (ctx->sr & CC_X) ? 1 : 0;
 	uint16_t d2 = (uint16_t)ctx->d[2], d3 = (uint16_t)ctx->d[3], n = (uint16_t)ctx->d[4];
-	ctx->cycles = 20 + 24 * n;
+	ctx->cycles = 30 + 29 * n;
 	for (uint16_t i = 0; i < n; i++) {
 		d2 = roxl16(d2, &x);
 		d3 = roxl16(d3, &x);
@@ -58,16 +58,17 @@ HLE_FUNC(0x008710, password_shift_bits, 20)
 }
 
 /* $00870E: d4 = 5 (one symbol's worth of bits), then the same */
-HLE_FUNC(0x00870E, password_shift_symbol, 24)
+HLE_FUNC(0x00870E, password_shift_symbol, 180)
 {
 	ctx->d[4] = 5;
 	password_shift_bits(ctx);
+	ctx->cycles = 180;
 }
 
 /* $00873E: scramble the password bytes in place: r[0] = (r[1] ^ r[0]) & $1F, then a running
  * xor chain over the 29 state bytes (docs/passwords.md).  Registers after: scratch (d0-d2, a0);
  * the only caller (password_show, $008660) loads them afresh, flags dead. */
-HLE_FUNC(0x00873E, password_scramble, 400)
+HLE_FUNC(0x00873E, password_scramble, 970)
 {
 	uint8_t acc = (uint8_t)((RAM8(PW_RAW + 1) ^ RAM8(PW_RAW)) & 0x1F);
 	RAM8(PW_RAW) = acc;
@@ -80,7 +81,7 @@ HLE_FUNC(0x00873E, password_scramble, 400)
 /* $00876C: the inverse (decode): room = (r[1] ^ r[0]) & $1F into r[0]'s place, state[i] =
  * r[2+i] ^ r[1+i] (r[0] standing in for r[1]). Scratch regs d0-d3, a0, flags dead (only caller:
  * password_check). */
-HLE_FUNC(0x00876C, password_unscramble, 450)
+HLE_FUNC(0x00876C, password_unscramble, 1212)
 {
 	uint8_t prev = RAM8(PW_RAW);
 	RAM8(PW_RAW) = (uint8_t)((RAM8(PW_RAW + 1) ^ prev) & 0x1F);
@@ -100,7 +101,7 @@ HLE_FUNC(0x00876C, password_unscramble, 450)
  * the stale byte is read, not assumed to be 0.
  * Registers (d0-d5, a0, a1) and flags are scratch for every caller: title_screen reloads them
  * before use, the CLEAR key restores them with movem, the password screen setup sets d4-d7. */
-HLE_FUNC(0x008660, password_show, 14000)
+HLE_FUNC(0x008660, password_show, 18100)
 {
 	password_state st;
 	st.room = RAM8(ROOM_INDEX + 1);
@@ -130,7 +131,7 @@ HLE_FUNC(0x008660, password_show, 14000)
 /* $009392: next password bit.  d1 = bits left in d3, d3 = the current symbol shifted so that
  * its 5 bits are on top; when empty, load the next symbol byte from (a0)+ and shift it up by 3.
  * Returns the bit in X (and C).  Used only by password_read_byte; flags other than X are dead. */
-HLE_FUNC(0x009392, password_read_bit, 40)
+HLE_FUNC(0x009392, password_read_bit, 47)
 {
 	unsigned x = (ctx->sr & CC_X) ? 1 : 0;
 	uint8_t d3 = (uint8_t)ctx->d[3];
@@ -146,7 +147,7 @@ HLE_FUNC(0x009392, password_read_bit, 40)
 }
 
 /* $009382: collect 8 password bits into d2.b (MSB first) */
-HLE_FUNC(0x009382, password_read_byte, 400)
+HLE_FUNC(0x009382, password_read_byte, 689)
 {
 	unsigned x = (ctx->sr & CC_X) ? 1 : 0;
 	uint16_t d2 = 0;
@@ -172,7 +173,7 @@ HLE_FUNC(0x009382, password_read_byte, 400)
  * d4 is saved/restored by the original; d5-d7 are untouched; everything else is scratch. */
 #define PW_CHECK_RTS   0x009326
 #define PW_CHECK_OK    0x009328
-HLE_RANGE(0x009298, password_check, 9000, PW_CHECK_RTS, PW_CHECK_OK)
+HLE_RANGE(0x009298, password_check, 45000, PW_CHECK_RTS, PW_CHECK_OK)
 {
 	/* typed text -> symbol numbers: the position of each character in the alphabet */
 	for (int row = 0; row < 2; row++)
@@ -215,7 +216,7 @@ HLE_RANGE(0x009298, password_check, 9000, PW_CHECK_RTS, PW_CHECK_OK)
  * Clears the state block, copies the 29 decoded bytes in, sets the start room ($FF0A90) and
  * goes on to menu_start_game ($008CD6).  MF_FROM_PASSWORD makes the game's intro cutscenes
  * count as a restored game. */
-HLE_RANGE(0x00933E, password_accept, 900, 0x008CD6)
+HLE_RANGE(0x00933E, password_accept, 3080, 0x008CD6)
 {
 	RAM8(MENU_FLAGS) |= MF_FROM_PASSWORD;
 	for (int i = 0; i < 0x100; i++)      /* 128 words */
@@ -256,7 +257,7 @@ HLE_FUNC(0x0093CC, password_switch_row, 90)
 
 /* $0093DC: CLEAR: sound $63, regenerate the text of the current game state, cursor home.
  * (movem keeps every register but d4/d5.) */
-HLE_FUNC(0x0093DC, password_clear, 300)
+HLE_FUNC(0x0093DC, password_clear, 18500)
 {
 	hle_ctx save = *ctx;
 	menu_sound(ctx, 0x63);
@@ -269,7 +270,7 @@ HLE_FUNC(0x0093DC, password_clear, 300)
 }
 
 /* $009162: icon 6 does nothing (rts) */
-HLE_FUNC(0x009162, password_key_noop, 0) { (void)ctx; }
+HLE_FUNC(0x009162, password_key_noop, 16) { (void)ctx; }
 
 /* $0093F8: unreferenced (`bra menu_start_game`); never run, kept as a tail jump */
 HLE_FUNC(0x0093F8, password_unused_start, 0) { hle_jump(ctx, 0x008CD6); }
@@ -277,7 +278,7 @@ HLE_FUNC(0x0093F8, password_unused_start, 0) { hle_jump(ctx, 0x008CD6); }
 /* ------------------------------------------------------------------ cancel ($00927A) */
 /* The CANCEL icon: [68k: wait_vblank at $00927A], hide the cursor sprites, then pop the key
  * handler's return address ([68k: tst.l (sp)+ at $009292]) and go back to the menu ($00851E). */
-HLE_RANGE(0x00927E, password_cancel, 50, 0x009292)
+HLE_RANGE(0x00927E, password_cancel, 56, 0x009292)
 {
 	vdp_ctrl_w32(0x7C600003);        /* VRAM $FC60: the two cursor sprites */
 	bus_w32(VDP_DATA, 0);
@@ -360,7 +361,7 @@ static void pw_end_pass(hle_ctx *ctx)
 
 /* $009010: the screen's art is in the name table: draw it, show the current password, set up
  * the cursor registers, fall into the loop at $00903A */
-HLE_RANGE(0x009010, password_screen_start, 4000, PW_LOOP)
+HLE_RANGE(0x009010, password_screen_start, 18900, PW_LOOP)
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	menu_refresh_planes(ctx);
@@ -384,7 +385,7 @@ HLE_RANGE(0x00903A, password_screen_frame, 400, PW_JSR_ICON, PW_WAIT_FRAME)
 }
 
 /* $009052: input pass without the countdown reset (the countdown has not run out yet) */
-HLE_RANGE(0x009052, password_screen_input, 300, PW_JSR_ICON, PW_WAIT_FRAME)
+HLE_RANGE(0x009052, password_screen_input, 250, PW_JSR_ICON, PW_WAIT_FRAME)
 {
 	uint32_t e = pw_input_body(ctx);
 	if (e == PW_JSR_ICON) {
@@ -395,7 +396,7 @@ HLE_RANGE(0x009052, password_screen_input, 300, PW_JSR_ICON, PW_WAIT_FRAME)
 }
 
 /* $009160: back from an icon handler: end of pass */
-HLE_RANGE(0x009160, password_screen_icon_done, 20, PW_WAIT_FRAME)
+HLE_RANGE(0x009160, password_screen_icon_done, 38, PW_WAIT_FRAME)
 {
 	pw_end_pass(ctx);
 }
@@ -403,13 +404,14 @@ HLE_RANGE(0x009160, password_screen_icon_done, 20, PW_WAIT_FRAME)
 /* $0091D8: after the VBlank wait: countdown still running -> poll the pad again; run out ->
  * refresh the planes, place the two cursor sprites (the key grid cursor at $FC60 and the
  * text cursor), redraw the two text rows and start a new frame ($00903A). */
-HLE_RANGE(0x0091D8, password_screen_tick, 3000, PW_LOOP, PW_INPUT)
+HLE_RANGE(0x0091D8, password_screen_tick, 30, PW_LOOP, PW_INPUT)
 {
 	if (!(RAM16(FRAME_COUNTDOWN) & 0x8000)) {
 		hle_jump(ctx, PW_INPUT);
 		return;
 	}
 	menu_refresh_planes(ctx);
+	ctx->cycles += 600;                                  /* its own work; the DMAs and text calls are counted as nested */
 	uint16_t pos = (uint16_t)ctx->d[4], trow = (uint16_t)ctx->d[5];
 	int16_t col = (int16_t)ctx->d[6], grow = (int16_t)ctx->d[7];
 	uint16_t grid_y = (uint16_t)(grow * 16 + 0xF0), grid_x = (uint16_t)(col * 8 + 0xD8);

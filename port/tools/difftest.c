@@ -334,7 +334,7 @@ static int do_run(const hle_def *target, const opts *o)
 
 	sb_snap *ref = calloc(1, sizeof *ref), *got = calloc(1, sizeof *got);
 	int pass_n = 0, fail_n = 0, err_n = 0;
-	unsigned long cyc_min = ~0ul, cyc_max = 0, cyc_sum = 0, ins_sum = 0;
+	unsigned long cyc_min = ~0ul, cyc_max = 0, cyc_sum = 0, ins_sum = 0, c_sum = 0;
 	int nvar = o->npokes ? o->npokes : 1;
 	for (int k = 0; k < n * nvar; k++) {
 		int i = k / nvar;
@@ -384,7 +384,8 @@ static int do_run(const hle_def *target, const opts *o)
 		sb_begin();
 		sb_record_begin();
 		uint32_t ret0 = bus_r32(gx_m68k_dar()[15]) & 0xFFFFFF;
-		hle_invoke(cdef);
+		int charged = hle_invoke(cdef);
+		c_sum += charged > 0 ? (unsigned long)charged : 0;
 		/* a C function that ends in a tail jump into 68k code (hle_jump) is followed
 		 * until it returns like the original (ranges stop at their exit at once) */
 		if (!sb_run_68k_to(sp0, ret0, target->exits, 50000000ul)) {
@@ -440,8 +441,8 @@ static int do_run(const hle_def *target, const opts *o)
 	if (err_n)
 		printf(", %d errors", err_n);
 	if (pass_n + fail_n)
-		printf("; original: %lu insns avg, 68k cycles min/avg/max %lu/%lu/%lu", ins_sum / tested,
-		       cyc_min, cyc_sum / tested, cyc_max);
+		printf("; original: %lu insns avg, 68k cycles min/avg/max %lu/%lu/%lu; C charged avg %lu", ins_sum / tested,
+		       cyc_min, cyc_sum / tested, cyc_max, c_sum / tested);
 	printf("\n");
 	for (int i = 0; i < n; i++)
 		free(files[i]);

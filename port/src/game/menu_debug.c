@@ -148,7 +148,7 @@ static void list_text(hle_ctx *ctx, uint32_t str)
 #define ROM_BLANK_LINE       0x02FFF4
 
 /* $0088D8: split d0 into page and row, count the rooms */
-HLE_RANGE(0x0088D8, rooms_browser, 200, RB_PAGE)
+HLE_RANGE(0x0088D8, rooms_browser, 226, RB_PAGE)
 {
 	uint16_t entry = (uint16_t)ctx->d[0];
 	ctx->d[3] = (ctx->d[3] & 0xFFFF0000u) | entry;
@@ -162,7 +162,7 @@ HLE_RANGE(0x0088D8, rooms_browser, 200, RB_PAGE)
 
 /* $0088FC: draw a page: a1 -> its first record (the table starts at header +8; the page begins
  * -$28 before so that the first rows can hold the placeholder strings); then wait a frame. */
-HLE_RANGE(0x0088FC, rooms_page, 150, RB_WAIT1)
+HLE_RANGE(0x0088FC, rooms_page, 147, RB_WAIT1)
 {
 	uint32_t table = ROM32(ctx->a[2] + 8);
 	ctx->a[1] = table + (uint32_t)(uint16_t)ctx->d[5] * 0x140 - 0x28;
@@ -171,7 +171,7 @@ HLE_RANGE(0x0088FC, rooms_page, 150, RB_WAIT1)
 }
 
 /* $00892C: the page's rows (the name strings), blanks down to row $17, then wait a frame */
-HLE_RANGE(0x00892C, rooms_rows, 3000, RB_BAR)
+HLE_RANGE(0x00892C, rooms_rows, 500, RB_BAR)
 {
 	uint32_t table = ROM32(ctx->a[2] + 8);
 	uint32_t text = ROM32(ctx->a[2] + 0x20);
@@ -194,7 +194,7 @@ HLE_RANGE(0x00892C, rooms_rows, 3000, RB_BAR)
 }
 
 /* $008976: the bar, then the pad */
-HLE_RANGE(0x008976, rooms_input, 600, RB_PAGE, RB_BAR, RB_RTS)
+HLE_RANGE(0x008976, rooms_input, 1000, RB_PAGE, RB_BAR, RB_RTS)
 {
 	list_draw_bar(ctx, (uint16_t)ctx->d[3]);
 	static const list_exits ex = { RB_PAGE, RB_BAR, RB_RTS };
@@ -210,7 +210,7 @@ HLE_RANGE(0x008976, rooms_input, 600, RB_PAGE, RB_BAR, RB_RTS)
 #define OB_BAR    0x008B16
 #define OB_RTS    0x008C3E
 
-HLE_RANGE(0x008AB4, objects_browser, 200, OB_PAGE)
+HLE_RANGE(0x008AB4, objects_browser, 80, OB_PAGE)
 {
 	ctx->d[0] = 0;
 	ctx->a[2] = RAM32(MYSTERY_HDR);
@@ -220,7 +220,7 @@ HLE_RANGE(0x008AB4, objects_browser, 200, OB_PAGE)
 	hle_jump(ctx, OB_PAGE);
 }
 
-HLE_RANGE(0x008AD4, objects_page, 150, OB_WAIT1)
+HLE_RANGE(0x008AD4, objects_page, 122, OB_WAIT1)
 {
 	uint16_t ofs = (uint16_t)((uint16_t)ctx->d[5] << 7);        /* lsl.w #7,d1 / lea (a1,d1.w) */
 	ctx->a[1] = ROM32(ctx->a[2] + 0x28) + (uint32_t)(int32_t)(int16_t)ofs;
@@ -228,7 +228,7 @@ HLE_RANGE(0x008AD4, objects_page, 150, OB_WAIT1)
 	hle_jump(ctx, OB_WAIT1);
 }
 
-HLE_RANGE(0x008B00, objects_rows, 1500, OB_BAR)
+HLE_RANGE(0x008B00, objects_rows, 500, OB_BAR)
 {
 	uint32_t text = ROM32(ctx->a[2] + 0x20);
 	int16_t d6 = (int16_t)ctx->d[6];
@@ -240,7 +240,7 @@ HLE_RANGE(0x008B00, objects_rows, 1500, OB_BAR)
 	hle_jump(ctx, OB_BAR);
 }
 
-HLE_RANGE(0x008B1A, objects_input, 600, OB_PAGE, OB_BAR, OB_RTS)
+HLE_RANGE(0x008B1A, objects_input, 1000, OB_PAGE, OB_BAR, OB_RTS)
 {
 	list_draw_bar(ctx, (uint16_t)ctx->d[3]);
 	static const list_exits ex = { OB_PAGE, OB_BAR, OB_RTS };
@@ -250,7 +250,7 @@ HLE_RANGE(0x008B1A, objects_input, 600, OB_PAGE, OB_BAR, OB_RTS)
 /* ================================================================== screen loader ($0096F4) */
 /* a0 = RLE stream of a screen: unpack it to the ring buffer, wait a frame, upload it to plane A
  * ($C000, $380 words).  [68k: bsr wait_vblank at $00970C] */
-HLE_RANGE(0x0096F4, menu_load_screen, 400, 0x00970C)
+HLE_RANGE(0x0096F4, menu_load_screen, 100, 0x00970C)
 {
 	ctx->a[2] = LZSS_RING;
 	rle_call(ctx);
@@ -275,13 +275,13 @@ HLE_RANGE(0x0088A2, debug_rooms, 12, 0x0088A8)
 	hle_jump(ctx, 0x0088A8);                    /* bsr menu_load_screen */
 }
 
-HLE_RANGE(0x0088AC, debug_rooms_pick, 12, 0x0088B2)
+HLE_RANGE(0x0088AC, debug_rooms_pick, 16, 0x0088B2)
 {
 	set_w(&ctx->d[0], RAM16(MENU_ROOM));
 	hle_jump(ctx, 0x0088B2);                    /* bsr rooms_browser */
 }
 
-HLE_RANGE(0x0088B6, debug_rooms_done, 300, 0x0088A2, MENU_OPEN_ADDR)
+HLE_RANGE(0x0088B6, debug_rooms_done, 70, 0x0088A2, MENU_OPEN_ADDR)
 {
 	int16_t room = (int16_t)ctx->d[0];
 	if (room <= 1) {
@@ -309,7 +309,7 @@ HLE_RANGE(0x008C40, debug_objects, 100, 0x008C58)
 /* $008C80: the object d2 (index; record at a0 + d0, d0 = index * 26) moves to location d1 (a
  * room number, 1 = carried by the player).  Keeps the carried-items list ($FF0A1E: object
  * indices, $FFFF-terminated) in step: leaving room 1 removes the index, entering it appends. */
-HLE_RANGE(0x008C80, debug_objects_move, 600, 0x008CC0)
+HLE_RANGE(0x008C80, debug_objects_move, 82, 0x008CC0)
 {
 	uint32_t rec = ctx->a[0] + (uint16_t)ctx->d[0] + 6;     /* word: location */
 	uint16_t new_loc = (uint16_t)ctx->d[1], idx = (uint16_t)ctx->d[2];
@@ -336,7 +336,7 @@ HLE_RANGE(0x008C80, debug_objects_move, 600, 0x008CC0)
 	hle_jump(ctx, 0x008CC0);
 }
 
-HLE_RANGE(0x008CC0, debug_objects_done, 200, MENU_OPEN_ADDR)
+HLE_RANGE(0x008CC0, debug_objects_done, 40, MENU_OPEN_ADDR)
 {
 	menu_dma(ctx, 0xFC00, 0x34, ROM_TITLE_SAT);
 	hle_jump(ctx, MENU_OPEN_ADDR);
