@@ -416,10 +416,12 @@ static int do_run(const hle_def *target, const opts *o)
 		uint32_t lo = sp0 - o->stack_window;
 		if (min_sp < lo)
 			lo = min_sp;
-		/* a range that exits with a negative stack delta (HLE_EXIT_SP) leaves what it
-		 * pushed in [exit SP, entry SP): that is live data, compare it */
+		/* a range ends with everything below its exit SP dead: with a negative stack
+		 * delta (HLE_EXIT_SP) what it pushed, [exit SP, entry SP), is live data and
+		 * compared; with a positive delta what it popped, [entry SP, exit SP), is dead
+		 * (and often overwritten by later calls inside the range) */
 		uint32_t hi = sp0;
-		if (target->exits && ref->a[7] < hi)
+		if (target->exits)
 			hi = ref->a[7];
 		if (lo > hi)
 			lo = hi;

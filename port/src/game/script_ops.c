@@ -75,7 +75,7 @@ static void who_to_actor(hle_ctx *ctx, uint16_t who)
 #define FACE_RTS       0x002730
 #define FACE_WAIT_SHAG 0x0026D4
 #define FACE_WAIT_SCOO 0x002716
-HLE_RANGE(0x00268E, script_op_face, 150, FACE_RTS, FACE_WAIT_SHAG, FACE_WAIT_SCOO)
+HLE_RANGE(0x00268E, script_op_face, 200, FACE_RTS, FACE_WAIT_SHAG, FACE_WAIT_SCOO)
 {
 	if (!exec_mode(ctx)) {
 		A(5) += 6;
@@ -146,7 +146,7 @@ HLE_RANGE(0x004F70, script_op_wait_stop, 120, WST_FRAME, WST_RTS)
 	who_to_actor(ctx, opw(ctx, 2));
 	hle_jump(ctx, WST_FRAME);
 }
-HLE_RANGE(0x004FA4, script_op_wait_stop_test, 40, WST_FRAME, WST_RTS)
+HLE_RANGE(0x004FA4, script_op_wait_stop_test, 64, WST_FRAME, WST_RTS)
 {
 	if (bit_test(ctx, RAM_ACTORS_MOVING, D(0)) || bit_test(ctx, RAM_ACTORS_ON_PATH, D(0))) {
 		hle_jump(ctx, WST_FRAME);
@@ -221,7 +221,7 @@ HLE_FUNC(0x004944, script_op_path, 160)
  * waits for the HUD upload: the 68k makes that call). */
 #define SO_REFRESH 0x002C4C
 #define SO_RTS     0x002C54
-HLE_RANGE(0x002BF8, script_op_show_obj, 200, SO_REFRESH, SO_RTS)
+HLE_RANGE(0x002BF8, script_op_show_obj, 240, SO_REFRESH, SO_RTS)
 {
 	if (exec_mode(ctx)) {
 		set_w(&D(0), opw(ctx, 2));
@@ -265,7 +265,7 @@ HLE_RANGE(0x002C50, script_op_show_obj_done, 8, SO_RTS) { A(5) += 4; hle_jump(ct
  * stay 68k). */
 #define SI_WAIT 0x002DE4
 #define SI_RTS  0x002DF0
-HLE_RANGE(0x002DC0, script_op_set_icon, 120, SI_WAIT, SI_RTS)
+HLE_RANGE(0x002DC0, script_op_set_icon, 140, SI_WAIT, SI_RTS)
 {
 	if (exec_mode(ctx)) {
 		set_w(&D(0), opw(ctx, 2));

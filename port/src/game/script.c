@@ -537,7 +537,7 @@ static void test_actor_bit(hle_ctx *ctx, int flagbit, uint32_t bits_addr)
 }
 /* op $1C runs in the Blake's Hotel intro (port/scripts/script/intro_w0.txt); op $1D occurs
  * nowhere in the script data (dead handler): not registered. */
-HLE_FUNC(0x00255E, script_op_test_moving, 90) { test_actor_bit(ctx, 2, RAM_ACTORS_MOVING); }
+HLE_FUNC(0x00255E, script_op_test_moving, 240) { test_actor_bit(ctx, 2, RAM_ACTORS_MOVING); }
 #ifdef SCRIPT_UNTESTED
 HLE_FUNC(0x002510, script_op_test_anim_done, 90) { test_actor_bit(ctx, 3, RAM_ACTORS_ANIMDONE); }
 #endif
@@ -1892,4 +1892,354 @@ HLE_RANGE(0x004570, script_sys_wait_button_test, 60, 0x004568, 0x004588, 0x0045A
 		return;
 	}
 	hle_jump(ctx, bit_test(ctx, PAD1_PREV, 4) ? 0x0045A2 : 0x004568);
+}
+
+/* ================================================================== nested TALK levels */
+/* $002320 script_run_nested: collect the talk_choice ops of the block A5..A6 (flags = 4,
+ * count 0) with script_run, keeping A5/A6 and the block callback (pushed: 12 bytes).
+ * Two ranges around the `bsr script_run` with stack-delta exits (docs/porting.md "Ranges
+ * that push or pop"). */
+HLE_RANGE(0x002320, script_run_nested, 90, HLE_EXIT_SP(0x002344, -12))
+{
+	RAM8(RAM_SCRIPT_FLAGS) = SF_COLLECT_TALK;
+	RAM16(RAM_TALK_COUNT) = 0;
+	push32(ctx, ctx->a[6]);                                /* movem.l a5-a6,-(sp) */
+	push32(ctx, ctx->a[5]);
+	push32(ctx, RAM32(RAM_SCRIPT_CB));
+	RAM32_W(RAM_SCRIPT_CB, 0x0023DC);                      /* script_run */
+	cc_logic32(ctx, 0x0023DC);
+	hle_jump(ctx, 0x002344);
+}
+HLE_RANGE(0x002348, script_run_nested_done, 50, HLE_EXIT_SP(0x002352, 12))
+{
+	uint32_t cb = pop32(ctx);
+	RAM32_W(RAM_SCRIPT_CB, cb);
+	cc_logic32(ctx, cb);
+	ctx->a[5] = pop32(ctx);
+	ctx->a[6] = pop32(ctx);
+	hle_jump(ctx, 0x002352);
+}
+
+/* $001CC4: collect the choices of the current TALK level (A5/A6 = RAM_TALK_A5/A6) with
+ * script_run_nested, all registers saved around it (movem.l d0-a6: 60 bytes) */
+HLE_RANGE(0x001CC4, talk_menu_collect, 160, HLE_EXIT_SP(0x001CD4, -60))
+{
+	for (int r = 6; r >= 0; r--)
+		push32(ctx, ctx->a[r]);
+	for (int r = 7; r >= 0; r--)
+		push32(ctx, ctx->d[r]);
+	ctx->a[5] = RAM32(RAM_TALK_A5);
+	ctx->a[6] = RAM32(RAM_TALK_A6);
+	hle_jump(ctx, 0x001CD4);
+}
+HLE_RANGE(0x001CD8, talk_menu_collect_done, 130, HLE_EXIT_SP(0x001CDC, 60))
+{
+	for (int r = 0; r < 8; r++)
+		ctx->d[r] = pop32(ctx);
+	for (int r = 0; r < 7; r++)
+		ctx->a[r] = pop32(ctx);
+	hle_jump(ctx, 0x001CDC);
+}
+
+/* ================================================================== TALK: the picked choice */
+/* $001E7A-$0020D0: after a pick (D3 = choice index, D4 = VRAM address of the bar rows):
+ *   1. mark the choice used, blank the bar, show the choice's text as Shaggy's line in the
+ *      font of colour 6 (text_wait $00A18C, blocking) while Shaggy gestures ($0020DA);
+ *   2. Shaggy's stand pose; the reply text in the partner's font colour (RAM $FF06B1) with
+ *      the partner actor's talk pose ($FF06B2 = TALK_POSE[choice]); text_show (blocking);
+ *   3. run the choice's body (script_run_frame, blocking);
+ *   4. the body ended the TALK (script flags bit 0 / flags2 bit 2: leave all levels) or
+ *      it nested a deeper level (it collected choices: push 10 bytes = used bits, A5, A6
+ *      and go back to $001CC4) or the level is done (pop one level, $001CC4);
+ *   5. leaving: blank the bar, slide it in (actor frames until $FF0ACB < 0), restore the
+ *      saved bar rows (6 x vdp_dma_vram), the normal font, then wait_vblank,
+ *      inventory_refresh, inventory_arrows_update (blocking, 68k) and rts.
+ * The pushes (movem.w d0-d3 = 8 bytes, movem.l d2-d4/a0 = 16, A5 = 4, 10 per TALK level)
+ * span the blocking calls: ranges with HLE_EXIT_SP. Leaving from level k drops 10*k bytes
+ * at once (`lea (sp,level*10),sp`): one exit per possible level. */
+#define RAM_TALK_REPLY_POSE 0xFF06B2   /* word: partner pose of the picked choice; low byte of $06B0 */
+#define RAM_TALK_COLOUR     0xFF06B1   /* byte: partner's font colour (bits 0-3) and palette (bits 4-5) */
+#define RAM_FONT_BASE       0xFF068C   /* word: font tile base | palette bits 13-14 */
+#define RAM_SCRIPT_FLAGS2   0xFF0ACA
+#define RAM_BAR_SLIDE       0xFF0ACB
+#define RAM_VERB_STATE_B    0xFF09DE
+#define SHAGGY_FACING_W     0xFF05B8
+
+/* $0022F2 talk_bar_blank: 6 rows x 32 blank tiles (font base + $20) at VRAM D4 */
+static void talk_bar_blank(hle_ctx *ctx)
+{
+	set_w(&ctx->d[1], RAM16(RAM_FONT_BASE));
+	set_w(&ctx->d[1], cc_add(ctx, ctx->d[1], 0x20, 16));
+	ctx->d[3] = 5;
+	set_w(&ctx->d[0], ctx->d[4]);
+	do {
+		set_w(&ctx->d[2], 0x1F);
+		do {
+			vram_write_word(ctx);
+			set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 2, 16));
+			set_w(&ctx->d[2], ctx->d[2] - 1);
+		} while ((uint16_t)ctx->d[2] != 0xFFFF);
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 0x40, 16));
+		set_w(&ctx->d[3], ctx->d[3] - 1);
+	} while ((uint16_t)ctx->d[3] != 0xFFFF);
+	set_w(&ctx->d[0], 0x0F);
+	set_w(&ctx->d[1], 0x10);
+	cc_logic16(ctx, 0x10);
+}
+HLE_FUNC(0x0022F2, talk_bar_blank_fn, 20000) { talk_bar_blank(ctx); }
+
+/* $0020DA talk_gesture: unless Shaggy's idle animations are off ($FF09E9 bits 7/4), a
+ * random talking gesture (animation 36 + facing*4 + 0..3; facing up counts as right and is
+ * set to right, down as left) */
+static void talk_gesture(hle_ctx *ctx)
+{
+	if (bit_test(ctx, 0xFF09E9, 7) || bit_test(ctx, 0xFF09E9, 4))
+		return;
+	/* rng_next with D0 = 7: D1 = new state, D0 = (7 * low word) >> 16 */
+	uint32_t s = RAM32(RAM_RNG_STATE);
+	s = ~((s << 1) | (s >> 31));
+	RAM32_W(RAM_RNG_STATE, s);
+	ctx->d[1] = s;
+	ctx->d[0] = (7u * (s & 0xFFFF)) >> 16;
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 3, 16, true));
+	if (ctx->d[0] & 0x8000)
+		set_w(&ctx->d[0], 0);
+	if (cmpw(ctx, RAM16(SHAGGY_FACING_W), 2) == 0)
+		RAM16(SHAGGY_FACING_W) = 0;
+	set_w(&ctx->d[1], RAM16(SHAGGY_FACING_W));
+	if (cmpw(ctx, ctx->d[1], 3) == 0)
+		ctx->d[1] = 2;
+	set_w(&ctx->d[1], lslw(ctx, ctx->d[1], 2));
+	set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], ctx->d[1], 16));
+	set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 36, 16));
+	RAM16(RAM_ACTOR_ANIM) = (uint16_t)ctx->d[0];
+	cc_logic16(ctx, ctx->d[0]);
+	bit_set(ctx, RAM_ACTOR_START, 0);
+}
+HLE_FUNC(0x0020DA, talk_gesture_fn, 150) { talk_gesture(ctx); }
+
+/* movem.l Dfirst-A6 to / from a C array (the stack copy is not needed: these are popped
+ * inside the same range) */
+static void regs_save(const hle_ctx *ctx, int first, uint32_t *v)
+{
+	for (int r = first; r < 8; r++)
+		*v++ = ctx->d[r];
+	for (int r = 0; r < 7; r++)
+		*v++ = ctx->a[r];
+}
+static void regs_load(hle_ctx *ctx, int first, const uint32_t *v)
+{
+	for (int r = first; r < 8; r++)
+		ctx->d[r] = *v++;
+	for (int r = 0; r < 7; r++)
+		ctx->a[r] = *v++;
+}
+
+/* the measured cost of the original (difftest average) includes the nested font reload
+ * and status line: charge what is left after the nested calls (porting.md, #31) */
+static void charge_total(hle_ctx *ctx, int total)
+{
+	int left = total - hle_nested_cycles();
+	ctx->cycles = left > 0 ? left : 0;
+}
+
+/* 1: the choice as Shaggy's line -> exit at `jsr text_wait` with D0-D3 pushed */
+HLE_RANGE(0x001E7A, talk_choice_say, 0, HLE_EXIT_SP(0x001ECE, -8))
+{
+	for (int r = 3; r >= 0; r--)
+		push16(ctx, (uint16_t)ctx->d[r]);                  /* movem.w d0-d3,-(sp) */
+	bit_set(ctx, RAM_TALK_USED, ctx->d[3]);
+	set_w(&ctx->d[3], lslw(ctx, ctx->d[3], 2));
+	ctx->a[0] = bus_r32(RAM_TALK_TEXT + (int16_t)ctx->d[3]);
+	talk_bar_blank(ctx);
+	uint32_t save[13];                                     /* movem.l d2-a6 */
+	regs_save(ctx, 2, save);
+	ctx->d[0] = 6;
+	ctx->d[1] = 1;
+	set_w(&ctx->d[2], RAM16(RAM_FONT_BASE) & 0x9FFF);
+	cc_logic16(ctx, ctx->d[2]);
+	RAM16(RAM_FONT_BASE) = (uint16_t)ctx->d[2];
+	hle_call68k(ctx, FONT_RECOLOUR);                       /* Shaggy's colour */
+	regs_load(ctx, 2, save);
+	ctx->d[0] = 0;
+	ctx->d[1] = 0;
+	cc_logic32(ctx, 0);
+	hle_call68k(ctx, TEXT_LINE_CLEAR);                     /* the line, A0 = choice text */
+	regs_load(ctx, 2, save);
+	talk_gesture(ctx);
+	bit_set(ctx, RAM_VERB_STATE_B, 4);
+	charge_total(ctx, 1363000);
+	hle_jump(ctx, 0x001ECE);
+}
+
+/* 2: Shaggy stands, the reply -> exit at `jsr text_show` with D2-D4/A0 pushed (the
+ * D0-D3 of step 1 popped: net -8) */
+HLE_RANGE(0x001ED4, talk_choice_reply, 0, HLE_EXIT_SP(0x001FBC, -8))
+{
+	bit_clr(ctx, RAM_VERB_STATE_B, 4);
+	set_w(&ctx->d[0], RAM16(SHAGGY_FACING_W));
+	set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 4, 16));      /* stand pose */
+	RAM16(RAM_ACTOR_ANIM) = (uint16_t)ctx->d[0];
+	cc_logic16(ctx, ctx->d[0]);
+	bit_set(ctx, RAM_ACTOR_START, 0);
+	for (int r = 0; r < 4; r++)                            /* movem.w (sp)+,d0-d3 (sign-extends) */
+		ctx->d[r] = (uint32_t)(int32_t)(int16_t)pop16(ctx);
+	push32(ctx, ctx->a[0]);                                /* movem.l d2-d4/a0,-(sp) */
+	push32(ctx, ctx->d[4]);
+	push32(ctx, ctx->d[3]);
+	push32(ctx, ctx->d[2]);
+	set_w(&ctx->d[0], ctx->d[3]);
+	set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], ctx->d[0], 16));   /* word index */
+	set_w(&ctx->d[3], lslw(ctx, ctx->d[3], 2));                 /* long index */
+	ctx->a[0] = RAM_TALK_REPLY;
+	ctx->a[1] = RAM_TALK_LEN;
+	uint16_t pose = RAM16(RAM_TALK_POSE + (int16_t)ctx->d[0]);
+	RAM16(RAM_TALK_REPLY_POSE) = pose;
+	set_w(&ctx->d[0], RAM16(RAM_TALK_LEN + (int16_t)ctx->d[0]));
+	cc_logic16(ctx, ctx->d[0]);
+	ctx->a[5] = RAM32(RAM_TALK_BODY + (int16_t)ctx->d[3]);       /* the choice's body */
+	ctx->a[6] = ctx->a[5] + (int16_t)ctx->d[0];
+	RAM32_W(RAM_SCRIPT_CB, 0x002406);                            /* script_run_frame */
+	cc_logic32(ctx, 0x002406);
+	ctx->a[0] = RAM32(RAM_TALK_REPLY + (int16_t)ctx->d[3]);      /* the reply text */
+	uint32_t save[15];                                            /* movem.l d0-a6 */
+	regs_save(ctx, 0, save);
+	RAM8(RAM_TEXT_BUF) = 0;
+	cc_logic8(ctx, 0);
+	ctx->a[0] = RAM_TEXT_BUF;
+	hle_call68k(ctx, TEXT_LINE_CLEAR);                           /* clear Shaggy's line */
+	/* the partner's font colour */
+	set_b(&ctx->d[0], RAM8(RAM_TALK_COLOUR));
+	set_w(&ctx->d[1], ctx->d[0]);
+	set_w(&ctx->d[0], ctx->d[0] & 0x0F);
+	set_w(&ctx->d[1], ctx->d[1] & 0x30);
+	set_w(&ctx->d[1], lslw(ctx, ctx->d[1], 5));
+	set_w(&ctx->d[1], lslw(ctx, ctx->d[1], 4));
+	set_w(&ctx->d[2], RAM16(RAM_FONT_BASE) | (uint16_t)ctx->d[1]);
+	cc_logic16(ctx, ctx->d[2]);
+	RAM16(RAM_FONT_BASE) = (uint16_t)ctx->d[2];
+	ctx->d[1] = 1;
+	hle_call68k(ctx, FONT_RECOLOUR);
+	/* the partner (object under the pointer, if it is an actor) takes the choice's pose */
+	ctx->a[0] = RAM_OBJECTS;
+	set_w(&ctx->d[0], RAM16(RAM_TARGET_OBJ));
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 3, 16, true));
+	if (!(ctx->d[0] & 0x8000)) {
+		ctx->d[0] = (ctx->d[0] & 0xFFFF) * OBJ_SIZE;
+		uint8_t slot = RAM8(RAM_OBJECTS + (int16_t)ctx->d[0] + OBJ_ACTOR);
+		set_b(&ctx->d[0], slot);
+		cc_logic8(ctx, slot);
+		if (!(slot & 0x80)) {
+			set_w(&ctx->d[0], (uint16_t)(int16_t)(int8_t)slot);   /* ext.w */
+			set_w(&ctx->d[1], ctx->d[0]);
+			set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 2, 16));
+			set_w(&ctx->d[1], cc_add(ctx, ctx->d[1], ctx->d[1], 16));
+			uint16_t p = RAM16(RAM_TALK_REPLY_POSE);
+			cc_logic16(ctx, p);
+			if (!(p & 0x8000)) {
+				ctx->a[0] = 0xFF048C;                            /* actors 2-5 animation */
+				RAM16(0xFF048C + (int16_t)ctx->d[1]) = p;
+				ctx->a[0] = 0xFF061C;
+				RAM16(0xFF061C + (int16_t)ctx->d[1]) = 0xFFFF;
+				cc_logic16(ctx, 0xFFFF);
+				bit_set(ctx, RAM_ACTOR_START, ctx->d[0]);
+			}
+		}
+	}
+	regs_load(ctx, 0, save);
+	charge_total(ctx, 1303000);
+	hle_jump(ctx, 0x001FBC);
+}
+
+/* 3: clear the line, run the body -> exit at `bsr script_run_frame` with A5 pushed */
+HLE_RANGE(0x001FC2, talk_choice_body, 800, HLE_EXIT_SP(0x001FE0, -4))
+{
+	RAM8(RAM_TEXT_BUF) = 0;
+	ctx->a[0] = RAM_TEXT_BUF;
+	hle_call68k(ctx, TEXT_LINE_CLEAR);
+	RAM8(RAM_SCRIPT_FLAGS) = 0;
+	push32(ctx, ctx->a[5]);
+	cc_logic32(ctx, ctx->a[5]);                            /* move.l a5,-(sp) sets N Z */
+	hle_jump(ctx, 0x001FE0);
+}
+
+/* 4: after the body: next level, back one level, or leave the TALK */
+#define TALK_LEAVE_EXITS(N) HLE_EXIT_SP(0x00207E, 20 + 10 * (N))
+HLE_RANGE(0x001FE4, talk_choice_after, 8900, HLE_EXIT_SP(0x001CC4, 10), HLE_EXIT_SP(0x001CC4, 30),
+          TALK_LEAVE_EXITS(0), TALK_LEAVE_EXITS(1), TALK_LEAVE_EXITS(2), TALK_LEAVE_EXITS(3),
+          TALK_LEAVE_EXITS(4), TALK_LEAVE_EXITS(5), TALK_LEAVE_EXITS(6), TALK_LEAVE_EXITS(7),
+          TALK_LEAVE_EXITS(8), TALK_LEAVE_EXITS(9), TALK_LEAVE_EXITS(10), TALK_LEAVE_EXITS(11))
+{
+	ctx->a[5] = pop32(ctx);
+	ctx->d[2] = pop32(ctx);                                /* movem.l (sp)+,d2-d4/a0 */
+	ctx->d[3] = pop32(ctx);
+	ctx->d[4] = pop32(ctx);
+	ctx->a[0] = pop32(ctx);
+	if (bit_test(ctx, RAM_SCRIPT_FLAGS, 0)) {              /* the level is done */
+		uint16_t lv = (uint16_t)cc_sub(ctx, RAM16(RAM_TALK_DEPTH), 1, 16, true);
+		RAM16(RAM_TALK_DEPTH) = lv;
+		if (!(lv & 0x8000)) {                              /* back to the parent level */
+			uint32_t a6 = pop32(ctx), a5 = pop32(ctx);
+			RAM32_W(RAM_TALK_A6, a6);
+			RAM32_W(RAM_TALK_A5, a5);
+			uint16_t used = pop16(ctx);
+			RAM16(RAM_TALK_USED) = used;
+			cc_logic16(ctx, used);
+			hle_jump(ctx, 0x001CC4);
+			return;
+		}
+	} else if (bit_test(ctx, RAM_SCRIPT_FLAGS2, 2)) {     /* talk_end: leave all levels */
+		bit_clr(ctx, RAM_SCRIPT_FLAGS2, 2);
+		set_w(&ctx->d[0], RAM16(RAM_TALK_DEPTH));
+		set_w(&ctx->d[1], ctx->d[0]);
+		set_w(&ctx->d[0], lslw(ctx, ctx->d[0], 3));
+		set_w(&ctx->d[1], cc_add(ctx, ctx->d[1], ctx->d[1], 16));
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], ctx->d[1], 16));
+		ctx->a[7] += (int16_t)ctx->d[0];                  /* drop 10 bytes per level */
+	} else {                                               /* the body collected a deeper level */
+		RAM16(RAM_TALK_DEPTH) = (uint16_t)cc_add(ctx, RAM16(RAM_TALK_DEPTH), 1, 16);
+		push16(ctx, RAM16(RAM_TALK_USED));
+		push32(ctx, RAM32(RAM_TALK_A5));
+		push32(ctx, RAM32(RAM_TALK_A6));
+		RAM32_W(RAM_TALK_A5, ctx->a[5]);
+		RAM32_W(RAM_TALK_A6, ctx->a[6]);
+		RAM16(RAM_TALK_USED) = 0;
+		cc_logic16(ctx, 0);
+		hle_jump(ctx, 0x001CC4);
+		return;
+	}
+	/* leave: blank the bar and slide it back in */
+	RAM16(RAM_POINTER_HIDE) = 0xFFFF;
+	talk_bar_blank(ctx);
+	RAM8(RAM_BAR_SLIDE) = 0x10;
+	cc_logic8(ctx, 0x10);
+	hle_jump(ctx, 0x00207E);
+}
+
+/* 5: one actor frame per step until the bar is in, then restore it -> `bsr wait_vblank` */
+HLE_RANGE(0x002084, talk_leave, 26, 0x00207E, 0x0020C4)
+{
+	uint8_t slide = RAM8(RAM_BAR_SLIDE);
+	cc_logic8(ctx, slide);
+	if (!(slide & 0x80)) {
+		hle_jump(ctx, 0x00207E);
+		return;
+	}
+	set_w(&ctx->d[0], ctx->d[4]);
+	ctx->a[0] = 0xFF2C00;                                  /* the bar rows saved by talk_menu_save */
+	ctx->d[2] = 5;
+	set_w(&ctx->d[1], 32);
+	do {
+		hle_call68k(ctx, 0x0099F6);                        /* vdp_dma_vram */
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 0x80, 16));
+		set_w(&ctx->d[2], ctx->d[2] - 1);
+	} while ((uint16_t)ctx->d[2] != 0xFFFF);
+	set_w(&ctx->d[0], 0x0F);
+	ctx->d[1] = 1;
+	set_w(&ctx->d[2], RAM16(RAM_FONT_BASE) & 0x9FFF);
+	cc_logic16(ctx, ctx->d[2]);
+	hle_call68k(ctx, FONT_RECOLOUR);                       /* back to the normal font */
+	bit_clr(ctx, RAM_VERB_STATE_B, 2);
+	ctx->cycles = 400;                                     /* + the nested DMA and font reload */
+	hle_jump(ctx, 0x0020C4);
 }
