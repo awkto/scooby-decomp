@@ -425,18 +425,21 @@ def check_traces(rom, paths):
                     continue
                 parts = line.split()
                 pc, addr = int(parts[2], 16), int(parts[3], 16)
-                if pc not in DISPATCH_PCS:
-                    continue
+                if pc not in DISPATCH_PCS or addr < 0x200:
+                    continue    # < $200: interrupt vector fetch taken at the dispatch pc
                 if addr in starts:
                     seen[addr] = seen.get(addr, 0) + 1
                 else:
                     bad[addr] = bad.get(addr, 0) + 1
-    ops = {}
+    ops, execs = {}, {}
     for a in seen:
         ops[starts[a][0]] = ops.get(starts[a][0], 0) + 1
+        execs[starts[a][0]] = execs.get(starts[a][0], 0) + seen[a]
     print('dispatched script ops: %d distinct addresses, %d executions; %d NOT op starts'
           % (len(seen), sum(seen.values()), len(bad)))
-    print('opcodes seen: ' + ' '.join('%02X(%s)x%d' % (o, OPS[o], ops[o]) for o in sorted(ops)))
+    print('opcodes seen (distinct ops / executions):')
+    for o in sorted(ops):
+        print('  %02X %-14s %5d %8d' % (o, OPS[o], ops[o], execs[o]))
     for a in sorted(bad):
         print('  MISMATCH: dispatch at $%06X (%d times) is not an op start' % (a, bad[a]))
     return 1 if bad else 0
