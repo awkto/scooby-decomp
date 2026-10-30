@@ -1,0 +1,14 @@
+# Walk through the Lobby's top door by clicking it (port/tools/mousetest.sh), from the
+# Lobby state (camera 160,0).  The door is object record 43, walk-on rectangle cells
+# 32,4 3x2 = world 256..279 x 32..47 = screen 96..119 x 48..63.  Its default verb is
+# Look, but Shaggy can step into it, so the click walks into it and the game's walk-on
+# trigger changes the room to the Hallway (room 9).
+mouse 128 100
+run 10
+click L 108 56
+run 20
+peek moving FF0AB7 1
+run 600
+peek room FF06AC
+peek mystery FF06AA
+shot exit_end

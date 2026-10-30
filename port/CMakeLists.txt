@@ -18,12 +18,14 @@ include(cmake/gpgx.cmake)
 # ---- emulator wrapper + HLE layer + decompiled game code (shared by all programs) ----
 # OBJECT library so that HLE_FUNC registrations (constructors) are never dropped by the linker.
 file(GLOB GAME_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/game/*.c")
+file(GLOB MOUSE_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse/*.c")
 add_library(scooby_common OBJECT
   src/emu.c src/sha1.c src/script.c src/capture.c
   hle/hle.c hle/sandbox.c hle/gx.c
-  ${GAME_SOURCES})
+  ${GAME_SOURCES} ${MOUSE_SOURCES})
 target_include_directories(scooby_common PUBLIC
-  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/hle")
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/hle"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/game" "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse")
 target_link_libraries(scooby_common PUBLIC gpgx_core)
 target_compile_options(scooby_common PRIVATE -Wall -Wextra -Wno-unused-parameter
   -fno-strict-aliasing)
@@ -50,3 +52,7 @@ endif()
 add_executable(difftest tools/difftest.c)
 target_link_libraries(difftest PRIVATE scooby_common)
 target_compile_options(difftest PRIVATE -Wall -Wextra -Wno-unused-parameter)
+
+# ---- mouse mapping unit test ----
+add_executable(mousemap_test tools/mousemap_test.c)
+target_link_libraries(mousemap_test PRIVATE scooby_common)

@@ -1,0 +1,23 @@
+# Verb bar <-> inventory, and keyboard taking over (port/tools/mousetest.sh), from the
+# Lobby state.  The "C" arrow icon (screen 208..231 x 176..207) slides the bar to the
+# inventory ($FF09DC bit 4), the left arrow (x < 48) slides it back.
+mouse 128 100
+run 10
+click L 220 190
+run 30
+peek inv1 FF09DC 1
+wheel -1
+run 10
+peek page FF06EC
+click L 20 190
+run 30
+peek inv2 FF09DC 1
+# the pad takes over: a direction closes the hover pointer, then walks
+mouse 128 100
+run 10
+peek ptr FF09DC 1
+peek x0 FF04DC
+press R 60
+run 4
+peek kptr FF09DC 1
+peek x1 FF04DC

@@ -6,6 +6,10 @@
  *       Tab (hold) fast forward, F11 or Alt+Enter fullscreen, F12 screenshot, Esc quit.
  * Gamepad (SDL GameController): D-pad / left stick, X/Y = A, A = B, B/RB = C, Start,
  *       Back = pause.
+ * Mouse (docs/mouse.md; --no-mouse disables it): left click = walk there / use the
+ *       selected (or default) verb on an object / pick a verb or item on the bar,
+ *       right click = Look at an object (or leave pointer mode), middle = Start,
+ *       wheel = inventory page.
  * Run with --help for the command line (headless --script / --frames / --screenshot,
  * entry-state --capture, --hle selection). */
 #include <SDL.h>
@@ -19,6 +23,7 @@
 #include "capture.h"
 #include "emu.h"
 #include "hle.h"
+#include "mouse.h"
 #include "overlay.h"
 #include "script.h"
 
@@ -29,7 +34,7 @@ typedef struct {
 	int cap_n, cap_every, cap_skip;
 	long frames;            /* -1: unlimited */
 	int scale;
-	bool fullscreen, vsync, mute, no_throttle, overlay, list_hle, realtime_script;
+	bool fullscreen, vsync, mute, no_throttle, overlay, list_hle, realtime_script, no_mouse;
 } args_t;
 
 static void usage(const char *argv0)
@@ -53,6 +58,7 @@ static void usage(const char *argv0)
 	       "  --capture ADDR N        save the first N entry states of the 68k function at ADDR\n"
 	       "  --capture-dir DIR       (default runs/states/<ADDR>)  --capture-every K  --capture-skip K\n"
 	       "  --no-throttle           run as fast as possible\n"
+	       "  --no-mouse              ignore the mouse (keyboard/gamepad only)\n"
 	       "Headless: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy %s --script s.txt --screenshot out.ppm\n",
 	       argv0, argv0);
 }
@@ -186,6 +192,24 @@ static bool window_shot(video_t *v, const char *path)
 	return f != NULL;
 }
 
+/* mouse position (window coordinates) -> game pixel, through the letterboxed integer
+ * scaling of video_present.  Window coordinates are converted to renderer output pixels
+ * first (they differ on HiDPI displays). */
+static void mouse_from_window(video_t *v, int x, int y)
+{
+	int ww, wh, ow, oh, gx, gy;
+	if (!v->win || !v->ren)
+		return;
+	SDL_GetWindowSize(v->win, &ww, &wh);
+	if (SDL_GetRendererOutputSize(v->ren, &ow, &oh) || ww <= 0 || wh <= 0)
+		return;
+	int tw = v->tw ? v->tw : 256, th = v->th ? v->th : 224;
+	if (mouse_map_window(x * ow / ww, y * oh / wh, ow, oh, tw, th, &gx, &gy))
+		mouse_move(gx, gy);
+	else
+		mouse_leave();
+}
+
 /* ------------------------------------------------------------------ main */
 int main(int argc, char **argv)
 {
@@ -214,6 +238,7 @@ int main(int argc, char **argv)
 		else if (!strcmp(s, "--outdir")) a.outdir = NEXT();
 		else if (!strcmp(s, "--savedir")) a.savedir = NEXT();
 		else if (!strcmp(s, "--no-throttle")) a.no_throttle = true;
+		else if (!strcmp(s, "--no-mouse")) a.no_mouse = true;
 		else if (!strcmp(s, "--capture")) {
 			const char *ad = NEXT();
 			a.cap_addr = (uint32_t)strtoul(ad + (ad[0] == '$'), NULL, 16);
@@ -270,6 +295,9 @@ int main(int argc, char **argv)
 	static video_t v;
 	if (!video_init(&v, a.scale, a.fullscreen, a.vsync))
 		fprintf(stderr, "video unavailable (%s), running without a window\n", SDL_GetError());
+	mouse_set_enabled(!a.no_mouse);
+	if (!a.no_mouse && v.win)
+		SDL_ShowCursor(SDL_DISABLE);       /* the host cursor is drawn into the game image */
 
 	SDL_AudioDeviceID adev = 0;
 	int rate = (int)(emu_sample_rate() + 0.5);
@@ -368,6 +396,27 @@ int main(int argc, char **argv)
 					ff = false;
 				g_keys &= ~key_to_pad(e.key.keysym.sym);
 				break;
+			case SDL_MOUSEMOTION: {
+				int mx, my;
+				SDL_GetMouseState(&mx, &my);   /* window coordinates (events are rescaled) */
+				mouse_from_window(&v, mx, my);
+				break;
+			}
+			case SDL_MOUSEBUTTONDOWN: {
+				int mx, my;
+				SDL_GetMouseState(&mx, &my);
+				mouse_from_window(&v, mx, my);
+				mouse_click(e.button.button == SDL_BUTTON_RIGHT ? MOUSE_RIGHT :
+				            e.button.button == SDL_BUTTON_MIDDLE ? MOUSE_MIDDLE : MOUSE_LEFT);
+				break;
+			}
+			case SDL_MOUSEWHEEL:
+				mouse_wheel(e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -e.wheel.y : e.wheel.y);
+				break;
+			case SDL_WINDOWEVENT:
+				if (e.window.event == SDL_WINDOWEVENT_LEAVE)
+					mouse_leave();
+				break;
 			case SDL_CONTROLLERDEVICEADDED:
 				SDL_GameControllerOpen(e.cdevice.which);
 				break;
@@ -395,7 +444,7 @@ int main(int argc, char **argv)
 		if (scr) {
 			unsigned pad;
 			if (script_step(scr, &pad)) {
-				emu_set_pad(0, pad);
+				emu_set_pad(0, mouse_frame(pad));
 				scripted = true;
 			} else {
 				if (script_errors(scr))
@@ -409,7 +458,8 @@ int main(int argc, char **argv)
 		if (!scripted) {
 			if (batch && frames_after_script >= a.frames && a.frames >= 0)
 				break;
-			emu_set_pad(0, live_pad());
+			/* the mouse state machine advances only on frames that are emulated */
+			emu_set_pad(0, (!paused || step) ? mouse_frame(live_pad()) : live_pad());
 		}
 		if (scripted || !paused || step) {
 			emu_run_frame();
@@ -445,16 +495,18 @@ int main(int argc, char **argv)
 			if (overlay) {
 				char t[256];
 				uint32_t sx = emu_ram32(0xFF04DC) >> 16, sy = emu_ram32(0xFF04F4) >> 16;
-				snprintf(t, sizeof t, "F %ld  %.1f FPS%s%s\nHLE %lu/F  SLOT %d\nSHAGGY %u,%u\nPAD %02X  AQ %u MS",
+				snprintf(t, sizeof t, "F %ld  %.1f FPS%s%s\nHLE %lu/F  SLOT %d\nSHAGGY %u,%u\nPAD %02X  AQ %u MS\nMOUSE %s",
 				         emu_frame_count(), fps_show, paused ? "  PAUSED" : "", ff ? "  FF" : "",
 				         hle_calls_this_frame(), slot, sx, sy, emu_ram8(0xFF09E0),
-				         adev ? (unsigned)(SDL_GetQueuedAudioSize(adev) * 1000 / (rate * 4)) : 0);
+				         adev ? (unsigned)(SDL_GetQueuedAudioSize(adev) * 1000 / (rate * 4)) : 0,
+				         mouse_enabled() ? mouse_status() : "OFF");
 				overlay_text(v.buf, (int)w, (int)h, 2, 2, 0xFFE0, t);
 			}
 			if (msg_timer > 0) {
 				overlay_text(v.buf, (int)w, (int)h, 2, (int)h - 8, 0xFFFF, msg);
 				msg_timer--;
 			}
+			mouse_draw(v.buf, (int)w, (int)h);
 			video_present(&v, v.buf, (int)w, (int)h);
 		}
 
