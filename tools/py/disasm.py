@@ -73,7 +73,7 @@ def trace(rom, md, entries, quiet=()):
     return insns, labels
 
 
-CODE_REGIONS = [(0x200, 0x11000), (0x1F6D7A, 0x1F6F66)]
+CODE_REGIONS = [(0x200, 0x11000), (0x1F6D7A, 0x1F7082)]
 
 
 def try_block(rom, md, start, end, dataread):
