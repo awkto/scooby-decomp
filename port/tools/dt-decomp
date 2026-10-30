@@ -1,0 +1,22 @@
+#!/bin/sh
+# Difftest the decompressors (src/game/decomp.c, issue #14) on the captured entry states PLUS a
+# variant for every LZSS / RLE stream in the ROM (all room tiles/planes/zone maps of both
+# mysteries, title and logo screens, ...; long streams, odd output addresses, a ring overlapping
+# the output, RLE with and without the $FF09ED bit 3 side effect).
+#   port/tools/dt-decomp [lzss_decompress|rle_decompress]
+root=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$root"
+[ -f build/port/CMakeCache.txt ] || cmake -S port -B build/port -DCMAKE_BUILD_TYPE=Release >/dev/null
+cmake --build build/port -j"$(nproc)" --target difftest >/dev/null
+PY=.venv/bin/python
+[ -x $PY ] || PY=/opt/venv/bin/python
+rc=0
+if [ -z "$1" ] || [ "$1" = lzss_decompress ]; then
+	pokes=$($PY -I tools/py/decomp_streams.py lzss | tr '\n' ' ')
+	eval build/port/difftest check lzss_decompress --max 2 --keep-going $pokes || rc=1
+fi
+if [ -z "$1" ] || [ "$1" = rle_decompress ]; then
+	pokes=$($PY -I tools/py/decomp_streams.py rle | tr '\n' ' ')
+	eval build/port/difftest check rle_decompress --max 8 --keep-going $pokes || rc=1
+fi
+exit $rc

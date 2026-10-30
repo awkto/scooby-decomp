@@ -83,6 +83,16 @@ void gx_vdp_untimed_end(void)
 }
 
 unsigned gx_vdp_line_base(void) { return mcycles_vdp; }
+int gx_vdp_vcounter(void) { return v_counter; }
+void gx_vdp_set_vcounter(int v) { v_counter = v; }
+/* nested 68k inside C (#33): the raster advances with the CPU, V counter included */
+void gx_vdp_follow_cpu_lines(void)
+{
+	while (m68k.cycles >= (int)(mcycles_vdp + MCYCLES_PER_LINE)) {
+		mcycles_vdp += MCYCLES_PER_LINE;
+		v_counter = (v_counter + 1) % lines_per_frame;
+	}
+}
 void gx_vdp_set_line_base(unsigned v) { mcycles_vdp = v; }
 
 /* sandbox: let the VDP line base follow the CPU (the frame loop normally does this) */

@@ -200,18 +200,39 @@ static void ctx_store(const hle_ctx *c)
 		m68k_hle_set_sr(c->sr);
 }
 
-static int g_nested_cycles;    /* nested 68k cycles of the current C function (rewound) */
 static long g_stall_debt;      /* cycles still to burn at STALL_PC */
-static int g_nest;
-static int g_nest_c0;
+static int g_nest;             /* depth of nested 68k execution */
+static bool g_top;             /* a top-level C function is running */
+/* "session": the nested 68k time of the current top-level C function. The clock, raster
+ * line base and V counter keep advancing from one nested call to the next (so code after
+ * the 2nd call sees the time the 1st took, as in the original, #33) and are rewound when
+ * the C function returns; the time becomes part of its charge (#31). */
+static bool g_sess;
+static int g_sess_c0, g_sess_vc;
+static unsigned g_sess_line_base;
 
-int hle_nested_cycles(void) { return g_nested_cycles; }
+int hle_nested_cycles(void) { return g_sess ? (gx_m68k_cycles() - g_sess_c0) / 7 : 0; }
+
+static int sess_end(void)
+{
+	if (!g_sess)
+		return 0;
+	int n = (gx_m68k_cycles() - g_sess_c0) / 7;
+	gx_m68k_set_cycles(g_sess_c0);
+	gx_vdp_fifo_clamp();
+	gx_vdp_set_line_base(g_sess_line_base);
+	gx_vdp_set_vcounter(g_sess_vc);
+	gx_m68k_resync_irq();
+	g_sess = false;
+	return n > 0 ? n : 0;
+}
 
 static int run_def(const hle_def *def, entry *e)
 {
 	hle_ctx c;
-	int saved_nested = g_nested_cycles;
-	g_nested_cycles = 0;
+	bool top = g_nest == 0 && !g_top;
+	if (top)
+		g_top = true;
 	ctx_load(&c);
 	bool unmasked = ((c.sr >> 8) & 7) < 6;
 	c.def = def;
@@ -234,8 +255,12 @@ static int run_def(const hle_def *def, entry *e)
 		c.pc = bus_r32(c.a[7]);   /* rts */
 		c.a[7] += 4;
 	}
-	long total = (c.cycles > 0 ? c.cycles : 0) + (long)g_nested_cycles;
-	g_nested_cycles = saved_nested;
+	long nested = 0;
+	if (top) {
+		nested = sess_end();
+		g_top = false;
+	}
+	long total = (c.cycles > 0 ? c.cycles : 0) + nested;
 	if (unmasked && total > STALL_SLICE && !hle_post_access && g_nest == 0 && !g_stall_debt) {
 		/* Long function entered with VBlank unmasked: the original would have been
 		 * interrupted along the way. Spend the cost in slices at STALL_PC, a trap that
@@ -251,7 +276,7 @@ static int run_def(const hle_def *def, entry *e)
 	return (int)total;
 }
 
-void hle_state_reset(void) { g_stall_debt = 0; }
+void hle_state_reset(void) { g_stall_debt = 0; g_sess = false; g_top = false; g_nest = 0; }
 
 /* STALL_PC: burn the next slice of g_stall_debt; then rts to the continuation */
 static int stall(void)
@@ -315,46 +340,43 @@ void hle_install(void)
  *    VDP data-port write computes its FIFO slot from (CPU cycles - line base) and reads
  *    past GPGX's fifo_timing[] when that exceeds ~2 lines, which stalls the CPU by
  *    millions of cycles: the next ~15 VBlanks were lost (vblank_main skipped, input lag).
- *    So the line base follows the CPU during nested execution (as in the sandbox) and is
- *    restored afterwards for the frame loop's own bookkeeping.
+ *    So the line base - and the V counter (#33) - follow the CPU during nested execution
+ *    and are restored when the C function returns (frame loop bookkeeping).
  *  - DMA (#31): a VDP DMA started by nested code is advanced by the frame loop, line by
  *    line, which can't run until C returns: the nested code's DMA-busy poll spun or the
  *    transfer stalled the CPU clock for seconds, and room_load's plane uploads never
  *    reached VRAM (Lobby drawn without its background). Nested DMA completes at once, as
  *    in the sandbox; the CPU is halted during a 68k->VDP DMA anyway.
- *  - The CPU clock (#31): it is rewound to where the nested call started and the nested
- *    time is added to the C function's charge (run_def), so it is subject to the same cap
- *    and a later Z80 bus request doesn't catch the Z80/YM2612 up by many frames at once. */
-static unsigned g_line_base;
-
+ *  - The CPU clock (#31): time keeps running across the nested calls of one C function
+ *    (an HV read after a nested call sees the time it took, as in the original: #33) and
+ *    is rewound when the C function returns; the nested time is added to its charge
+ *    (run_def), so a later Z80 bus request doesn't catch the Z80/YM2612 up by frames. */
 static void nest_begin(void)
 {
-	if (g_nest++ == 0) {
-		g_line_base = gx_vdp_line_base();
-		g_nest_c0 = gx_m68k_cycles();
+	if (g_nest++ == 0 && !hle_post_access && !g_sess) {   /* the sandbox manages time itself */
+		g_sess = true;
+		g_sess_c0 = gx_m68k_cycles();
+		g_sess_line_base = gx_vdp_line_base();
+		g_sess_vc = gx_vdp_vcounter();
 	}
 	gx_m68k_clear_irq();
-	gx_vdp_follow_cpu();
+	if (g_sess)
+		gx_vdp_follow_cpu_lines();
 }
 
 static void nest_step_done(void)
 {
 	gx_m68k_clear_irq();
-	gx_vdp_follow_cpu();
+	if (g_sess)
+		gx_vdp_follow_cpu_lines();
 	if (gx_dma_length())
 		gx_flush_dma();
 }
 
 static void nest_end(void)
 {
-	if (--g_nest == 0 && !hle_post_access) {  /* the sandbox (difftest) manages all this itself */
-		/* the nested time becomes part of the C function's charge (run_def, #31) */
-		g_nested_cycles += (gx_m68k_cycles() - g_nest_c0) / 7;
-		gx_m68k_set_cycles(g_nest_c0);
-		gx_vdp_fifo_clamp();
-		gx_vdp_set_line_base(g_line_base);
-		gx_m68k_resync_irq();
-	}
+	if (--g_nest == 0 && !g_top)    /* nested call made outside a C function (tools) */
+		sess_end();
 }
 
 static void call68k(hle_ctx *c, uint32_t addr, bool orig)

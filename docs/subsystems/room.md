@@ -3,8 +3,8 @@
 Code: `port/src/game/room.c`. Data formats: `docs/formats.md` ("Rooms"). Dump: `tools/py/gfx.py roomdump`.
 Test driver: `port/tools/dt-room` (captured states plus synthetic room variants, see "Testing").
 
-The LZSS / RLE decompressors belong to issue #14. `room.c` calls the LZSS routine `$0097AA` with
-`hle_call68k` and does not port it. The VDP write helpers come from `vdp.c`.
+The LZSS / RLE decompressors are C too (`decomp.c`, `docs/subsystems/decomp.md`); `room.c` calls
+`lzss_decompress` directly. The VDP write helpers come from `vdp.c`.
 
 ## Functions
 
@@ -23,7 +23,7 @@ The LZSS / RLE decompressors belong to issue #14. `room.c` calls the LZSS routin
 
 Callers of the loader (not ported, other subsystems): `$002138` `room_enter`, `$002196` `room_change`,
 `$00219A` `room_fade_in`, `$00221A` / `$002278` (run the load / arrival script), script opcodes
-`$11`/`$18`. Callees that stay in 68k: `$0097AA` LZSS, `$005D1C` / `$005CB6` (inventory icon and verb bar VRAM
+`$11`/`$18`. Callees that stay in 68k: `$005D1C` / `$005CB6` (inventory icon and verb bar VRAM
 areas), `$0047AC` (verb bar text), `$00FC3A`/`$00FD5E`/`$00FE74`/`$00FF68` (scroll column helpers), `$0099F6`
 (VRAM DMA), `$0013BA` (mystery intro), `$009776` (sound stop).
 

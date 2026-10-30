@@ -56,15 +56,9 @@ enum {
 #define FLAGS_09DE        0xFF09DE  /* byte: room/scene mode flags (bit2, bit3, bit5, bit6, bit7 used here) */
 #define GAME_STATE        0xFF2A00
 
-/* Heavy nested 68k code (LZSS): the HLE layer rewinds the CPU clock after every nested call
- * and adds the nested time to the function's charge (hle.c, #31), so a later Z80 bus request
- * no longer catches the Z80/YM2612 up by frames at once (the YM buffer overflow found by the
- * mouse soak test). Charges below are "original total - hle_nested_cycles()". */
-static void nested68k(hle_ctx *ctx, uint32_t addr)
-{
-	hle_call68k(ctx, addr);
-}
-
+/* Charges below are "original total - hle_nested_cycles()": the layer adds the time of nested
+ * 68k calls itself (hle.c, #31). LZSS is C now, so nothing is nested for it and the measured
+ * room_load totals (which include the LZSS time) are charged whole. */
 /* total 68k cost of the original, minus what the nested calls already accounted for */
 static int charge_total(int original_total)
 {
@@ -78,7 +72,11 @@ static void lzss(hle_ctx *ctx, uint32_t stream, uint32_t out)
 	ctx->a[0] = stream;
 	ctx->a[1] = LZSS_RING;
 	ctx->a[2] = out;
-	nested68k(ctx, 0x0097AA);
+	/* C now (decomp.c). The measured room_load totals already contain the LZSS time, so the
+	 * cost lzss_decompress would add is dropped (nothing is nested any more). */
+	int keep = ctx->cycles;
+	lzss_decompress(ctx);
+	ctx->cycles = keep;
 }
 
 /* VRAM helpers (register-free wrappers around the vdp.c routines). */
