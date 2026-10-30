@@ -27,6 +27,8 @@ def serve(d):
         hle = be.split(":", 1)[1] if ":" in be else "all"
         env = dict(os.environ, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         cmd = ["build/port/scoobyport", "--hle", hle, "--script", ctl, "--outdir", d, "--frames", "0"]
+        if os.environ.get("SCOOBY_PORT_OPTS"):     # e.g. widescreen=16:9 (port/tools/storytest.sh, STORYTEST_WS)
+            cmd += ["--options", os.environ["SCOOBY_PORT_OPTS"]]
         h = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=open(os.path.join(d, "harness.err"), "w"))
     else:
         h = subprocess.Popen(["build/harness", "ext/gpgx/genesis_plus_gx_libretro.so", "rom/baserom.md", ctl, d],

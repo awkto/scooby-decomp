@@ -12,7 +12,7 @@ Everything that changes emulator state (run / press / poke) is appended to `g.ro
 finished route is a flat harness script that replays from power-on (savestates are not bit-exact
 over long runs, so routes never contain load/save).  Observation (ram dumps, shots, peeks) is not recorded.
 """
-import os, struct, subprocess, sys, time
+import hashlib, os, struct, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(__file__))
 import session
 
@@ -1192,7 +1192,9 @@ def checkpoint(self, label):
     raw = st.hex()
     for i in VOLATILE_STORY_BYTES:
         st[i] = 0
-    self.cp.append(dict(label=label, room=self.w(0xFF06AC, r), inv=self.inventory(r), story=st.hex(), raw=raw))
+    # ramsha: the whole of work RAM (storytest STORYTEST_WS: widescreen must not change the game's state)
+    self.cp.append(dict(label=label, room=self.w(0xFF06AC, r), inv=self.inventory(r), story=st.hex(), raw=raw,
+                        ramsha=hashlib.sha1(r).hexdigest()))
 
 
 def _wrap(name):

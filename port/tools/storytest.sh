@@ -8,6 +8,10 @@
 # PASS per route = checkpoints identical for --hle none and --hle all.  The end room is also compared with the
 # harness-verified header of tools/scripts/story/ROUTE.txt (reported as a note).
 # On a none/all mismatch, STORYTEST_BISECT=1 bisects with --hle all,-FUNC and names the replacement whose removal restores agreement.
+# STORYTEST_WS=1 (#26, widescreen is presentation only): instead of none vs all, run each route twice with
+# --hle ${STORYTEST_HLE:-all} and the native renderer, --options widescreen=4:3 and widescreen=16:9 (STORYTEST_WS_OPT),
+# and require identical checkpoints INCLUDING a sha1 of the whole work RAM, and an identical per-frame hash of
+# RAM + VRAM + CRAM + VSRAM + VDP registers + Z80 RAM at every frame (SCOOBY_STATE_LOG).
 set -u
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
@@ -17,9 +21,10 @@ out=runs/storytest; rm -rf "$out"; mkdir -p "$out/gen"
 export STORY_PRESS_MIN=5 STORY_OUT="$out/gen" SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 fail=0
 
-run_one() { # ROUTE SPEC TAG
+run_one() { # ROUTE SPEC TAG [PORT_OPTIONS]
 	d="$out/$1.$3"
 	mkdir -p "$d"
+	SCOOBY_PORT_OPTS="${4:-}" SCOOBY_STATE_LOG="${4:+$out/$1.$3.state}" \
 	SCOOBY_BACKEND="port:$2" python3 tools/py/session.py serve "$d" >"$d.log" 2>&1 &
 	sp=$!
 	n=0; while [ ! -S "$d/sock" ] && [ $n -lt 100 ]; do sleep 0.2; n=$((n+1)); done
@@ -41,6 +46,39 @@ if len(a) != len(b):
 sys.exit(1 if bad else 0)
 P
 }
+
+cmp_ws() { # full checkpoint dicts (incl. ramsha) and the per-frame state logs
+	python3 - "$1" "$2" <<'P'
+import json, sys
+a, b = json.load(open(sys.argv[1])), json.load(open(sys.argv[2]))
+bad = [(i, x, y) for i, (x, y) in enumerate(zip(a, b)) if x != y]
+for i, x, y in bad[:3]:
+    print("  step", i, x["label"], "\n    4:3:", x, "\n    wide:", y)
+if len(a) != len(b):
+    print("  checkpoint counts differ", len(a), len(b)); bad.append(0)
+sys.exit(1 if bad else 0)
+P
+}
+
+if [ -n "${STORYTEST_WS:-}" ]; then
+	export SCOOBY_RENDERER=native SCOOBY_WS_STATS=1
+	for r in $routes; do
+		run_one "$r" "${STORYTEST_HLE:-all}" ws43 "widescreen=4:3"
+		run_one "$r" "${STORYTEST_HLE:-all}" wide "widescreen=${STORYTEST_WS_OPT:-16:9}"
+		if [ ! -s "$out/$r.ws43.cp.json" ] || [ ! -s "$out/$r.wide.cp.json" ]; then
+			echo "FAIL $r: route did not complete (see $out/$r.*.out)"; fail=1; continue; fi
+		if ! cmp_ws "$out/$r.ws43.cp.json" "$out/$r.wide.cp.json"; then
+			echo "FAIL $r: checkpoints (incl. RAM sha1) differ between 4:3 and widescreen"; fail=1; continue; fi
+		f1=$(wc -l < "$out/$r.ws43.state"); f2=$(wc -l < "$out/$r.wide.state")
+		if ! cmp -s "$out/$r.ws43.state" "$out/$r.wide.state"; then
+			echo "FAIL $r: machine state differs between 4:3 and widescreen at frame" \
+			     "$(cmp "$out/$r.ws43.state" "$out/$r.wide.state" | head -1)"; fail=1; continue; fi
+		n=$(python3 -c "import json;print(len(json.load(open('$out/$r.ws43.cp.json'))))")
+		wide=$(grep -h "^ws: width" "$out/$r.wide/harness.err" | tail -1)
+		echo "PASS $r: 4:3 == widescreen over $n checkpoints (RAM sha1) and $f1 frames (machine state hash); $wide"
+	done
+	exit $fail
+fi
 
 for r in $routes; do
 	run_one "$r" none none; run_one "$r" "${STORYTEST_HLE:-all}" all

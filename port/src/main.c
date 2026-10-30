@@ -4,7 +4,7 @@
  *       F1 debug overlay, F2 toggle all C replacements (HLE), F5 save state, F9 load state,
  *       F6/F7 previous/next state slot, P pause, N or . frame advance (pauses),
  *       Tab (hold) fast forward, F11 or Alt+Enter fullscreen, F12 screenshot, Esc quit,
- *       F3 output filter (nearest / smooth / crt).
+ *       F3 output filter (nearest / smooth / crt), F10 widescreen on/off (#26).
  * Gamepad (SDL GameController): D-pad / left stick, X/Y = A, A = B, B/RB = C, Start,
  *       Back = pause.
  * Mouse (docs/mouse.md; --no-mouse disables it): left click = walk there / use the
@@ -31,9 +31,10 @@ void sndlog_init(void);
 #include "present.h"
 #include "render_emu.h"
 #include "script.h"
+#include "widescreen.h"
 
 typedef struct {
-	const char *rom, *script, *outdir, *screenshot, *window_shot, *savedir, *hle, *renderer;
+	const char *rom, *script, *outdir, *screenshot, *window_shot, *savedir, *hle, *renderer, *widescreen;
 	present_filter filter;
 	const char *cap_dir;
 	uint32_t cap_addr;
@@ -51,6 +52,9 @@ static void usage(const char *argv0)
 	       "  --renderer R            native (default) | gpgx: the C renderer draws the picture and\n"
 	       "                          the verb-bar split is a band, not a raster effect (#25)\n"
 	       "  --filter F              nearest (default, whole-number scale) | smooth | crt\n"
+	       "  --options K=V[,K=V]     widescreen=16:9|21:9|W:H|PIXELS|auto|4:3 (native renderer; default\n"
+	       "                          16:9 when played, 4:3 with --script/--frames/--screenshot; F10\n"
+	       "                          toggles), ws_stats=1 (widescreen counters at exit)\n"
 	       "  --fullscreen            start fullscreen (F11 toggles)\n"
 	       "  --no-vsync              don't sync presentation to the display\n"
 	       "  --mute                  no audio\n"
@@ -149,8 +153,9 @@ typedef struct {
 static bool video_init(video_t *v, int scale, bool fullscreen, bool vsync, present_filter filter)
 {
 	v->filter = filter;
+	int w = ws_width() > 320 ? ws_width() : 320;
 	v->win = SDL_CreateWindow("Scooby-Doo Mystery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-	                          320 * scale, 224 * scale,
+	                          w * scale, 224 * scale,
 	                          SDL_WINDOW_RESIZABLE | (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0));
 	if (!v->win)
 		return false;
@@ -273,7 +278,11 @@ static void mouse_from_window(video_t *v, int x, int y)
 		mouse_leave();
 		return;
 	}
-	mouse_move(px * gw / r[2], py * gh / r[3]);
+	/* frame pixel -> the game's screen pixel (the wide room view and the centred 4:3 bands map
+	 * differently, widescreen.c) */
+	int gx, gy;
+	ws_frame_to_game(px * gw / r[2], py * gh / r[3], &gx, &gy);
+	mouse_move(gx, gy);
 }
 
 /* ------------------------------------------------------------------ main */
@@ -297,6 +306,29 @@ int main(int argc, char **argv)
 		else if (!strcmp(s, "--overlay")) a.overlay = true;
 		else if (!strcmp(s, "--hle")) a.hle = NEXT();
 		else if (!strcmp(s, "--renderer")) a.renderer = NEXT();
+		else if (!strcmp(s, "--options")) {
+			/* K=V,K=V: widescreen=..., ws_stats=1 */
+			char buf[512];
+			snprintf(buf, sizeof buf, "%s", NEXT());
+			for (char *kv = strtok(buf, ","); kv; kv = strtok(NULL, ",")) {
+				char *eq = strchr(kv, '=');
+				const char *val = eq ? eq + 1 : "1";
+				if (eq)
+					*eq = 0;
+				if (!strcmp(kv, "widescreen")) {
+					if (!ws_configure(val)) {
+						fprintf(stderr, "bad widescreen=%s (16:9 | 21:9 | W:H | PIXELS | auto | 4:3)\n", val);
+						return 2;
+					}
+					a.widescreen = "set";
+				} else if (!strcmp(kv, "ws_stats")) {
+					ws_set_stats(atoi(val) != 0);
+				} else {
+					fprintf(stderr, "unknown option %s\n", kv);
+					return 2;
+				}
+			}
+		}
 		else if (!strcmp(s, "--filter")) {
 			if (!present_filter_parse(NEXT(), &a.filter)) {
 				fprintf(stderr, "unknown --filter (nearest | smooth | crt)\n");
@@ -325,6 +357,10 @@ int main(int argc, char **argv)
 	}
 	if (a.scale < 1)
 		a.scale = 1;
+	/* widescreen: 16:9 for a player by default; scripted / batch runs (tests, tools) stay 4:3
+	 * unless they ask (their screenshots and mouse coordinates are the 4:3 screen's) */
+	if (!a.widescreen && !a.script && a.frames < 0 && !a.screenshot && !a.window_shot)
+		ws_configure("16:9");
 
 	const char *rom = emu_find_rom(a.rom, argv[0]);
 	if (!rom) {
@@ -465,6 +501,12 @@ int main(int argc, char **argv)
 						slot = (slot + (k == SDLK_F7 ? 1 : 9)) % 10;
 						snprintf(msg, sizeof msg, "SLOT %d", slot);
 						msg_timer = 90;
+					} else if (k == SDLK_F10) {
+						ws_toggle();
+						snprintf(msg, sizeof msg, "WIDESCREEN %s", ws_enabled() ? "ON" : "OFF");
+						if (ws_enabled() && render_emu_kind() != RENDERER_NATIVE)
+							snprintf(msg, sizeof msg, "WIDESCREEN NEEDS --renderer native");
+						msg_timer = 90;
 					} else if (k == SDLK_F12) {
 						char p[1200];
 						snprintf(p, sizeof p, "%s/shot-%06ld.ppm", a.outdir, emu_frame_count());
@@ -581,6 +623,11 @@ int main(int argc, char **argv)
 		/* video (skip most frames when running unthrottled) */
 		int w, h;
 		bool show = !fast || (total % 30) == 0 || paused;
+		if (v.ren && show) {
+			int ow, oh;
+			if (!SDL_GetRendererOutputSize(v.ren, &ow, &oh))
+				ws_set_window_aspect(ow, oh);    /* widescreen=auto follows the window */
+		}
 		if (v.ren && show && game_frame(&v, &w, &h)) {
 			if (overlay) {
 				char t[256];

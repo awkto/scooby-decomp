@@ -279,6 +279,41 @@ unsigned emu_pad_from_letters(const char *s)
 	return m;
 }
 
+/* SCOOBY_STATE_LOG=FILE: one line per frame, "frame hash" of the emulated machine's memories
+ * (work RAM, VRAM, CRAM, VSRAM, VDP registers, Z80 RAM). Two runs with the same input must
+ * write the same file whatever the host does with the picture (widescreen: port/tools/wstest.sh). */
+static FILE *g_state_log;
+static int g_state_log_init;
+
+static uint64_t fnv1a(uint64_t h, const uint8_t *p, size_t n)
+{
+	for (size_t i = 0; i < n; i++)
+		h = (h ^ p[i]) * 0x100000001B3ull;
+	return h;
+}
+
+static void state_log_frame(void)
+{
+	if (!g_state_log_init) {
+		g_state_log_init = 1;
+		const char *p = getenv("SCOOBY_STATE_LOG");
+		if (p && *p)
+			g_state_log = fopen(p, "w");
+	}
+	if (!g_state_log)
+		return;
+	uint64_t h = 0xCBF29CE484222325ull;
+	h = fnv1a(h, gx_work_ram(), 0x10000);
+	h = fnv1a(h, gx_vram(), 0x10000);
+	h = fnv1a(h, gx_cram(), 0x80);
+	h = fnv1a(h, gx_vsram(), 0x80);
+	h = fnv1a(h, gx_vdp_reg(), 0x20);
+	h = fnv1a(h, gx_zram(), 0x2000);
+	fprintf(g_state_log, "%ld %016llx\n", g_frames, (unsigned long long)h);
+	if (!(g_frames & 255))
+		fflush(g_state_log);
+}
+
 void emu_run_frame(void)
 {
 	g_audio_frames = 0;
@@ -290,6 +325,7 @@ void emu_run_frame(void)
 			memcpy(g_fb_copy + y * g_fb_w, (const uint8_t *)g_fb + y * g_fb_pitch, g_fb_w * 2);
 	}
 	render_emu_frame_end(g_frames);
+	state_log_frame();
 }
 
 long emu_frame_count(void) { return g_frames; }

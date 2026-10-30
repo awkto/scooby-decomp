@@ -10,6 +10,7 @@
 #include "emu.h"
 #include "mousehook.h"
 #include "walkpath.h"
+#include "widescreen.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -111,6 +112,14 @@ static void push_click_step(int button, int x, int y)
 
 static bool busy(void) { return M.pos < M.np; }
 
+/* widescreen (#26): the mouse is in a margin of the wide room view, left or right of what the
+ * 4:3 screen shows. Only floor walks start there: the game's crosshair stays on the 4:3 screen
+ * (mg_pointer_place clamps it), so its hit test cannot see a margin. */
+static bool in_margin(void)
+{
+	return M.my >= MG_ROOM_TOP && M.my < MG_BAR_TOP && (M.mx < 0 || M.mx > 255);
+}
+
 /* ------------------------------------------------------------------ events */
 void mouse_move(int gx, int gy)
 {
@@ -135,6 +144,8 @@ void mouse_move(int gx, int gy)
 	M.mx = gx;
 	M.my = gy;
 	M.inside = true;
+	if (in_margin())
+		M.hover = false;                        /* nothing to hover over in a margin */
 }
 
 void mouse_leave(void) { M.inside = false; }
@@ -197,6 +208,17 @@ void mouse_click(int button)
 		return;
 	}
 	bool on_bar = M.my >= MG_BAR_TOP;
+	if (in_margin()) {
+		/* widescreen margin: a left click walks toward that point of the room (the same
+		 * walk a floor click inside the 4:3 view starts); the right button does nothing */
+		if (button == MOUSE_LEFT) {
+			if (mode == MG_POINTER)
+				plan_walk(M.mx, M.my, -1);
+			else
+				push(OP_WALK, M.mx, M.my, 0, 0);
+		}
+		return;
+	}
 	if (mode == MG_FREE && !on_bar && button == MOUSE_LEFT) {
 		/* pointer closed (Shaggy standing or walking): an object with a verb needs the
 		 * game's pointer flow, anything else is a walk - no need to stop first */
@@ -609,11 +631,14 @@ void mouse_draw_rgba(uint32_t *px, int w, int h)
 	if (!M.enabled || !M.inside)
 		return;
 	/* in pointer mode the game's crosshair is centred on the mouse in the room view */
-	if (mg_mode_get() == MG_POINTER && M.my < MG_BAR_TOP && M.my >= MG_ROOM_TOP && !M.override && M.active)
+	if (mg_mode_get() == MG_POINTER && M.my < MG_BAR_TOP && M.my >= MG_ROOM_TOP && !M.override && M.active &&
+	    !in_margin())
 		return;
+	int fx, fy;                                 /* the frame may be wider than the game's screen */
+	ws_game_to_frame(M.mx, M.my, &fx, &fy);
 	for (int r = 0; r < (int)(sizeof arrow / sizeof arrow[0]); r++)
 		for (int c = 0; arrow[r][c]; c++) {
-			int x = M.mx + c, y = M.my + r;
+			int x = fx + c, y = fy + r;
 			if (x < 0 || y < 0 || x >= w || y >= h || arrow[r][c] == ' ')
 				continue;
 			px[y * w + x] = arrow[r][c] == '#' ? 0xFF000000u : 0xFFFFFFFFu;

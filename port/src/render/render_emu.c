@@ -10,6 +10,7 @@
 #include "emu.h"
 #include "gx.h"
 #include "hle.h"
+#include "widescreen.h"
 
 /* game/frameloop.c: record the verb-bar band at the 68k hblank_verb_bar (SCOOBY_RENDER_SPLIT=model) */
 void frameloop_split_model_check(bool on);
@@ -20,6 +21,15 @@ static render_ctx g_rc;
 static uint32_t g_fb[RENDER_MAX_W * RENDER_MAX_H];
 static render_band g_band = { .line = -1 };
 static int g_out_w = 256, g_out_h = 224;
+
+/* widescreen (#26, widescreen.c): a second frame, drawn alongside the 4:3 one from the same live
+ * state at the same moments. Room lines go through the wide view (their own render_ctx, so the
+ * sprite lists and masking state are the view's), every other line is the 4:3 line, centred. */
+static render_ctx g_rcw;
+static uint32_t g_wfb[RENDER_MAX_W * RENDER_MAX_H];
+static bool g_ws_frame;            /* this frame is being drawn into g_wfb */
+static int g_ws_w;                 /* its width */
+static bool g_ws_line[RENDER_MAX_H];
 
 /* ------------------------------------------------------------------ the live view */
 static render_vdp live_view(void)
@@ -65,13 +75,27 @@ static void on_line(int line)
 	if (line == 0 && g_frame_stats)
 		snapshot();
 	render_vdp v = live_view();
+	if (line == 0) {
+		g_ws_frame = ws_enabled() && g_kind == RENDERER_NATIVE;
+		if (g_ws_frame) {
+			ws_frame_begin(&v);
+			g_ws_w = ws_width() > v.width ? ws_width() : v.width;
+		}
+	}
 	render_line_pixels(&g_rc, &v, &g_band, line);
+	if (g_ws_frame) {
+		g_ws_line[line] = ws_line_wide(&v, &g_band, line);
+		if (g_ws_line[line])
+			render_line_pixels_view(&g_rcw, &v, &g_band, line, ws_view());
+	}
 }
 
 static void on_parse(int line)
 {
 	render_vdp v = live_view();
 	render_parse_sprites(&g_rc, &v, line);
+	if (ws_enabled() && g_kind == RENDERER_NATIVE)
+		render_parse_sprites(&g_rcw, &v, line);
 }
 
 static void on_remap(int line)
@@ -79,7 +103,33 @@ static void on_remap(int line)
 	if (line < 0 || line >= RENDER_MAX_H || line >= gx_viewport_h())
 		return;
 	render_vdp v = live_view();
-	render_line_colors(&g_rc, &v, g_fb + (size_t)line * RENDER_MAX_W);
+	uint32_t *dst = g_fb + (size_t)line * RENDER_MAX_W;
+	render_line_colors(&g_rc, &v, dst);
+	if (g_ws_frame) {
+		uint32_t *w = g_wfb + (size_t)line * RENDER_MAX_W;
+		const uint32_t black = render_rgba(0, 0, 0);
+		if (g_ws_line[line]) {
+			render_line_colors(&g_rcw, &v, w);
+			/* the 4:3 screen inside the view must be the 4:3 line, pixel for pixel (left
+			 * column blanking aside, which the view does not apply) */
+			int x0 = -ws_view()->x0, sw = g_rc.width, skip = (v.reg[0] & 0x20) ? 8 : 0;
+			ws_count_centre(memcmp(w + x0 + skip, dst + skip, (size_t)(sw - skip) * 4) != 0);
+			int l, r;
+			ws_bars(&l, &r);                 /* outside the room */
+			for (int x = 0; x < l; x++)
+				w[x] = black;
+			for (int x = r; x < g_ws_w; x++)
+				w[x] = black;
+		} else {
+			/* a 4:3 line (name band, text box, verb bar, a 4:3 screen): centred, black sides */
+			int sw = g_rc.width, c = (g_ws_w - sw) / 2;
+			for (int x = 0; x < c; x++)
+				w[x] = black;
+			memcpy(w + c, dst, (size_t)sw * 4);
+			for (int x = c + sw; x < g_ws_w; x++)
+				w[x] = black;
+		}
+	}
 }
 
 static void start(void)
@@ -88,6 +138,7 @@ static void start(void)
 		return;
 	render_tables_init();
 	render_ctx_reset(&g_rc);
+	render_ctx_reset(&g_rcw);
 	gx_set_render_hooks(on_line, on_parse, on_remap);
 	g_running = true;
 }
@@ -245,6 +296,7 @@ renderer_kind render_emu_kind(void) { return g_kind; }
 
 void render_emu_init(void)
 {
+	atexit(ws_report);           /* widescreen counters (SCOOBY_WS_STATS=1 / --options ws_stats) */
 	const char *c = getenv("SCOOBY_RENDERCMP");
 	if (c && *c) {
 		g_cmp_every = atoi(c);
@@ -289,6 +341,8 @@ void render_emu_frame_end(long frame)
 		g_out_h = RENDER_MAX_H;
 	if (g_cmp_every)
 		compare(frame);
+	if (g_ws_frame)
+		ws_frame_end();
 	g_band.line = -1;
 }
 
@@ -296,7 +350,11 @@ const uint32_t *render_emu_frame(int *w, int *h)
 {
 	if (!g_running)
 		return NULL;
-	*w = g_out_w;
 	*h = g_out_h;
+	if (g_ws_frame) {
+		*w = g_ws_w;
+		return g_wfb;
+	}
+	*w = g_out_w;
 	return g_fb;
 }

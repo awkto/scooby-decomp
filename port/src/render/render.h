@@ -28,8 +28,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define RENDER_MAX_W 320
+#define RENDER_MAX_W 640          /* widest output: 4:3 is 256/320, widescreen views up to 640 (#26) */
 #define RENDER_MAX_H 240
+#define RENDER_VIEW_CELLS (RENDER_MAX_W / 8 + 8)   /* cells of a render_view row, with margins */
 
 /* The VDP state the renderer reads. All pointers are read-only. */
 typedef struct render_vdp {
@@ -63,8 +64,26 @@ typedef struct render_scene {
 	int height;              /* active lines: 224 (V28) or 240 (V30) */
 } render_scene;
 
+/* A wider view of the room band (#26 widescreen, docs/subsystems/widescreen.md). Presentation
+ * only: the renderer draws more of the planes and opens the sprites' x range; nothing it reads
+ * is changed. A line drawn with a view shows the 4:3 screen's x in [x0, x0 + width). */
+typedef struct render_view {
+	int x0;                  /* 4:3 screen x drawn at output pixel 0 (<= 0 for a wider view) */
+	int width;               /* output pixels (<= RENDER_MAX_W) */
+	/* name table words for the cells the game has not drawn. The view's cells are counted from
+	 * its left edge: output pixel x is in view cell (cell_ofs + x) >> 3, stored at index
+	 * cell + 2 (the partly shown columns start left of pixel 0). names[p] (p 0 = plane A,
+	 * 1 = plane B) is indexed [plane row][view cell + 2]; it replaces VRAM in the view cells
+	 * whose from_vram[p][cell + 2] is 0. NULL: VRAM everywhere. Only for 64 x 32-cell planes. */
+	int cell_ofs;
+	const uint16_t (*names[2])[RENDER_VIEW_CELLS];
+	const uint8_t *from_vram[2];
+	long sprites_wrapped;    /* out: sprite pieces hidden because their x word is not 0..511 */
+	long sprites_lost;       /* out: ... of which the true position was inside the view */
+} render_view;
+
 /* Renderer state that lives across lines and frames, like the VDP's internal state. */
-typedef struct render_sprite { uint16_t y, x, attr, size; } render_sprite;
+typedef struct render_sprite { uint16_t y, x, attr, size, xraw; } render_sprite;
 typedef struct render_ctx {
 	render_sprite obj[2][20];   /* sprites of the next line / this line (parity of the line) */
 	uint8_t obj_count[2];
@@ -79,6 +98,13 @@ void render_ctx_reset(render_ctx *rc);
 
 /* Draw line `line` into rc->idx. `band` may be NULL (or band->line < 0). */
 void render_line_pixels(render_ctx *rc, const render_vdp *v, const render_band *band, int line);
+/* The same line drawn through a wider view (rc->width = view->width). Uses the sprite list
+ * parsed into rc like render_line_pixels; give the view its own render_ctx. */
+void render_line_pixels_view(render_ctx *rc, const render_vdp *v, const render_band *band, int line,
+                             render_view *view);
+/* true if the window plane covers the whole of `line` (register 18 with the band applied), or
+ * the window splits it horizontally (register 17): such a line is not a room line */
+bool render_line_is_window(const render_vdp *v, const render_band *band, int line);
 /* Parse the sprite table for line+1 (line = -1: for line 0). */
 void render_parse_sprites(render_ctx *rc, const render_vdp *v, int line);
 /* Convert rc->idx (rc->width pixels) to RGBA (bytes R, G, B, A in memory). */

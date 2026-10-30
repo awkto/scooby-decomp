@@ -1,0 +1,27 @@
+# Widescreen margin clicks (port/tools/wstest.sh, after port/scripts/lobby.txt, run with
+# --options widescreen=16:9). Lobby: Shaggy at (288,64), camera 160, so the 398-px view starts at
+# world x 89 (camera - 71) and the 4:3 screen shows world x 160..415. Frame coordinates (fclick):
+#   (20,150) is in the left margin -> world (109,134), the floor left of the 4:3 screen
+#   (380,130) is in the right margin -> world (469,114)
+# A click there walks toward that world point, as a floor click inside the 4:3 screen would.
+run 30
+shot m0
+peek camx1 FF06CA
+fclick L 20 150
+run 20
+peek moving1 FF0AB7 1
+run 700
+peek sx1 FF04DC
+peek sy1 FF04F4
+peek camx2 FF06CA
+shot m1
+fmouse 380 130
+run 10
+fclick L 380 130
+run 20
+peek moving2 FF0AB7 1
+run 700
+peek sx2 FF04DC
+peek sy2 FF04F4
+peek camx3 FF06CA
+shot m2

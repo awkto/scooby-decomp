@@ -4,6 +4,7 @@
 #include "gx.h"
 #include "hle.h"
 #include "mouse.h"
+#include "widescreen.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,6 +144,20 @@ bool script_step(script *s, unsigned *pad)
 			int x, y;
 			if (sscanf(line, "%*s %*s %d %d", &x, &y) == 2)
 				mouse_move(x, y);
+			int b = a1[0] == 'R' || a1[0] == 'r' ? MOUSE_RIGHT : a1[0] == 'M' || a1[0] == 'm' ? MOUSE_MIDDLE : MOUSE_LEFT;
+			mouse_click(b);
+		} else if (!strcmp(cmd, "fmouse") && sscanf(line, "%*s %511s %511s", a1, a2) == 2) {
+			/* fmouse X Y / fclick L|R|M X Y: like mouse / click, in pixels of the shown frame
+			 * (the wide frame with widescreen, mapped like the window's mouse, widescreen.c) */
+			int gx, gy;
+			ws_frame_to_game(atoi(a1), atoi(a2), &gx, &gy);
+			mouse_move(gx, gy);
+		} else if (!strcmp(cmd, "fclick") && sscanf(line, "%*s %511s", a1) == 1) {
+			int x, y, gx, gy;
+			if (sscanf(line, "%*s %*s %d %d", &x, &y) == 2) {
+				ws_frame_to_game(x, y, &gx, &gy);
+				mouse_move(gx, gy);
+			}
 			int b = a1[0] == 'R' || a1[0] == 'r' ? MOUSE_RIGHT : a1[0] == 'M' || a1[0] == 'm' ? MOUSE_MIDDLE : MOUSE_LEFT;
 			mouse_click(b);
 		} else if (!strcmp(cmd, "wheel") && sscanf(line, "%*s %ld", &n) == 1) {
