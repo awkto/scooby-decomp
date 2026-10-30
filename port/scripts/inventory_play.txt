@@ -1,0 +1,128 @@
+# After lobby.txt: pointer mode (B), slide the verb bar to the inventory (C), move the
+# pointer onto the bar and sweep it left/right clicking B on every slot (scroll arrows are
+# slots 5 and 10). Used for difftest captures of the main-loop inventory code (#12).
+press B 3
+run 30
+press C 3
+run 40
+press D 120
+run 10
+press L 120
+run 5
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press R 6
+press B 3
+run 20
+press L 100
+press C 3
+run 40
+press B 3
+run 20
+press L 12
+press B 3
+run 20
+press L 12
+press B 3
+run 20
+press L 12
+press B 3
+run 20
+press L 12
+press B 3
+run 20
+press L 12
+press B 3
+run 20
+press L 12
+press B 3
+run 20
+press L 12
+press B 3
+run 20
+press U 60
+run 20

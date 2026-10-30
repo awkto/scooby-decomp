@@ -20,6 +20,7 @@ uint32_t *gx_m68k_dar(void);     /* D0-D7, A0-A7 (A7 = active SP) */
 uint32_t gx_m68k_pc(void);
 void gx_m68k_set_pc(uint32_t pc);
 uint32_t gx_m68k_other_sp(void); /* inactive stack pointer */
+void gx_m68k_set_usp(uint32_t v);      /* move An,usp */
 int gx_m68k_cycles(void);        /* master clocks (7 per 68k cycle) */
 void gx_m68k_clear_irq(void);
 

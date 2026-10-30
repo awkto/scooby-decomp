@@ -74,6 +74,7 @@ FF06E4 2    ram_ui_tile_base_b
 FF06E6 2    ram_ui_tile_base_c
 FF06E8 2    ram_ui_tile_base_d
 FF06EC 2    ram_inv_page  # inventory scroll row (list index of the first slot = 4*this)
+
 FF06F8 128  ram_pal_cur      # current CRAM image (64 words), DMA'd to CRAM each frame
 FF0778 128  ram_pal_target   # palette fade target
 FF07B8 64   ram_room_pal23   # room palettes 2-3 copy (32 words)
@@ -83,13 +84,13 @@ FF07FC 2    ram_vscroll
 FF0800 2    ram_hscroll_verb # verb-bar plane hscroll, set by hblank_verb_bar
 FF0802 2    ram_ui_tile_base_e
 FF0878 4    ram_script_cb    # script callback (script_run / script_run_frame)
-FF08AE 2    ram_08ae
+FF08AE 2    ram_frame_countdown # decremented every VBlank while >= 0; title/menu pacing (#12)
 FF08B8 2    ram_ui_tile_base_f
 FF08BC 2    ram_08bc
 
 # ---- input / flags
-FF09DC 1    ram_vblank_flags # bit0 = wait_vblank handshake (set by main loop, cleared by VBlank); other bits = deferred VBlank jobs
-FF09DE 2    ram_09de
+FF09DC 1    ram_vblank_flags # bit0 wait_vblank handshake, 2 object timers, 3 pointer mode, 4 inventory bar, 5 HUD DMA request, 6 VBlank frame work, 7 script running (#12, game.h VBF_*)
+FF09DE 2    ram_verb_state   # bit0 waiting for 2nd target, bit1 redraw status line, bit7 no ambient events; +1 = previous pass (#12)
 FF09E0 1    ram_pad1         # pad 1 raw, ACTIVE LOW: bit7 S, 6 A, 5 C, 4 B, 3 R, 2 L, 1 D, 0 U (0 = pressed)
 FF09E1 1    ram_pad2         # pad 2 raw, same layout
 FF09E2 2    ram_pad_last     # copy of ram_pad1/2 taken at the start of the previous pad_read
@@ -173,3 +174,18 @@ FF06E2 2    ram_pointer_dy    # pointer Y speed
 FF06EA 2    ram_ui_slot       # bar/inventory cell under the pointer (verb view 1-10, inventory 0-10; 5 and 10 = page arrows)
 FF0A1E 2    ram_inv_list      # carried object indices (words), terminated by a negative word
 FF0ACB 1    ram_bar_slide     # verb-bar slide counter ($10 .. 1 while sliding, $FF idle)
+# ---- #12 main loop / interrupts / frame timing (docs/subsystems/mainloop.md, port/src/game/game.h + mainloop.c)
+FF000E 2    ram_title_strip_timer # frames until the title strip scrolls again (title_anim)
+FF001C 1    ram_title_scroll_dir  # 0 = ram_title_scroll counting up, 1 = down
+FF06B4 2    ram_hover_prev       # ram_hover_target of the previous main-loop pass
+FF06B8 2    ram_cur_verb_prev
+FF06BC 2    ram_second_prev
+FF06D6 4    ram_room_name_prev   # ram_room_name_ptr of the previous pass
+FF06F4 2    ram_obj_last         # number of object records - 1
+FF0810 2    ram_title_piece_vram # title lightning: plane offset of the flashed piece
+FF0812 2    ram_title_piece_w    # its width in words
+FF0814 2    ram_title_piece_h    # its height - 1
+FF08B2 2    ram_hblank_hv        # HV counter when hblank_verb_bar switched to the verb bar
+FF09DD 1    ram_vblank_flags_prev # ram_vblank_flags of the previous main-loop pass
+FF0AC7 1    ram_vbl_countdown_b  # decremented every VBlank while >= 0
+FF0AD1 1    ram_verb_bar_window  # low byte of VDP reg $12 written by hblank_verb_bar

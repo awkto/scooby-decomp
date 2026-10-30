@@ -11,7 +11,8 @@
  * calls made on that route.
  *
  * For every captured entry state: load it, run the original 68k code until it returns
- * (other HLE functions disabled unless --with-hle), snapshot; reload, run the C function,
+ * (an HLE_RANGE: until it reaches one of its declared exits at the entry SP; other HLE
+ * functions disabled unless --with-hle), snapshot; reload, run the C function,
  * snapshot; compare registers, SR, work RAM (minus dead stack), VRAM/CRAM/VSRAM, VDP
  * registers + port latches, Z80 RAM / bus state, I/O registers and the ordered list of
  * writes to the VDP ports, Z80 area and I/O area. The first failing state is reported in
@@ -169,7 +170,10 @@ static char **list_states(const char *dir, int *count)
 
 static void passthrough_fn(hle_ctx *ctx)
 {
-	hle_call68k_orig(ctx, ctx->pc);
+	if (ctx->def && ctx->def->exits)
+		hle_run68k_until(ctx, ctx->def->exits);   /* HLE_RANGE */
+	else
+		hle_call68k_orig(ctx, ctx->pc);
 }
 
 static bool *g_saved_enable;
@@ -251,7 +255,7 @@ static int do_run(const hle_def *target, const opts *o)
 		sb_record_begin();
 		unsigned long insns, cycles;
 		uint32_t min_sp;
-		bool ok = sb_run_68k(50000000ul, &insns, &cycles, &min_sp);
+		bool ok = sb_run_68k_until(target->exits, 50000000ul, &insns, &cycles, &min_sp);
 		sb_snapshot(ref);
 		sb_end();
 		if (!ok) {
@@ -271,7 +275,19 @@ static int do_run(const hle_def *target, const opts *o)
 		cap_apply(&cs);
 		sb_begin();
 		sb_record_begin();
+		uint32_t ret0 = bus_r32(gx_m68k_dar()[15]) & 0xFFFFFF;
 		hle_invoke(cdef);
+		/* a C function that ends in a tail jump into 68k code (hle_jump) is followed
+		 * until it returns like the original (ranges stop at their exit at once) */
+		if (!sb_run_68k_to(sp0, ret0, target->exits, 50000000ul)) {
+			printf("%s: C side did not return (pc $%06X)\n", files[i], gx_m68k_pc());
+			err_n++;
+			sb_snapshot(got);
+			sb_end();
+			sb_snap_free(got);
+			cap_free(&cs);
+			continue;
+		}
 		sb_snapshot(got);
 		sb_end();
 
@@ -301,7 +317,7 @@ static int do_run(const hle_def *target, const opts *o)
 		} else {
 			pass_n++;
 			if (o->verbose)
-				printf("ok   %s (frame %u, %lu insns, %lu cycles, %d port writes)\n", files[i], cs.frame, insns, cycles, ref->nev);
+				printf("ok   %s (frame %u, %lu insns, %lu cycles, %d port writes, exit $%06X)\n", files[i], cs.frame, insns, cycles, ref->nev, ref->pc);
 		}
 		sb_snap_free(ref);
 		sb_snap_free(got);

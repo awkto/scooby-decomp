@@ -1,0 +1,635 @@
+# Pointer-mode / verb-bar / inventory play after lobby.txt (tools/py/pointerscript.py, seed 1212)
+press UL 23
+run 19
+press D 77
+press L 26
+press B 3
+run 23
+press A 3
+run 8
+press B 3
+run 27
+press D 82
+press L 56
+press B 3
+run 31
+press D 53
+press R 5
+press B 3
+run 24
+press B 3
+run 10
+press B 3
+run 12
+press D 55
+press L 34
+press B 3
+run 26
+press U 6
+run 20
+press D 64
+press L 16
+press B 3
+run 33
+press A 3
+run 32
+press UR 14
+run 10
+press B 3
+run 29
+press B 3
+run 14
+press D 66
+press L 27
+press B 3
+run 11
+press U 47
+run 8
+press D 82
+press R 48
+press B 3
+run 10
+press DR 43
+run 20
+press U 14
+run 18
+press B 3
+run 14
+press A 3
+run 9
+press A 3
+run 32
+press C 3
+run 28
+press UR 29
+run 7
+press C 3
+run 35
+press D 81
+press L 59
+press B 3
+run 25
+press U 15
+run 18
+press D 35
+press L 43
+press B 3
+run 25
+press B 3
+run 18
+press L 7
+run 3
+press D 63
+press R 49
+press B 3
+run 39
+press B 3
+run 19
+press A 3
+run 33
+press B 3
+run 26
+press U 28
+run 4
+press C 3
+run 37
+press B 3
+run 25
+press L 21
+run 19
+press A 3
+run 12
+press DL 29
+run 20
+press L 16
+run 18
+press A 3
+run 34
+press B 3
+run 29
+press C 3
+run 34
+press DR 14
+run 14
+press L 20
+run 19
+press B 3
+run 23
+press DR 42
+run 6
+press D 80
+press L 56
+press B 3
+run 25
+press UR 30
+run 18
+press L 32
+run 10
+press B 3
+run 16
+press B 3
+run 32
+press D 29
+run 10
+press A 3
+run 30
+press D 68
+press R 30
+press B 3
+run 31
+press D 85
+press L 26
+press B 3
+run 26
+press A 3
+run 37
+press B 3
+run 37
+press D 15
+run 3
+press B 3
+run 28
+press U 34
+run 11
+press DR 14
+run 17
+press C 3
+run 15
+press D 43
+run 18
+press A 3
+run 17
+press C 3
+run 44
+press D 31
+press R 37
+press B 3
+run 13
+press L 24
+run 17
+press A 3
+run 28
+press B 3
+run 19
+press C 3
+run 60
+press D 85
+press L 13
+press B 3
+run 32
+press B 3
+run 39
+press A 3
+run 35
+press DR 10
+run 4
+press D 33
+press R 32
+press B 3
+run 31
+press D 88
+press R 14
+press B 3
+run 31
+press C 3
+run 42
+press L 14
+run 3
+press B 3
+run 30
+press B 3
+run 14
+press D 43
+press L 9
+press B 3
+run 32
+press D 16
+run 9
+press B 3
+run 40
+press DR 29
+run 15
+press B 3
+run 19
+press DL 40
+run 7
+press U 28
+run 20
+press D 39
+run 14
+press B 3
+run 24
+press D 62
+press R 26
+press B 3
+run 12
+press L 36
+run 10
+press L 25
+run 20
+press DL 50
+run 19
+press B 3
+run 39
+press UR 47
+run 19
+press UR 32
+run 13
+press A 3
+run 8
+press UR 43
+run 14
+press D 79
+press R 28
+press B 3
+run 26
+press B 3
+run 23
+press UR 27
+run 13
+press U 14
+run 16
+press D 76
+press L 19
+press B 3
+run 21
+press D 32
+press R 58
+press B 3
+run 13
+press B 3
+run 39
+press DL 14
+run 16
+press DL 5
+run 20
+press C 3
+run 59
+press C 3
+run 42
+press DR 15
+run 9
+press A 3
+run 37
+press D 58
+press L 17
+press B 3
+run 31
+press D 52
+press L 36
+press B 3
+run 11
+press UR 43
+run 14
+press B 3
+run 16
+press D 8
+run 7
+press D 63
+press R 17
+press B 3
+run 28
+press U 9
+run 3
+press DR 5
+run 10
+press U 47
+run 13
+press R 42
+run 5
+press D 54
+press R 37
+press B 3
+run 36
+press D 64
+press L 9
+press B 3
+run 30
+press UR 20
+run 4
+press B 3
+run 5
+press D 67
+press R 6
+press B 3
+run 25
+press D 62
+press R 45
+press B 3
+run 25
+press B 3
+run 31
+press D 11
+run 10
+press A 3
+run 37
+press D 46
+run 8
+press D 59
+press L 51
+press B 3
+run 39
+press A 3
+run 18
+press A 3
+run 27
+press B 3
+run 24
+press U 16
+run 4
+press D 74
+press R 58
+press B 3
+run 37
+press B 3
+run 9
+press L 12
+run 14
+press B 3
+run 18
+press B 3
+run 15
+press R 41
+run 1
+press UR 17
+run 9
+press DL 22
+run 2
+press D 6
+run 13
+press DL 48
+run 3
+press UL 6
+run 1
+press D 56
+press R 36
+press B 3
+run 34
+press B 3
+run 20
+press A 3
+run 6
+press A 3
+run 5
+press UR 34
+run 18
+press C 3
+run 37
+press B 3
+run 13
+press D 80
+press R 25
+press B 3
+run 21
+press DR 25
+run 20
+press D 42
+press L 17
+press B 3
+run 20
+press D 54
+press L 43
+press B 3
+run 30
+press B 3
+run 31
+press B 3
+run 36
+press B 3
+run 6
+press D 77
+press R 44
+press B 3
+run 39
+press R 30
+run 5
+press B 3
+run 35
+press DL 44
+run 14
+press DR 36
+run 10
+press UL 15
+run 20
+press UL 33
+run 2
+press B 3
+run 22
+press U 28
+run 18
+press A 3
+run 37
+press D 81
+press R 50
+press B 3
+run 36
+press B 3
+run 37
+press D 45
+press L 55
+press B 3
+run 19
+press D 67
+press L 45
+press B 3
+run 20
+press D 39
+press R 53
+press B 3
+run 11
+press B 3
+run 33
+press L 42
+run 2
+press C 3
+run 33
+press A 3
+run 40
+press R 16
+run 20
+press B 3
+run 8
+press R 21
+run 8
+press B 3
+run 27
+press UR 32
+run 16
+press A 3
+run 29
+press A 3
+run 9
+press D 35
+press L 47
+press B 3
+run 11
+press UR 35
+run 17
+press U 19
+run 8
+press D 60
+press L 26
+press B 3
+run 37
+press A 3
+run 23
+press DL 34
+run 19
+press C 3
+run 58
+press B 3
+run 38
+press B 3
+run 7
+press B 3
+run 39
+press D 78
+press L 55
+press B 3
+run 40
+press D 64
+press L 38
+press B 3
+run 16
+press DL 44
+run 11
+press D 61
+press R 54
+press B 3
+run 18
+press D 37
+press L 15
+press B 3
+run 11
+press DL 35
+run 7
+press B 3
+run 20
+press UL 30
+run 7
+press B 3
+run 35
+press U 29
+run 4
+press D 89
+press L 34
+press B 3
+run 27
+press B 3
+run 17
+press R 25
+run 1
+press DL 16
+run 4
+press B 3
+run 19
+press A 3
+run 40
+press A 3
+run 35
+press B 3
+run 17
+press DR 39
+run 2
+press R 17
+run 20
+press D 35
+press R 17
+press B 3
+run 34
+press A 3
+run 36
+press B 3
+run 26
+press A 3
+run 18
+press A 3
+run 11
+press UL 49
+run 16
+press UR 10
+run 3
+press U 32
+run 11
+press R 10
+run 13
+press D 33
+press R 16
+press B 3
+run 16
+press B 3
+run 32
+press A 3
+run 5
+press U 46
+run 4
+press A 3
+run 8
+press D 32
+press L 60
+press B 3
+run 12
+press A 3
+run 26
+press B 3
+run 39
+press R 37
+run 2
+press DR 26
+run 16
+press DL 19
+run 19
+press C 3
+run 26
+press B 3
+run 28
+press D 84
+press L 60
+press B 3
+run 29
+press D 35
+press R 57
+press B 3
+run 10
+press B 3
+run 27
+press U 9
+run 7
+press D 86
+press R 29
+press B 3
+run 14
+press C 3
+run 22
+press L 17
+run 8
+press L 11
+run 4
+press D 36
+run 6
+press D 54
+press L 43
+press B 3
+run 31
+press D 48
+press L 46
+press B 3
+run 11
+press C 3
+run 18
+press L 47
+run 10
+press D 44
+press R 27
+press B 3
+run 15
+press DL 18
+run 1
+press D 16
+run 13
+press A 3
+run 18
+press D 53
+press L 36
+press B 3
+run 31

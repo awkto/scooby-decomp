@@ -45,6 +45,10 @@ typedef struct hle_def {
 	hle_fn fn;
 	int cycles;         /* 68k cycles charged per call (approximate original cost) */
 	const char *file;
+	/* HLE_RANGE only: 0-terminated list of addresses where the replaced code range can
+	 * exit (the C function must hle_jump() to one of them, at the entry SP). NULL for an
+	 * ordinary function (exit = rts). */
+	const uint32_t *exits;
 } hle_def;
 
 /* ------------------------------------------------------------------ registration */
@@ -55,7 +59,25 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
 
 #define HLE_FUNC(ADDR, NAME, CYCLES)                                                    \
 	void NAME(hle_ctx *ctx);                                                            \
-	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__ };  \
+	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__, 0 }; \
+	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
+	{ hle_register_def(&hle_def_##NAME); }                                              \
+	void NAME(hle_ctx *ctx)
+
+/* HLE_RANGE(addr, name, cycles, exit1, exit2, ...): replace a code RANGE that is not a
+ * subroutine - a piece of straight-line code inside Reset, one pass of a main loop, the
+ * part of a function between two blocking calls. The C function runs when the CPU reaches
+ * addr and must end with hle_jump(ctx, exitN) with the stack pointer as it was on entry.
+ * difftest runs the original from addr until it first reaches one of the exits with the
+ * entry SP (after at least one instruction), so a loop head may be its own exit.
+ * Typical use: stop right BEFORE a jsr/bsr to a function that waits for VBlank, let the
+ * original 68k instruction make that call, and register the code after it as the next
+ * range (see docs/porting.md, "Waiting for VBlank"). */
+#define HLE_RANGE(ADDR, NAME, CYCLES, ...)                                              \
+	void NAME(hle_ctx *ctx);                                                            \
+	static const uint32_t hle_exits_##NAME[] = { __VA_ARGS__, 0 };                      \
+	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__,   \
+	                                        hle_exits_##NAME };                         \
 	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
 	{ hle_register_def(&hle_def_##NAME); }                                              \
 	void NAME(hle_ctx *ctx)
@@ -86,8 +108,15 @@ int hle_invoke(const hle_def *def);
 void hle_call68k(hle_ctx *ctx, uint32_t addr);
 /* same, but the HLE override at addr itself is bypassed (run the original). */
 void hle_call68k_orig(hle_ctx *ctx, uint32_t addr);
+/* Run the ORIGINAL 68k code from ctx->pc (the HLE override at ctx->pc itself is bypassed,
+ * others apply) until it reaches one of the 0-terminated exits with SP == ctx->a[7]; load
+ * the final registers into ctx and hle_jump to that exit. Used by difftest --passthrough
+ * for HLE_RANGE functions. Interrupts don't fire while it runs. */
+void hle_run68k_until(hle_ctx *ctx, const uint32_t *exits);
 /* resume 68k execution at addr instead of returning (tail jump / bra to shared code) */
 static inline void hle_jump(hle_ctx *ctx, uint32_t addr) { ctx->pc = addr; ctx->jumped = 1; }
+/* move An,usp (the user stack pointer is not part of hle_ctx) */
+void hle_set_usp(uint32_t usp);
 
 /* ------------------------------------------------------------------ memory */
 extern unsigned char work_ram[0x10000];   /* GPGX: 68k work RAM, 16-bit words host-endian */
