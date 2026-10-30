@@ -149,6 +149,26 @@ def flag(byte, bit):
     return 'F%02X.%d' % (byte, bit & 7)
 
 
+def path_text(r, a, n):
+    """scripted path words (docs/subsystems/walking.md 5.4): (x,y) pairs and commands"""
+    out, i = [], 0
+    while i + 2 <= n:
+        v = u16(r, a + i)
+        if v == 0xFFFD and i + 4 <= n:
+            out.append('anim %d' % u16(r, a + i + 2)); i += 4
+        elif v in (0xFFFC, 0xFFFB) and i + 4 <= n:
+            out.append('depth%s %d' % ('' if v == 0xFFFC else '+', s16(r, a + i + 2))); i += 4
+        elif v == 0xFFFE:
+            out.append('end'); i += 2
+        elif v == 0xFFFF:
+            out.append('loop'); i += 2
+        elif i + 4 <= n:
+            out.append('(%d,%d)' % (s16(r, a + i), s16(r, a + i + 2))); i += 4
+        else:
+            out.append('$%04X' % v); i += 2
+    return ' '.join(out)
+
+
 class Dis:
     def __init__(self, w):
         self.w, self.rom = w, w.rom
@@ -317,9 +337,8 @@ class Dis:
                     w.who(w2), s16(r, a + 4), ' wait' if w2 & 0x8000 else ''))
             elif op == 0x21:
                 n = 8 + w2
-                data = r[a + 8:a + 8 + w2]
-                self.out(depth, a, 'path %s delay %d data[%d] %s' % (
-                    w.who(w4), s16(r, a + 6), w2, data.hex()))
+                self.out(depth, a, 'path %s delay %d [%d bytes]: %s' % (
+                    w.who(w4), s16(r, a + 6), w2, path_text(r, a + 8, w2)))
             else:
                 raise AssertionError(op)
             self.starts[a] = (op, n)
