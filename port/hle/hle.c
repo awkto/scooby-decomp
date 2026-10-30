@@ -259,6 +259,45 @@ void hle_install(void)
 }
 
 /* ------------------------------------------------------------------ nested 68k calls */
+/* 68k code run nested inside a C function (hle_call68k, hle_run68k_until) executes
+ * inside ONE time slice of the emulator's frame loop: the loop can't advance the raster
+ * until the C function returns. Two things must not leak out of that (#30):
+ *  - Interrupts. m68k_step_one() doesn't poll them, but any instruction that writes SR
+ *    (move to SR, andi/ori to SR, rte) checks them, so a pending HBlank would be taken
+ *    in the middle of the nested call. The C function takes no emulated time, so the
+ *    interrupt belongs after it: the level is cleared after every nested instruction and
+ *    recomputed from the VDP's pending flags when the outermost nested call returns.
+ *  - The VDP line base. Nested code can run for many lines' worth of CPU cycles. A 68k
+ *    VDP data-port write computes its FIFO slot from (CPU cycles - line base) and reads
+ *    past GPGX's fifo_timing[] when that exceeds ~2 lines, which stalls the CPU by
+ *    millions of cycles: the next ~15 VBlanks were lost (vblank_main skipped, input lag).
+ *    So the line base follows the CPU during nested execution (as in the sandbox) and is
+ *    restored afterwards for the frame loop's own bookkeeping. */
+static int g_nest;
+static unsigned g_line_base;
+
+static void nest_begin(void)
+{
+	if (g_nest++ == 0)
+		g_line_base = gx_vdp_line_base();
+	gx_m68k_clear_irq();
+	gx_vdp_follow_cpu();
+}
+
+static void nest_step_done(void)
+{
+	gx_m68k_clear_irq();
+	gx_vdp_follow_cpu();
+}
+
+static void nest_end(void)
+{
+	if (--g_nest == 0 && !hle_post_access) {  /* the sandbox (difftest) manages both itself */
+		gx_vdp_set_line_base(g_line_base);
+		gx_m68k_resync_irq();
+	}
+}
+
 static void call68k(hle_ctx *c, uint32_t addr, bool orig)
 {
 	/* push the sentinel return address, run until it is popped */
@@ -267,12 +306,15 @@ static void call68k(hle_ctx *c, uint32_t addr, bool orig)
 	bus_w32(c->a[7], SENTINEL_RET);
 	uint32_t sp_done = c->a[7] + 4;
 	c->pc = addr;
+	nest_begin();
 	ctx_store(c);
 	if (orig)
 		m68k_hle_skip_pc = addr;
 	unsigned long n = 0;
 	while (!(gx_m68k_pc() == SENTINEL_RET && gx_m68k_dar()[15] == sp_done)) {
-		if (m68k_step_one() < 0) {
+		int r = m68k_step_one();
+		nest_step_done();
+		if (r < 0) {
 			fprintf(stderr, "hle_call68k($%06X): address error at pc $%06X\n", addr, gx_m68k_pc());
 			abort();
 		}
@@ -284,6 +326,7 @@ static void call68k(hle_ctx *c, uint32_t addr, bool orig)
 		}
 	}
 	m68k_hle_skip_pc = 0xFFFFFFFF;
+	nest_end();
 	ctx_load(c);
 	c->def = save.def;
 	c->pc = save.pc;
@@ -297,6 +340,7 @@ void hle_run68k_until(hle_ctx *c, const uint32_t *exits)
 {
 	hle_ctx save = *c;
 	uint32_t sp = c->a[7], start = c->pc;
+	nest_begin();
 	ctx_store(c);
 	m68k_hle_skip_pc = start;
 	for (unsigned long n = 0;; n++) {
@@ -308,7 +352,9 @@ void hle_run68k_until(hle_ctx *c, const uint32_t *exits)
 			if (hit && gx_m68k_dar()[15] == sp)
 				break;
 		}
-		if (m68k_step_one() < 0) {
+		int r = m68k_step_one();
+		nest_step_done();
+		if (r < 0) {
 			fprintf(stderr, "hle_run68k_until($%06X): address error at pc $%06X\n", start, gx_m68k_pc());
 			abort();
 		}
@@ -320,6 +366,7 @@ void hle_run68k_until(hle_ctx *c, const uint32_t *exits)
 		}
 	}
 	m68k_hle_skip_pc = 0xFFFFFFFF;
+	nest_end();
 	ctx_load(c);
 	c->def = save.def;
 	c->cycles = save.cycles;

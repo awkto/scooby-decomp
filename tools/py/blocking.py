@@ -13,8 +13,10 @@ A spin loop is a label followed by at most 4 instructions that read a RAM variab
 port or the HV counter (no post-increment/pre-decrement walks) and branch back to the
 label. Counting loops (addq/subq/addi/subi on a data register: bit scans, step
 animations) are not spin loops themselves (a wait_vblank inside them is found through the
-call graph). Polls of the VDP status DMA-busy bit (`btst #1` of vdp_ctrl) are not counted: DMA
-completes immediately in the sandbox and stalls the CPU in GPGX. Heuristic: a loop that
+call graph). Polls of the VDP status DMA-busy bit (`btst #1` of vdp_ctrl) are not counted:
+68k->VDP DMA completes immediately in the sandbox and stalls the CPU in GPGX. A VRAM
+fill/copy DMA advances with the raster, though, so it blocks inside C; the one known case
+(game_init, right after boot_hw_init's fill) is listed by hand. Heuristic: a loop that
 waits through a callee that is not in the call graph is missed.
 """
 import os
@@ -88,6 +90,9 @@ def load():
         callees[left.split()[1]] = [c.rstrip("*^") for c in right.split() if c != "-"]
 
     why = {f: "spins at " + ", ".join(lab for lab, _ in v) for f, v in spins.items()}
+    # DMA-busy polls block when a VRAM fill/copy DMA can still be running (those advance
+    # with the raster, unlike 68k->VDP DMA): found the hard way (#30)
+    why["game_init"] = "waits for DMA busy = 0; boot_hw_init's VRAM fill is still running"
     changed = True
     while changed:
         changed = False

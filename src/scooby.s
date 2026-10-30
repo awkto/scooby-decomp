@@ -494,6 +494,7 @@ boot_init:
 	move.l d0,(ram_cur_music).l
 	jsr (sound_play).l
 	jsr (game_init).l
+boot_vdp_init:
 	clr.w d0
 	move.w #0x8000,d1
 	jsr (vdp_clear_vram).l
