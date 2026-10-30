@@ -324,6 +324,8 @@ static const struct {
 	{ 0x00F272, 0x00F8, 0x00 },
 	/* camera_update: d0-d3, a0 scratch and flags dead for its only caller vblank_main (camera.c) */
 	{ 0x00FA78, 0x010F, 0x1F },
+	/* palette_cycle: only caller vblank_main (palcycle.c); everything it touches is scratch */
+	{ 0x00A7CE, 0x033F, 0x1F },
 };
 
 static int do_run(const hle_def *target, const opts *o)
