@@ -169,8 +169,8 @@
 005b5e    52 object_name_ptr  # 17 insns
 005b92    74 inventory_arrows_update  # 23 insns
 005bdc   126 verb_label_redraw  # 36 insns
-005c5a    26 sub_005C5A  # 5 insns
-005c74    26 sub_005C74  # 5 insns
+005c5a    26 inventory_arrow_up_wait  # 5 insns
+005c74    26 inventory_arrow_down_wait  # 5 insns
 005c8e    40 hud_dma  # 10 insns
 005cb6    64 inventory_upload  # 16 insns
 005cf6    38 inventory_refresh  # 7 insns

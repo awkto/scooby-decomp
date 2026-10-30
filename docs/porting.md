@@ -388,6 +388,12 @@ Typical shapes (script_walk.c, walkto.c):
 - A wait loop between push and pop (`loop: bsr actor_animate / btst / beq loop`): the range
   after the call exits to the `bsr` with delta 0 (relative to its own entry, which is
   already below the push) or leaves with the pop.
+- A table pushed before a wait and used for a `jmp` after it (menus.c `menu_open` pushes the action table and the item
+  count, `-6`; `menu_show` pops the count, `+2`; `menu_dispatch` pops the table and `jmp`s through it: one
+  `HLE_EXIT_SP(target, +4)` per table entry, and a missing entry shows up as "original did not return" in difftest).
+- `jsr (a0)` through a table, where some handlers pop their own return address to leave the loop for good
+  (menu_password.c): push the return address in C (`push32`) and exit at the handler with `HLE_EXIT_SP(handler, -4)`,
+  one exit per handler; the handler that pops it (`+4`) then exits to the code it continues with.
 - Pushes that are popped again inside the same range (`movem.l d0-d2/d7,-(sp)` ...
   `movem.l (sp)+,...`) need no delta; keep them as real pushes only when a later exit
   with a negative delta exposes the bytes.

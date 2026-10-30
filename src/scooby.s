@@ -1033,7 +1033,7 @@ loc_001144:
 	beq.w loc_001174
 	subi.w #0x1,(ram_inv_page).l
 	moveq #0x1,d0
-	bsr.w sub_005C5A
+	bsr.w inventory_arrow_up_wait
 	bsr.w inventory_refresh
 loc_001174:
 	bsr.w inventory_arrows_update
@@ -1055,7 +1055,7 @@ loc_00118C:
 	beq.w loc_0011B0
 	addi.w #0x1,(ram_inv_page).l
 	moveq #0x1,d0
-	bsr.w sub_005C74
+	bsr.w inventory_arrow_down_wait
 	bsr.w inventory_refresh
 loc_0011B0:
 	bsr.w inventory_arrows_update
@@ -6033,7 +6033,7 @@ inventory_arrows_update:
 	bne.s loc_005B9E
 	moveq #0x2,d0
 loc_005B9E:
-	bsr.w sub_005C5A
+	bsr.w inventory_arrow_up_wait
 	lea.l (ram_objects).l,a0
 	move.w (ram_obj_last).l,d0
 	moveq #0x0,d1
@@ -6054,7 +6054,7 @@ loc_005BBA:
 loc_005BD4:
 	moveq #0x2,d0
 loc_005BD6:
-	bsr.w sub_005C74
+	bsr.w inventory_arrow_down_wait
 	rts
 verb_label_redraw:
 	tst.w (ram_verb_redraw).l
@@ -6099,15 +6099,15 @@ loc_005C36:
 	movem.w (sp)+,d2-d3
 loc_005C58:
 	rts
-sub_005C5A:
+inventory_arrow_up_wait:
 	tst.b (0xff0ab1).l
-	bpl.w sub_005C5A
+	bpl.w inventory_arrow_up_wait
 	move.b #0x8,(0xff0ab1).l
 	move.w d0,(0xff0804).l
 	rts
-sub_005C74:
+inventory_arrow_down_wait:
 	tst.b (0xff0ab2).l
-	bpl.w sub_005C74
+	bpl.w inventory_arrow_down_wait
 	move.b #0x8,(0xff0ab2).l
 	move.w d0,(0xff0806).l
 	rts

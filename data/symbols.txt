@@ -369,3 +369,7 @@
 # ---- #22 sound API glue (C in port/src/game/sound.c; docs/subsystems/sound.md)
 # C names: sound_cmd_play/stop/pause/unpause/stop_all keep their symbols; $009762 = sound_play_wrapper,
 # $009776 = sound_stop_wrapper, $1F6EA8 = sound_init_wrapper (C API: sound_driver_init), $1F6DDE = z80_reset_driver.
+
+# ---- #17 inventory arrows (port/src/game/verbs.c): spin until the VBlank consumed the last frame, then set it
+005C5A inventory_arrow_up_wait      # d0 = frame of the page-up arrow ($FF0804); spins on $FF0AB1; the range after the spin is inventory_arrow_up_set
+005C74 inventory_arrow_down_wait    # same for the page-down arrow ($FF0806, $FF0AB2)
