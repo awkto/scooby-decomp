@@ -590,6 +590,11 @@ sound, set_hotspot, on_event, freeze, pal_cycle, 9 sub-ops) as functions, the bl
 unfreeze_wait, bar_hide/bar_show) as ranges around their waits, and the drivers
 action_execute, run_object_events, the room scripts and the TALK menu loop as ranges.
 `tools/py/script_dt_all.sh` / `script_dt_pokes.sh` run them all.
+Second pass (files `script_walk.c`, `script_ops.c`, `walkto.c`; `tools/py/script_dt_pass2.sh`): the
+walk ops $0E/$1B/$0F and the walk-to routines $5002-$5B54, face, wait_stop, path, stop_path,
+show_obj, set_icon, test_moving, the TALK menu after the pick, script_run_nested, the rest of
+`say`, and 45 sub-ops, using `HLE_EXIT_SP` for every push/pop that spans a blocking call.
+Handlers no route reaches are tested with synthetic dispatch states (`difftest --entry`).
 
 #14 (decompressors), file `decomp.c`, details in `docs/subsystems/decomp.md`; test driver
 `port/tools/dt-decomp` (captured states plus one variant per LZSS/RLE stream in the ROM):

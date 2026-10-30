@@ -138,7 +138,7 @@ See "Difftest results" for the numbers.
 | 35 / 37 | $00301E / $0030A6 (5 ranges each) | shaggy_pose_45 / 47 | 35 C (synthetic; the sprite-DMA spin stays 68k); 37 written, not registered: occurs nowhere in the data |
 | 38 / 39 | $002FD6 / $002FE0 | skippable off / on | C (38: both intros) |
 
-## Difftest results
+## Difftest results (first pass)
 
 Run with `tools/py/script_dt_all.sh` (on the VM, after merging main). **No failing state.** Per function: the default capture route, then every call (`--every 1`, up to 200) on extra routes where the default gave fewer than 200 (routes without calls omitted). `pokes` = total states replayed with A5 moved to other ops of the same kind (`script_dt_pokes.sh`, up to 25 states x 40 variants per state directory).
 
@@ -213,7 +213,81 @@ Run with `tools/py/script_dt_all.sh` (on the VM, after merging main). **No faili
 | $00B05E | run_object_events_matched | capture 200/200 |  |
 | $00B09A | run_object_events_next | capture 200/200 |  |
 
-Not registered (no states on any route; enable with `-DSCRIPT_UNTESTED`): op $12 `set_hotspot` ($004F50, same code as the tested $2E7E), ops $1C/$1D `test_moving`/`test_anim_done`, sub-ops $0D ($004482) and $38 ($002FD6). `pal_cycle`'s DMA path was changed to a tail jump after its poke run; it was re-run on the route states only.
+First pass: `pal_cycle`'s DMA path was changed to a tail jump after its poke run; it was
+re-run on the route states only.
+
+## Difftest results, second pass
+
+`tools/py/script_dt_pass2.sh` (VM) reproduces all of it. **No failing state** except one
+invalid poke variant (below). Three kinds of states:
+
+* **route**: every call (up to 200 per route) on all routes: `capture`, `verbs`,
+  `script_talk`, the new `port/scripts/script/intro_w0.txt` / `intro_w1.txt` (title -> the
+  mystery's intro cutscene played to the end, *not* skipped: it runs face, wait_stop,
+  test_moving, camera_pan_right, the walk/put-and-animate paths...), the 12 natural routes
+  and the 6 story routes (`difftest capture-multi`: one pass per route for all addresses).
+* **pokes**: the route states replayed with A5 moved to up to 40 other ops of the same kind
+  (`script_pokes.py`, 25 states per directory).
+* **synthetic**: handlers that no route reaches, run on states captured at another handler
+  entered through the same call (difftest `--entry`, `script_dt_entry.sh`): sub-op entries
+  from sub-op $0E states (A5/A0/D0 poked to real ops of the target sub-op), op handlers from
+  op $08 states, "after `bsr actor_animate`" pieces of sub-ops from camera_pan_right's
+  ($441C), plus RAM pokes (`EXTRAS`) for the other side of their tests. They prove the C
+  equals the 68k on plausible inputs; they are not states the game produced.
+
+| function(s) | route | pokes / synthetic |
+| --- | --- | --- |
+| script_op_walk_spawn ($49BA) | 65/65 | 2600/2600 (op $0E) + 2600/2600 (op $1B) |
+| walk_spawn_anim0/anim1 ($4A34/$4AB2), _done0/_done1/_done ($4A4C/$4ACA/$4B0E) | 1/1, 1/1, 9/9, 3/3, 65/65 | |
+| actor_walk_to ($4B24), _anim ($4BA0), _moving ($4C14) | 49/49, 34/34, 600/600 | |
+| script_op_walk_obj ($4C20), _shaggy ($4D1C), _done ($4D78); sprite_frame_hotspot ($197E) | 17/17 each | 644/645 (op $0F, see below) |
+| walk_line_clear / shaggy_ / scooby_ / waypoint0_ / waypoint1_line_clear | 548, 33, 455, 35, 25 (all equal) | |
+| shaggy_/scooby_set_dir, shaggy_/scooby_dir_to | 24, 382, 21, 329 (all equal) | |
+| leg setup: shaggy_leg0_from_wp0, scooby_leg0_wp0/leg0_wp1/leg1_wp0/leg1_wp1 | 3, 25, 11, 5, 12 (all equal) | |
+| shaggy_/scooby_waypoints_reachable | 6/6, 63/63 | |
+| shaggy_walk_to ($5002), _turned, _moving, _standing | 26/26, 297/297, 1628/1628, 142/142 | |
+| scooby_walk_to ($56B0), scooby_walk_direct ($5AD8), scooby_walk_turned | 412/412, 293/293, 1563/1563 | |
+| scooby_walk_wait_mode/_moving/_standing | 3/3, 407/407, 29/29 | |
+| script_op_face ($268E), _wait_shaggy ($26DA), _wait_scooby ($271C) | 5/5, 400/400, - | 200/200 (op $1E); _wait_scooby 2000/2000 synthetic (from $26DA) |
+| script_op_wait_stop ($4F70), _test ($4FA4) | 4/4, 4/4 | 160/160 (op $1F) |
+| script_op_test_moving ($255E) | 200/200 | 100/100 (op $1C) |
+| script_op_show_obj ($2BF8), _done | 2/2, 2/2 | 18/18 (op $07) |
+| script_op_set_icon ($2DC0), _done | 1/1, 1/1 | 4/4 (op $0A) |
+| script_op_path ($4944), script_op_stop_path ($48F8) | - | 8280/8280, 2070/2070 synthetic (from op $08) |
+| script_run_nested ($2320), _done | 136/136, 136/136 | |
+| talk_menu_collect ($1CC4), _done ($1CD8) | 9/9, 9/9 | |
+| talk_choice_say / _reply / _body / _after, talk_leave | 6/6 each, talk_leave 200/200 | |
+| talk_bar_blank ($22F2), talk_gesture ($20DA) | 14/14, 105/105 | |
+| say: push_d7, push_facing, pose_started, pose_done, push_font, pop_font, pose_back, back_started, back_done, done | 161, 5, 78, 600, 161, 159, 5, 5, 600, 159 (all equal) | |
+| sys fade_out ($454E), _done ($4560) | 48/48, 48/48 | |
+| sys camera_pan_right ($43C0), _wait ($441C) | 3/3, 400/400 | |
+| sys sfx_random_a / _b | 13/13, 1/1 | |
+| sys skippable_off ($38), 09e8_1_off ($0E) | 2/2, 29/29 | |
+| 26 flag / one-shot sub-ops ($0B $09 $0A $0D $11 $12 $16 $19 $1F $20 $23 $24 $26 $28 $29 $2A $2C $2D $2E $2F $30 $31 $33 $34 $36 $3C $3D) | - | 29 to 232 each, all equal (synthetic) |
+| overlay_a_on, overlay_b_on, camera_pan_left, shaggy_anim_by_x, shaggy_alt_sprite_on, shaggy_pose_45, closeup_picture, bar_show_if_hidden | - | 29, 29, 58, 29, 29, 29, 29, 812 (synthetic) |
+| after-call pieces: wait_shaggy_path, shaggy_anim_by_x_wait, alt_sprite_on_wait, wait_dpad_choice, follow_mode_on, camera_pan_left_wait, shaggy_pose_45 _go/_place/_wait/_done | - | 200, 100, 100, 200, 300, 200, 50/50/200/50 (synthetic, from $441C) |
+
+The one failing variant: walk_obj state `004C20_w1_front_lot/00000` (Ha Ha Carnival) poked to
+the Blake's Hotel op at $149518 ("walk to #64 Shed"). Object 64 does not exist in that
+mystery, its hotspot index is 0, and the hotspot-table read goes through a garbage pointer
+into unmapped cartridge space (`$87EE3C`), where the 68k reads open bus (the last prefetched
+word). C cannot reproduce open-bus values; the real data never does this (cross-mystery
+pokes are an artifact of `script_pokes.py`).
+
+**Not registered** (`-DSCRIPT_UNTESTED`), all because nothing in the script data uses them
+(`build/scripts/op_starts.txt`): ops $00, $12, $1D; sub-ops $00, $08, $37 (shaggy_pose_47).
+Also without states: the Scooby tail of walk_obj ($4D48) and Shaggy's leg setups $51E4,
+$522E, $5276 (the planner range runs the same C for them).
+
+**Still 68k** in the subsystem, with reasons:
+* sub-ops $05/$0C fullscreen_picture, $1E ending_credits, $27 minigame_throw, $32
+  minigame_tug: long interactive or end-of-game sequences with many waits and no states
+  (no route reaches them; they would need a late-game route plus their own range chains).
+* sub-op $02 room_fade_in (`bsr room_fade_in / rts`), $04's entry (two `bsr`s), the entries
+  of $15/$21/$25 (`bsr actor_animate` first), and the 68k VBlank spins (`$4836` bar idle,
+  `$44BA`/`$3026` sprite DMA idle): nothing but calls / wait primitives.
+* the TALK tail after `talk_leave` (`bsr wait_vblank / inventory_refresh /
+  inventory_arrows_update / rts`) and action_execute's own pushes (first pass).
 
 ## Play test
 
@@ -245,3 +319,9 @@ starts exactly where the disassembly says an op starts. Executed opcodes: 01 02 
 | `tools/py/script_play.sh` | play-test: routes with `--hle all` vs `--hle none`, compare room / inventory / story bytes |
 | `port/scripts/script_talk.txt` | Lobby + a poked TALK to the Bellhop (dialog menu, choices) |
 | `poke ADDR W VAL` | new port-script command (harness syntax), used by the TALK route and #29's story routes |
+| `tools/py/script_survey.sh` | which op / sub-op handlers (and extra addresses) each route reaches, with hit counts (frameprof watches) |
+| `tools/py/script_dt_multi.sh` | `difftest capture-multi` over all routes (one pass per route), then difftest; `DTOPTS` for pokes |
+| `tools/py/script_pokes.py --dispatch OP` / `--sub SUB` | pokes for synthetic dispatch (A5 + A0, + D0 for sub-ops) |
+| `tools/py/script_dt_entry.sh` | synthetic-dispatch difftest (`--entry`) of handlers no route reaches; `EXTRAS` adds RAM pokes |
+| `tools/py/script_dt_pass2.sh` | all second-pass difftests (routes, pokes, synthetic) |
+| `port/scripts/script/intro_w0.txt`, `intro_w1.txt` | title -> the mystery's intro cutscene, not skipped (face, wait_stop, test_moving, camera pan, put-and-animate) |
