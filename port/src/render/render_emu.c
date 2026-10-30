@@ -209,12 +209,12 @@ void render_emu_report(void)
 {
 	if (!g_cmp_every)
 		return;
-	printf("rendercmp: sampled %ld frames, %ld differ; all %ld frames, %ld differ; split-line-only %ld\n",
-	       g_cmp_frames, g_cmp_bad, g_cmp_all, g_cmp_all_bad, g_cmp_split_race);
-	fflush(stdout);
+	/* stderr: session.py (storytest) keeps only the port's stderr */
+	fprintf(stderr, "rendercmp: sampled %ld frames, %ld differ; all %ld frames, %ld differ; split-line-only %ld\n",
+	        g_cmp_frames, g_cmp_bad, g_cmp_all, g_cmp_all_bad, g_cmp_split_race);
 	if (g_frame_stats)
-		printf("rendercmp-frame-mode: %ld frames, %ld differ from GPGX (%ld pixels): mid-frame VDP changes\n",
-		       g_fm_frames, g_fm_bad, g_fm_pixels);
+		fprintf(stderr, "rendercmp-frame-mode: %ld frames, %ld differ from GPGX (%ld pixels): mid-frame VDP changes\n",
+		        g_fm_frames, g_fm_bad, g_fm_pixels);
 }
 
 static void report_atexit(void) { render_emu_report(); }

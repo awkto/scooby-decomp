@@ -24,6 +24,7 @@
  *   --ignore-regs d1,a0   don't compare these registers (document why in the C source!)
  *   --ignore-flags        don't compare X N Z V C
  *   --poke "W:FF06AC=5,L:FF068E=0xFCA0C,D0=7"   run each state once per --poke variant, after patching
+ *                         (VC=N sets the V counter, e.g. for HV readers: VC=0xE4)
  *                         work RAM (B/W/L:HEXADDR=VALUE) and registers (D0..D7/A0..A7=VALUE), comma list
  *   --strict-stack        compare RAM below the entry SP as well
  *   --stack-window B      bytes below entry SP treated as scratch (default 256)
@@ -78,6 +79,11 @@ static void apply_poke(const char *spec)
 		if (tok[1] == ':') { sz = tok[0] & ~0x20; tok += 2; }
 		char *eq = strchr(tok, '=');
 		if (!eq) continue;
+		if (!strncmp(tok, "VC=", 3)) {
+			/* V counter (the beam line HV reads see; frozen in the sandbox), e.g. VC=0xE4 */
+			gx_vdp_set_vcounter((int)strtoul(eq + 1, NULL, 0));
+			continue;
+		}
 		if ((tok[0] == 'D' || tok[0] == 'A') && tok[1] >= '0' && tok[1] <= '7' && tok[2] == '=') {
 			/* register poke: D0=value / A3=value (long) */
 			gx_m68k_dar()[(tok[0] == 'A' ? 8 : 0) + (tok[1] - '0')] = (uint32_t)strtoul(eq + 1, NULL, 0);

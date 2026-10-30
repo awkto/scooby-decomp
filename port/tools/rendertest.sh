@@ -1,7 +1,7 @@
 #!/bin/sh
 # Native renderer vs GPGX, pixel for pixel, on the gate routes (GitLab #25).
 #   port/tools/rendertest.sh [GROUP...]     (on a VM after building build/port)
-# Groups (default: all): story mouse menus intros extra
+# Groups (default: all): mouse menus intros extra story
 # Every program run here has SCOOBY_RENDERCMP=N: the native renderer draws each frame alongside
 # GPGX from the same VDP state (render/render_emu.c), and the two frames are compared. "Sampled"
 # frames are every Nth frame plus the 8 frames after every scene change (the interrupt hooks
@@ -25,7 +25,7 @@ export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 export SCOOBY_RENDERCMP="${RENDERTEST_N:-30},$root/$out/dumps/%d"
 unset SCOOBY_RENDERER
 if [ "${RENDERTEST_SPLIT:-raster}" = model ]; then export SCOOBY_RENDER_SPLIT=model; else unset SCOOBY_RENDER_SPLIT; fi
-groups=${*:-"story mouse menus intros extra"}
+groups=${*:-"mouse menus intros extra story"}   # story last: it regenerates tools/scripts/story/*.txt, which mousetest reads
 P=build/port/scoobyport
 
 route() { # NAME SCRIPT HLE
@@ -36,8 +36,8 @@ for g in $groups; do
 	echo "== $g"
 	case $g in
 	story) STORYTEST_HLE=all port/tools/storytest.sh | sed 's/^/  /'
-		for f in runs/storytest/*.log; do cp "$f" "$out/logs/story.$(basename "$f")"; done ;;
-	mouse) port/tools/mousetest.sh | tail -2 | sed 's/^/  /'
+		for f in runs/storytest/*/harness.err; do cp "$f" "$out/logs/story.$(basename "$(dirname "$f")").log"; done ;;
+	mouse) port/tools/mousetest.sh > "$out/mousetest.txt" 2>&1; grep -v "^PASS" "$out/mousetest.txt" | sed "s/^/  /"
 		find runs/mousetest -name log.txt | while read -r f; do
 			cp "$f" "$out/logs/mouse.$(echo "$f" | sed 's#runs/mousetest/##; s#/#.#g')"; done ;;
 	menus) for h in ${RENDERTEST_HLE:-all none}; do
