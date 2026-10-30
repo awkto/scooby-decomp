@@ -1,0 +1,54 @@
+#!/bin/sh
+# difftest every VDP helper of #13 (vdp.c, palette.c). Run on a VM:  port/tools/dt-vdp
+#  - most functions: captured states from the main capture route (port/tools/dt does it)
+#  - draw_text_plane_a_hi / draw_text_centered: states from the password / sound-test screens
+#  - functions no route reaches (cram_write_word, plane clears, draw_text_labelled): the VBlank hook
+#    is pointed at them (port/tools/vblank_probe.sh) and difftest --poke supplies inputs
+#  - vdp_dma_vram: --poke variants that cross a 64 KiB source boundary (incl. the $8000-word overflow)
+#  - palette ranges: the route has one fade-in, so --poke variants vary the target image and step count
+root=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$root"
+dt=port/tools/dt
+D=build/port/difftest
+
+# capture ADDR SCRIPT: states from a route script, unless already there
+cap() {
+	[ -n "$(ls runs/states/$1 2>/dev/null)" ] && return
+	cmake --build build/port -j4 --target difftest >/dev/null
+	$D capture "$1" 200 --script "$2"
+}
+# probe ADDR: states through the VBlank hook
+probe() {
+	[ -n "$(ls runs/states/$1 2>/dev/null)" ] && return
+	port/tools/vblank_probe.sh "$1" 20
+}
+
+$dt vram_write_words vram_write_word vram_fill_words vdp_dma_vram vdp_dma_cram vdp_dma_setup
+$dt vdp_dma_vram --poke A0=0x0FF000,D1=0x1000,D0=0x2000 --poke A0=0x0F0000,D1=0x9000,D0=0x1000 --poke A0=0x0F8000,D1=0x0100
+for f in vram_read_word vdp_fill_cram vdp_clear_vram vdp_clear_cram vdp_reg_set draw_text_plane_a; do
+	$dt $f
+done
+
+cap 009F58 port/scripts/password_screen.txt
+cap 009F30 port/scripts/sound_test.txt
+$dt draw_text_plane_a_hi draw_text_centered
+
+STR=A0=0x02FFF4   # any NUL-terminated ROM string
+probe 0099C4
+probe 009716
+probe 009722
+probe 009F46
+$dt cram_write_word --n 20 --poke D0=0x0000,D1=0x0EEE --poke D0=0x0042,D1=0x0246 --poke D0=0xFFFE,D1=0x0888
+$dt plane_a_clear --n 20
+$dt plane_b_clear --n 20
+$dt draw_text_labelled --n 20 --poke $STR,D1=3,D2=5 --poke A0=0x0F0000,D1=0,D2=27 --poke $STR,D1=20,D2=0
+
+$dt palette_read_cram palette_read_cram_read palette_read_cram_dma
+$dt palette_fade palette_fade_dma --poke D3=7 --poke D3=3,A0=0x016CB8 --poke D3=0,A0=0x032482 --poke D3=5,A0=0x0236A0
+
+# word-wrapped text boxes: dialogue choices and the status line; the route has only short strings, so
+# --poke puts strings of 0, 11, 49, 90 (hyphen break), 41 and 66 characters into free RAM ($FF3F00)
+WRAP="--poke L:FF3F00=0x48454c4c,L:FF3F04=0x4f205448,L:FF3F08=0x45524500,A0=0xFF3F00,D0=2,D1=4 --poke L:FF3F00=0x4c4f4f4b,L:FF3F04=0x20415420,L:FF3F08=0x54484520,L:FF3F0C=0x4f4c4420,L:FF3F10=0x4d595354,L:FF3F14=0x4552494f,L:FF3F18=0x5553204d,L:FF3F1C=0x41434849,L:FF3F20=0x4e45204e,L:FF3F24=0x45415220,L:FF3F28=0x54484520,L:FF3F2C=0x444f4f52,L:FF3F30=0x00000000,A0=0xFF3F00,D0=2,D1=4 --poke L:FF3F00=0x54484520,L:FF3F04=0x51554943,L:FF3F08=0x4b204252,L:FF3F0C=0x4f574e20,L:FF3F10=0x464f5820,L:FF3F14=0x4a554d50,L:FF3F18=0x53204f56,L:FF3F1C=0x45522054,L:FF3F20=0x4845204c,L:FF3F24=0x415a5920,L:FF3F28=0x444f4720,L:FF3F2C=0x5748494c,L:FF3F30=0x45205343,L:FF3F34=0x4f4f4259,L:FF3F38=0x20414e44,L:FF3F3C=0x20534841,L:FF3F40=0x47475920,L:FF3F44=0x45415420,L:FF3F48=0x53414e44,L:FF3F4C=0x57494348,L:FF3F50=0x45532041,L:FF3F54=0x54204d49,L:FF3F58=0x444e4947,L:FF3F5C=0x4854204e,L:FF3F60=0x4f570000,A0=0xFF3F00,D0=2,D1=4 --poke L:FF3F00=0x41424344,L:FF3F04=0x45464748,L:FF3F08=0x494a4b4c,L:FF3F0C=0x4d4e4f50,L:FF3F10=0x51525354,L:FF3F14=0x55565758,L:FF3F18=0x595a2d41,L:FF3F1C=0x42434445,L:FF3F20=0x46474849,L:FF3F24=0x4a4b4c4d,L:FF3F28=0x4e4f5051,L:FF3F2C=0x52535455,L:FF3F30=0x56575859,L:FF3F34=0x5a2d4142,L:FF3F38=0x43444546,L:FF3F3C=0x4748494a,L:FF3F40=0x4b4c4d00,A0=0xFF3F00,D0=2,D1=4 --poke L:FF3F00=0x41414141,L:FF3F04=0x41414141,L:FF3F08=0x41414141,L:FF3F0C=0x41414141,L:FF3F10=0x41414141,L:FF3F14=0x41414141,L:FF3F18=0x41414141,L:FF3F1C=0x41204242,L:FF3F20=0x42424242,L:FF3F24=0x42204343,L:FF3F28=0x43000000,A0=0xFF3F00,D0=2,D1=4 --poke L:FF3F00=0x00000000,A0=0xFF3F00,D0=2,D1=4 --poke L:FF3F00=0x58585858,L:FF3F04=0x58585858,L:FF3F08=0x58585858,L:FF3F0C=0x58585858,L:FF3F10=0x58585858,L:FF3F14=0x20595959,L:FF3F18=0x59595959,L:FF3F1C=0x59595959,L:FF3F20=0x59595959,L:FF3F24=0x59595959,L:FF3F28=0x59595959,L:FF3F2C=0x59595959,L:FF3F30=0x59595959,L:FF3F34=0x59595959,L:FF3F38=0x59595959,L:FF3F3C=0x59205a5a,L:FF3F40=0x5a5a5a00,A0=0xFF3F00,D0=2,D1=4"
+probe 009FA2
+$dt draw_text_wrapped --n 20 $WRAP
+$dt draw_status_line --max 6 $WRAP   # 1024 writes per state: few states

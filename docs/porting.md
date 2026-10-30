@@ -521,6 +521,20 @@ action_execute, run_object_events, the room scripts and the TALK menu loop as ra
 | $0097AA | lzss_decompress (per-token cycle model, called directly by room.c / reset.c) | decomp.c | 484/484 (60 route states + 212 stream variants x 2 states) |
 | $009C64 | rle_decompress | decomp.c | 248/248 (8 route states + 31 title/logo streams, with and without the $FF09ED bit 3 side effect) |
 
+#13 (VDP helpers), files `vdp.c` and `palette.c`; design, the native-renderer hook (`vdp_set_hook`) and the
+list of remaining raw `$C00004` users are in `docs/subsystems/vdp.md`; test driver `port/tools/dt-vdp`:
+
+| Address | Name | File | difftest result |
+| --- | --- | --- | --- |
+| $0099F6 / $009A3C / $009B10 | vdp_dma_vram (64 KiB split) / vdp_dma_setup / vdp_dma_cram | vdp.c | 200/200 each + 600/600 poked variants for the split and the $8000-word overflow |
+| $009996 / $0099C4 | vram_read_word / cram_write_word | vdp.c | 200/200 / 60/60 (VBlank-hook probe + pokes) |
+| $009C1E / $009C58 / $009C5E | vdp_fill_cram / vdp_clear_vram / vdp_clear_cram | vdp.c | 3/3, 36/36, 3/3 (all calls on the route) |
+| $00972E / $009716 / $009722 | vdp_reg_set / plane_a_clear / plane_b_clear | vdp.c | 60/60 (all calls) / 20/20 / 20/20 (probe) |
+| $009F72 / $009F58 / $009F46 / $009F30 | draw_text_plane_a / _hi / draw_text_labelled / draw_text_centered | vdp.c | 170/170, 170/170, 60/60, 17/17 (password and sound-test screens, probe) |
+| $009FA2 / $00A054 | draw_text_wrapped / draw_status_line | vdp.c | see docs/subsystems/vdp.md |
+| $009DE0, $009DF2, $009E60 (ranges) | palette_read_cram (fade out) | palette.c | 34/34, 34/34, 200/200 |
+| $009E82, $009F0A (ranges) | palette_fade (fade in; the movem push/pop stay 68k) | palette.c | 116/116, 800/800 (route has one fade-in; pokes vary target and step) |
+
 #15 (sprites and actor animation), files `sprite.c`/`sprite.h`. Details: `docs/subsystems/sprite.md`,
 formats: `docs/formats.md` "Actor sprites":
 

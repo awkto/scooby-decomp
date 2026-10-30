@@ -236,3 +236,6 @@ FF0AC4 1    ram_actors_drawn # bit n: drawn into the SAT this frame
 FF0AC5 1    ram_actors_drawn_prev
 FF0AC6 1    ram_actors_follow_sync # follow mode: slot has a new frame, wait for the partner
 FF0ACE 1    ram_fx_blink     # effect sprite blink counter
+
+# ---- #13 VDP helpers (vdp.c)
+FF080A 2    ram_text_count   # draw_text_wrapped: rows*300 (pause length); draw_status_line: characters*16
