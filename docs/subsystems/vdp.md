@@ -29,7 +29,8 @@ The rest of the `$C00004` writers are inline in other subsystems (list at the en
 | `$009F46` | `draw_text_labelled` | draws the string at `$02FFF4` at column 0, then the caller's | C |
 | `$009F30` | `draw_text_centered` | column = (32 - strlen) / 2 | C |
 | `$009CDE` | `sub_009CDE` | bchg of a vblank flag, then a double-buffered word write to `$FF0808`; **no caller anywhere** (dead code) | not ported |
-| `$009FA2` / `$00A054` | `sub_009FA2` / `sub_00A054` | word-wrapped text into the verb-bar / status-line window | 68k (see "Left") |
+| `$009FA2` | `draw_text_wrapped` | word-wrapped text (30 columns) into the dialogue-choice rows of the verb-bar plane, `$FF080A` = rows * 300 | C |
+| `$00A054` | `draw_status_line` | clear plane `$D000` (1024 single-word writes), draw the status/command line wrapped and right-aligned, set VDP reg `$12` and `$FF080A` | C |
 | `$009C64` | `rle_decompress` | writes `$C00004` only to set/clear the H40-interlace register `$8C08/$8C00`; ported in #14 | C (#14) |
 | `$005C8E`, `$00AF24` | `hud_dma`, `actor_dma` | read the HV counter | **68k by rule** (docs/porting.md "HV counter reads") |
 
@@ -117,6 +118,34 @@ the wait (docs/porting.md "Waiting for VBlank"): see the comment at the top of `
 A range must leave with the stack pointer it entered with, so the `movem` push of `palette_fade` stays 68k
 (the first range starts at `$009E82`), and so does the pop + `rts` at `$009F2A`.
 
-## Results
+## Verification
 
-(see the table in docs/porting.md "Functions replaced so far")
+`port/tools/dt-vdp` (on a VM) runs everything; results are in the table in docs/porting.md. Notes:
+- Functions the capture route never reaches were tested from route scripts (`port/scripts/password_screen.txt`,
+  `sound_test.txt`) or by pointing the VBlank hook at them (`port/tools/vblank_probe.sh`, then `difftest --poke`
+  for inputs): `cram_write_word` and `draw_text_labelled` have no reachable caller in normal play, the plane
+  clears only run in the fullscreen-picture script op.
+- The 64 KiB split of `vdp_dma_vram` and its 16-bit overflow are covered by `--poke` variants, not by the route.
+- `SCOOBY_VDP_HOOKTEST=1` installs a test "renderer" (vdp.c `selftest_hook`) that redoes every hooked op from its
+  `vdp_op` description alone, through data-port writes. The game must draw and play the same with and without it:
+  with it on, irqtest and storytest (`STORYTEST_HLE=all`) pass, and Lobby / password / sound-test screenshots differ
+  from the normal run by only 170-260 pixels (sprite animation phase: the hooked path is charged a different cost).
+
+## Remaining raw `$C00004` users
+
+These write VDP registers / scroll values / the control port inline, not through the helpers, and belong to other
+subsystems. Found with `grep -n 'vdp_ctrl\|vdp_data' src/scooby.s`:
+
+| Where | What | Owner |
+|---|---|---|
+| Reset, `boot_vdp_init` `$00091C`, `$00093C`, `$0009CE`, `$000A38`, BusError | register init, CRAM `$C0000000` clears, blank-screen toggles | #12 reset.c (ranges) |
+| `mystery_intro` `$0014C8`-`$0017FA` | scroll/VSRAM writes, display on/off | #19 / intro |
+| script ops `minigame_tug` `$003183`, `closeup_picture` `$004378`, `fullscreen_picture` `$0045C8`-`$004716`, `$0038DC`, `$00421C` | plane/scroll/register writes for picture scenes | #19 script.c |
+| `title_screen` `$008525`-, `$008876`, `$008972`-`$008F6C`, `menu_start_game`, `$009008`-`$00920A`, `sound_test` | title/menu/password: register writes, scroll | title (#12) |
+| `vblank_main` `$00A65C` and `sub_00A130` | scroll registers, window register `$9202` | #12 mainloop.c / verbs |
+| `game_init` `$00A248` | reads the HV counter (RNG) | stays 68k (HV rule) |
+| `hud_dma` `$005C8E`, `actor_dma` `$00AF24` | read the HV counter | stay 68k (HV rule) |
+| `$00FC0A`-`$010104` incl. `hblank_verb_bar` `$01006C` | HBlank raster code | stays 68k (raster/HV) |
+
+A native renderer therefore still has to emulate the VDP registers and the scroll/VSRAM state; what this subsystem
+gives it is the bulk data path (tiles, nametables, SAT, palette) as semantic ops.

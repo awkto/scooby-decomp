@@ -340,7 +340,10 @@ function returns. The layer makes that safe (`nest_begin()` in hle.c):
   `room_load`'s plane uploads went missing that way, and the Lobby was drawn without its
   background (hosttest "Lobby HLE-on" fell to 60%). Calling DMA routines from C through
   `hle_call68k` is fine now. #19's script.c keeps some DMA calls in 68k from before this
-  fix; that is harmless.
+  fix; that is harmless. **C code that starts a DMA itself** (the VDP helpers, #13) brackets the
+  control-port writes with `hle_dma_begin()` / `hle_dma_complete()` / `hle_dma_end()` (hle.h): the
+  transfer completes at once and its stall time becomes nested time, charged by the layer. C never polls
+  the DMA-busy bit.
 - **The CPU clock** runs on across the nested calls of one C function, together with the
   raster line base and the V counter (#33, see "HV counter reads"). All three are rewound
   when the C function returns, and the nested time is added to its charge (see the next
@@ -531,7 +534,7 @@ list of remaining raw `$C00004` users are in `docs/subsystems/vdp.md`; test driv
 | $009C1E / $009C58 / $009C5E | vdp_fill_cram / vdp_clear_vram / vdp_clear_cram | vdp.c | 3/3, 36/36, 3/3 (all calls on the route) |
 | $00972E / $009716 / $009722 | vdp_reg_set / plane_a_clear / plane_b_clear | vdp.c | 60/60 (all calls) / 20/20 / 20/20 (probe) |
 | $009F72 / $009F58 / $009F46 / $009F30 | draw_text_plane_a / _hi / draw_text_labelled / draw_text_centered | vdp.c | 170/170, 170/170, 60/60, 17/17 (password and sound-test screens, probe) |
-| $009FA2 / $00A054 | draw_text_wrapped / draw_status_line | vdp.c | see docs/subsystems/vdp.md |
+| $009FA2 / $00A054 | draw_text_wrapped / draw_status_line | vdp.c | 140/140 (20 probe states x 7 poked strings, 0-90 chars) / 42/42 (6 states x 7 strings) |
 | $009DE0, $009DF2, $009E60 (ranges) | palette_read_cram (fade out) | palette.c | 34/34, 34/34, 200/200 |
 | $009E82, $009F0A (ranges) | palette_fade (fade in; the movem push/pop stay 68k) | palette.c | 116/116, 800/800 (route has one fade-in; pokes vary target and step) |
 
