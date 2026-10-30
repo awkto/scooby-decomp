@@ -334,10 +334,60 @@ function returns. The layer makes that safe (`nest_begin()` in hle.c):
   a nested poll of the DMA-busy bit hangs. `game_init` after `boot_hw_init`'s fill does
   this, which is why `boot_init` stops in front of it.
 
+- **DMA** started by nested code completes at once (#31). The frame loop advances a VDP DMA
+  line by line, and it can't run until the C function returns. Before this, a nested
+  `vdp_dma_vram` either stalled the CPU clock for seconds (#19) or never reached VRAM.
+  `room_load`'s plane uploads went missing that way, and the Lobby was drawn without its
+  background (hosttest "Lobby HLE-on" fell to 60%). Calling DMA routines from C through
+  `hle_call68k` is fine now. #19's script.c keeps some DMA calls in 68k from before this
+  fix; that is harmless.
+- **The CPU clock** is rewound after the outermost nested call, and the nested time is
+  added to the C function's charge (see the next section). Before this, a nested LZSS run
+  of millions of cycles followed by a Z80 bus request made the Z80/YM2612 catch up by
+  frames at once (YM buffer overflow). room.c used to rewind the clock itself
+  (`gx_m68k_set_cycles`); the layer does it now.
+
 difftest holds IRQs, so it can't see any of this. `port/tools/irqtest.sh` (frameprof
 "lost VBlank" count over the pointer, inventory and mouse routes, `--hle all` and
 `none`) is the regression check. Run it with hosttest after changing C code that calls
 68k code.
+
+### Long-running functions: what to charge (#31), the policy
+
+A C function takes no emulated time. What it costs is what the layer adds to the CPU
+clock when it returns. **Every agent follows these rules:**
+
+1. **Charge the original's cost.** Set `ctx->cycles` (or the `HLE_FUNC` cycles argument)
+   to the average 68k cycles that difftest prints for the original. Large values are
+   fine. Nested 68k calls are counted automatically: the layer rewinds the clock after
+   them and adds their time to the charge. If your number is a measured *total* that
+   already includes the nested callees, charge `total - hle_nested_cycles()` (room.c:
+   `charge_total()`).
+2. **Don't spread or cap the cost yourself.** The layer looks at the interrupt mask at
+   entry:
+   - **VBlank unmasked** (SR mask < 6): the cost above 1000 cycles is spent at a trap
+     (`STALL_PC` = $0000F4) in 1000-cycle slices. Interrupts are taken between slices,
+     as the original would have been interrupted along the way. The real continuation
+     is pushed like a `jsr`, so a savestate taken meanwhile simply resumes there (the
+     rest of the cost is dropped).
+     - Example: `font_tiles_load` (1.02 M cycles) is called by scripts with interrupts
+       on. Charged in one go, it skipped ~8 VBlanks per call. That was the irqtest
+       failure on `mouse/walk.txt` in #31.
+   - **Masked** (`room_load`, called at SR = $2700; Reset pieces before `move #$2000,sr`):
+     charged at once. The original loses those VBlanks too.
+3. **Don't make a long function an `HLE_RANGE` chain just for its cycle cost.** Split
+   only around real **waits** (blocking calls, see "Waiting for VBlank"). A loader that
+   never waits is one `HLE_FUNC` with a big charge.
+4. **Never move the CPU clock yourself** (`gx_m68k_set_cycles` is for the layer), and
+   don't busy-wait on emulated time in C.
+5. **Exact frame timing is not a goal.** Recorded frame-exact routes (`lobby.txt` and
+   friends) can desync with C enabled, because the charges are averages and C work
+   happens at the call instead of spread over the original's instructions. difftest
+   checks state, and `irqtest.sh` checks interrupt delivery. Closed-loop route testing
+   is a separate task.
+
+`port/tools/irqtest.sh` (no lost VBlanks), `hosttest.sh` and `mousetest.sh` must pass with
+`--hle all` after any change to charges or nested calls.
 
 ### Tail jumps into 68k (HLE_FUNC + hle_jump)
 
