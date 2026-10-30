@@ -18,6 +18,10 @@ build/port/mousemap_test || fail=1
 { cat port/scripts/lobby.txt; echo "save $out/lobby.state"; } > "$out/route.txt"
 $P --hle none --script "$out/route.txt" --outdir "$out" --frames 0 >/dev/null 2>&1
 [ -f "$out/lobby.state" ] || { echo "FAIL no Lobby state"; exit 1; }
+# the Cafe with 9 carried items (story route w0_cafe_items + 6 poked items, 3 inventory rows)
+{ cat tools/scripts/story/w0_cafe_items.txt port/scripts/inv_items.txt; echo "save $out/inv.state"; } > "$out/route_inv.txt"
+$P --hle none --script "$out/route_inv.txt" --outdir "$out" --frames 0 >/dev/null 2>&1
+[ -f "$out/inv.state" ] || { echo "FAIL no inventory state"; exit 1; }
 
 for hle in all none; do
 	for t in walk look exit bar; do
@@ -26,6 +30,16 @@ for hle in all none; do
 		{ echo "load $out/lobby.state"; cat "port/scripts/mouse/$t.txt"; } > "$d/script.txt"
 		SCOOBY_MOUSE_DEBUG=1 $P --hle "$hle" --script "$d/script.txt" --outdir "$d" --frames 0 >"$d/log.txt" 2>&1
 	done
+	# inventory: page arrows, wheel, item clicks, Use X on Y with both objects in the inventory
+	d="$out/$hle/inventory"
+	mkdir -p "$d"
+	{ echo "load $out/inv.state"; cat port/scripts/mouse/inventory.txt; } > "$d/script.txt"
+	SCOOBY_MOUSE_DEBUG=1 $P --hle "$hle" --script "$d/script.txt" --outdir "$d" --frames 0 >"$d/log.txt" 2>&1
+	# Use an inventory item on a room object (second object picked in the room view)
+	d="$out/$hle/inventory2"
+	mkdir -p "$d"
+	{ echo "load $out/inv.state"; cat port/scripts/mouse/inventory2.txt; } > "$d/script.txt"
+	SCOOBY_MOUSE_DEBUG=1 $P --hle "$hle" --script "$d/script.txt" --outdir "$d" --frames 0 >"$d/log.txt" 2>&1
 	# --no-mouse: the same clicks do nothing
 	d="$out/$hle/nomouse"
 	mkdir -p "$d"
@@ -112,6 +126,39 @@ for hle in ("all", "none"):
           f"pointer {p.get('ptr', 0):02x} -> {p.get('kptr', 0):02x}, x {s16(p.get('x0', 0))} -> {s16(p.get('x1', 0))}")
     check(f"[{hle}] a 1-px mouse bump does not take over", "bump" in p and not (p["bump"] & 8),
           f"$FF09DC={p.get('bump', 0):02x}")
+
+    p = peeks(f"{out}/{hle}/inventory/peek.log")
+    check(f"[{hle}] inventory view, hover reports the item under the pointer",
+          bool(p.get("inv1", 0) & 0x10) and p.get("hover1") == 124 + 3 and p.get("hover2") == 121 + 3,
+          f"$FF09DC={p.get('inv1', 0):02x} hover {p.get('hover1')} {p.get('hover2')}")
+    check(f"[{hle}] page arrows: down, down, down (stays), up",
+          [p.get(k) for k in ("page0", "page1", "page2", "page3", "page4")] == [0, 1, 2, 2, 1],
+          "pages " + " ".join(str(p.get(k)) for k in ("page0", "page1", "page2", "page3", "page4")))
+    check(f"[{hle}] paging moves one row: slots show other items, nothing past the end",
+          p.get("hover3") == 96 + 3 and p.get("hover4") == 0, f"hover {p.get('hover3')} {p.get('hover4')}")
+    check(f"[{hle}] wheel pages the inventory",
+          [p.get(k) for k in ("wpage1", "wpage2", "wpage3", "wpage4")] == [2, 1, 0, 0],
+          "pages " + " ".join(str(p.get(k)) for k in ("wpage1", "wpage2", "wpage3", "wpage4")))
+    check(f"[{hle}] click on an item runs its default verb (LOOK) on it",
+          bool(p.get("act1", 0) & 0x80) and p.get("actverb") == 10 and p.get("acttarget") == 124 + 3,
+          f"$FF09DC={p.get('act1', 0):02x} $FF06BE={p.get('actverb')} $FF06AE={p.get('acttarget')}")
+    check(f"[{hle}] Use Can Opener on Chili: first object waits for the second",
+          p.get("verb") == 5 and bool(p.get("wait", 0) & 1) and p.get("first") == 124 + 3,
+          f"verb {p.get('verb')} $FF09DE={p.get('wait', 0):02x} first {p.get('first')}")
+    inv = [p.get(f"inv{i}") for i in range(4)]
+    check(f"[{hle}] second object (also an item) runs the action; the Chili is used up",
+          p.get("second") == 100 + 3 and bool(p.get("act2", 0) & 0x80) and p.get("actverb2") == 5
+          and 100 not in inv and not (p.get("done", 0x80) & 0x80),
+          f"$FF06B6={p.get('second')} verb {p.get('actverb2')} list {inv}")
+
+    p = peeks(f"{out}/{hle}/inventory2/peek.log")
+    check(f"[{hle}] Use Pot on a room object: the item waits, the room click is the second object",
+          p.get("verb") == 5 and bool(p.get("inv", 0) & 0x10) and bool(p.get("wait", 0) & 1)
+          and p.get("first") == 121 + 3 and p.get("second") == 125 and p.get("hover2") == 125
+          and p.get("actverb") == 5 and bool(p.get("act", 0) & 0x80)
+          and not (p.get("done", 0x80) & 0x80) and not (p.get("wait2", 1) & 1),
+          f"verb {p.get('verb')} first {p.get('first')} second {p.get('second')} $FF06BE={p.get('actverb')} "
+          f"$FF09DC {p.get('act', 0):02x}->{p.get('done', 0):02x} $FF09DE {p.get('wait', 0):02x}->{p.get('wait2', 0):02x}")
 
     p = peeks(f"{out}/{hle}/nomouse/peek.log")
     check(f"[{hle}] --no-mouse ignores the mouse", p.get("room") == 16 and not (p.get("moving", 0) & 1),

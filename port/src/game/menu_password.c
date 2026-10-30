@@ -165,15 +165,16 @@ HLE_FUNC(0x009382, password_read_byte, 689)
 
 /* $009298 password_check: the END key.  Turns the typed text into raw bytes, decodes them and
  * verifies the checksum.  Bad password: error sound $05 and rts back into the entry loop.
- * Good password: leaves through $009328 (68k: pops the key handler's return address, plays
- * sound $59, waits 61 frames) and the accept code, see password_accept.
+ * Good password: pops the key handler's return address (the key loop is left for good, +4),
+ * plays sound $59 and leaves in front of the 61-frame wait (`bsr wait_vblanks`, $00933A, 68k);
+ * the accept code follows, see password_accept.
  *
  * The text is looked up in the alphabet; the bits are read 5 per symbol over 256 bits, so the
  * last byte r[31] comes from symbols 49 (low bits) .. 51 ($FF0070/71 are stale scratch).
  * d4 is saved/restored by the original; d5-d7 are untouched; everything else is scratch. */
 #define PW_CHECK_RTS   0x009326
-#define PW_CHECK_OK    0x009328
-HLE_RANGE(0x009298, password_check, 45000, PW_CHECK_RTS, PW_CHECK_OK)
+#define PW_CHECK_WAIT  0x00933A
+HLE_RANGE(0x009298, password_check, 45000, PW_CHECK_RTS, HLE_EXIT_SP(PW_CHECK_WAIT, +4))
 {
 	/* typed text -> symbol numbers: the position of each character in the alphabet */
 	for (int row = 0; row < 2; row++)
@@ -209,7 +210,11 @@ HLE_RANGE(0x009298, password_check, 45000, PW_CHECK_RTS, PW_CHECK_OK)
 		hle_jump(ctx, PW_CHECK_RTS);
 		return;
 	}
-	hle_jump(ctx, PW_CHECK_OK);
+	ctx->a[7] += 4;                      /* $009328: lea 4(sp),sp: drop the icon handler's return address */
+	menu_sound(ctx, 0x59);               /* success jingle */
+	set_w(&ctx->d[0], 0x3C);             /* move.w #60,d0: wait_vblanks waits d0+1 = 61 frames */
+	cc_logic16(ctx, 0x3C);
+	hle_jump(ctx, PW_CHECK_WAIT);
 }
 
 /* $009340: after the success sound and the 61-frame wait: start the game from the password.
@@ -277,12 +282,14 @@ HLE_FUNC(0x0093F8, password_unused_start, 0) { hle_jump(ctx, 0x008CD6); }
 
 /* ------------------------------------------------------------------ cancel ($00927A) */
 /* The CANCEL icon: [68k: wait_vblank at $00927A], hide the cursor sprites, then pop the key
- * handler's return address ([68k: tst.l (sp)+ at $009292]) and go back to the menu ($00851E). */
-HLE_RANGE(0x00927E, password_cancel, 56, 0x009292)
+ * handler's return address (tst.l (sp)+: the key loop is left for good) and go back to the menu
+ * ($00851E), which is entered with the SP the loop had (+4). */
+HLE_RANGE(0x00927E, password_cancel, 56, HLE_EXIT_SP(MENU_OPEN_ADDR, +4))
 {
 	vdp_ctrl_w32(0x7C600003);        /* VRAM $FC60: the two cursor sprites */
 	bus_w32(VDP_DATA, 0);
-	hle_jump(ctx, 0x009292);
+	cc_logic32(ctx, pop32(ctx));     /* $009292: tst.l (sp)+ */
+	hle_jump(ctx, MENU_OPEN_ADDR);
 }
 
 /* ================================================================== ENTER PASSWORD screen */
@@ -294,10 +301,14 @@ HLE_RANGE(0x00927E, password_cancel, 56, 0x009292)
 
 /* $0090xx: the key grid loop body from $009052: D-pad moves the grid cursor, A/B/Start press
  * the key.  A key press either types the character (grid rows 0..3) or runs an icon (row 4) by
- * `jsr (a0)` ($00915E), which is the 68k's to do: this function stops in front of it.
+ * `jsr (a0)` ($00915E): done here as push of the return address + jump to the handler (the
+ * handlers CANCEL and END pop that return address again when they leave the screen).
  * Returns the exit address. */
-#define PW_JSR_ICON    0x00915E
+#define PW_ICON_RETURN 0x009160   /* the instruction after `jsr (a0)` */
 #define PW_WAIT_FRAME  0x0091D4   /* bsr wait_vblank */
+/* the icon handlers (table $009164); each is entered with the return address pushed: -4 */
+#define PW_ICON_EXITS HLE_EXIT_SP(0x0093A2, -4), HLE_EXIT_SP(0x0093B6, -4), HLE_EXIT_SP(0x0093CC, -4), \
+	HLE_EXIT_SP(0x0093DC, -4), HLE_EXIT_SP(0x009298, -4), HLE_EXIT_SP(0x009162, -4), HLE_EXIT_SP(0x00927A, -4)
 static uint32_t pw_input_body(hle_ctx *ctx)
 {
 	uint8_t pad = RAM8(PAD1_CUR), prev = RAM8(MENU_PAD_PREV);
@@ -324,11 +335,11 @@ static uint32_t pw_input_body(hle_ctx *ctx)
 	uint32_t exit_pc = PW_WAIT_FRAME;
 	if ((prev & 0xD0) == 0xD0 && (pad & 0xD0) != 0xD0) {
 		if (grow == 4) {
-			/* icon: the handler is called by the 68k (jsr (a0)); d0 = col*4, a0 = handler */
+			/* icon: jsr (a0); d0 = col*4, a0 = handler */
 			set_w(&ctx->d[0], (uint16_t)(col << 2));
 			ctx->a[0] = ROM32(0x009164 + (uint16_t)(col << 2));
-			exit_pc = PW_JSR_ICON;
-			return exit_pc;
+			push32(ctx, PW_ICON_RETURN);
+			return ctx->a[0];
 		}
 		menu_sound(ctx, 0x27);                          /* key click */
 		uint8_t ch = ROM8(ROM_ALPHABET + grow * 8 + col);
@@ -372,24 +383,24 @@ HLE_RANGE(0x009010, password_screen_start, 18900, PW_LOOP)
 }
 
 /* $00903A: new frame of the loop: reset the pacing countdown, redraw the sprites, then input */
-HLE_RANGE(0x00903A, password_screen_frame, 400, PW_JSR_ICON, PW_WAIT_FRAME)
+HLE_RANGE(0x00903A, password_screen_frame, 400, PW_ICON_EXITS, PW_WAIT_FRAME)
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	menu_sprites_refresh(ctx);
 	uint32_t e = pw_input_body(ctx);
-	if (e == PW_JSR_ICON) {
-		hle_jump(ctx, e);
+	if (e != PW_WAIT_FRAME) {
+		hle_jump(ctx, e);                           /* into the icon handler */
 		return;
 	}
 	pw_end_pass(ctx);
 }
 
 /* $009052: input pass without the countdown reset (the countdown has not run out yet) */
-HLE_RANGE(0x009052, password_screen_input, 250, PW_JSR_ICON, PW_WAIT_FRAME)
+HLE_RANGE(0x009052, password_screen_input, 250, PW_ICON_EXITS, PW_WAIT_FRAME)
 {
 	uint32_t e = pw_input_body(ctx);
-	if (e == PW_JSR_ICON) {
-		hle_jump(ctx, e);
+	if (e != PW_WAIT_FRAME) {
+		hle_jump(ctx, e);                           /* into the icon handler */
 		return;
 	}
 	pw_end_pass(ctx);

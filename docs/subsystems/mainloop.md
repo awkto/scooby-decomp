@@ -274,10 +274,10 @@ noted (`--script port/scripts/lobby.txt --script port/scripts/pointer_play.txt` 
 | `$01006C` | hblank_verb_bar | raster split at line 167 | 68k: raster busy-wait |
 | `$00974C` | wait_vblank | set `VBF_WAITING`, spin until VBlank clears it | 68k: the wait primitive |
 | `$009742` | wait_vblanks | d0+1 × wait_vblank | 68k: the wait primitive |
-| `$000D3E` | main_loop_pass | one main-loop pass | C, 200/200 + 300/300 pointer route + 200/200 inventory route. Exits seen: `$D4A $E86 $1228 $1392 $13B0`. The pause exit `$D88` happens once on the capture route but is not among the sampled states. The inventory-arrow exits are not reached by any route. |
+| `$000D3E` | main_loop_pass | one main-loop pass | C, 200/200 + 300/300 pointer route + 200/200 inventory route. Exits seen: `$D4A $E86 $1228 $1392 $13B0`. The pause exit `$D88` happens once on the capture route but is not among the sampled states. The inventory-arrow exits `$116C $1174 $11A8 $11B0` are reached by the populated-inventory route of `port/tools/inv_dt.sh` (400/400 there, see verbs.md). |
 | `$000E8A` | main_loop_after_spawn | pass after an ambient spawn | C, 9/9 capture route + 75/75 pointer route |
 | `$00122E` | main_loop_after_click | verb highlight after a click | C, 200/200 + 200/200 pointer route |
-| `$001178` `$0011B4` | main_loop_after_inv_back/fwd | after inventory scroll | C, **not verified**: no route reaches the scroll arrows yet (`inventory_play.txt` misses them, the Lobby inventory is empty) |
+| `$001178` `$0011B4` | main_loop_after_inv_back/fwd | after inventory scroll | C, 6/6 and 4/4 on the populated-inventory route (`port/tools/inv_dt.sh`) |
 | `$000D4E` `$000D5A` `$000D96` `$001396` | main_loop_after_script, _script_done, _after_pause, _after_zone_script | 1–2 instruction glue between blocking calls | C, all route calls |
 | `$000200` | boot_hw_init (range → `$2FA`) | Sega start-up; skipped on soft reset | C (reset.c), 3/3 |
 | `$0002FA` | region_check (range → `$690`/`$334`/`$3FE`) | region check | C, 3/3 (lockout screen itself 68k) |

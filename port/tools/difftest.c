@@ -266,8 +266,10 @@ static const struct {
 	{ 0x008416, 0x3FBF, 0x1F },   /* title_bats_frame: live d6, a6 */
 	{ 0x0084AE, 0x3FBF, 0x1F },   /* title_bats_wait: live d6, a6 */
 	{ 0x00851E, 0x7CFE, 0x1F },   /* menu_open: live d0, a0, a1 */
-	{ 0x008590, 0x7FFF, 0x1F },   /* menu_show: nothing live */
-	{ 0x008D4A, 0x7FFF, 0x1F },   /* menu_choose_show */
+	{ 0x008590, 0x7FFE, 0x1F },   /* menu_show: live d0 (the item count popped for menu_select) */
+	{ 0x0085D2, 0x7FFF, 0x1F },   /* menu_dispatch: nothing live in the targets */
+	{ 0x008D36, 0x7FFF, 0x1F },   /* menu_choose */
+	{ 0x008D4A, 0x7FFE, 0x1F },   /* menu_choose_show: live d0 (the count) */
 	{ 0x008D6A, 0x7F0F, 0x1F },   /* menu_select: live d4-d7 (the cursor state) */
 	{ 0x008D8E, 0x7F0F, 0x1F },
 	{ 0x008D96, 0x7F0F, 0x1F },
@@ -316,7 +318,8 @@ static const struct {
 	{ 0x0088AC, 0x0000, 0x1F },   /* debug_rooms_pick */
 	{ 0x0088B6, 0x0000, 0x1F },
 	{ 0x008C40, 0x0000, 0x1F },   /* debug_objects */
-	{ 0x008C80, 0x7FFF, 0x1F },   /* debug_objects_move: nothing live at $008CC0 */
+	{ 0x008C60, 0x0000, 0x1F },   /* debug_objects_pick: flags only (d0 = location, d1/d2/a0 untouched or pushed) */
+	{ 0x008C78, 0x7FFF, 0x1F },   /* debug_objects_move: nothing live at $008CC0 */
 	{ 0x008CC0, 0x0000, 0x1F },
 };
 

@@ -224,12 +224,13 @@ replacements and with none:
 | verb + object | `look.txt` | hover opens pointer mode; LOOK cell -> `$FF06C0`=10; click on the window -> bit 7 + `$FF06BE`=10; click closes the text; right click on the rug -> LOOK at record 35 |
 | exit | `exit.txt` | click on the top door -> room 9 (Hallway) |
 | bar / pad | `bar.txt` | arrow icon -> inventory view, left arrow -> verbs; D-pad closes the hover pointer and walks; a 1-px bump does not take over |
+| inventory | `inventory.txt` | Cafe state with 9 carried items (story route `w0_cafe_items` + `inv_items.txt`): arrow icon -> inventory; hover reports the item under the pointer; page-down x3 stays on the last row, page-up; wheel; items on other rows after paging, nothing past the end; click on an item runs its default verb; "Use Can Opener on Chili" (both items): the first waits, the second lands in `$FF06B6`, the action runs and the Chili is used up |
+| inventory 2 | `inventory2.txt` | "Use Pot on" a room object: first object from the inventory, second object from the room view (`$FF06B6` = 125, "Um, how would you suggest I use that") |
 | --no-mouse | `exit.txt` | room stays 16 |
 | soak | 60 random left clicks | every walk that ends by itself ends on its goal (within 2 px), none is lost |
 | title | `title.txt` | power-on -> Lobby with clicks only; the host cursor is in the window shot |
 
-Not covered by tests (no item to pick up early in the game, so no captured state with an
-inventory): clicking inventory items, paging with several rows, and the second-object
-flow ("Use X with Y", "Give X to Y"). The code follows verbs.md section 5, which was itself
-read from the code. Dialogue choice menus (`$001C0C`) work with the wheel (U/D) and a click
+Inventory clicks, multi-row paging and the second-object flow ("Use X on Y", Y an item or a room object) are covered since the
+populated-inventory route of `port/tools/inv_dt.sh` exists. Give X to Y goes through the same flow (`$FF09DE` bit 0); only Use
+was exercised. Dialogue choice menus (`$001C0C`) work with the wheel (U/D) and a click
 (B), but are not tested. Hovering over a choice does not select it.
