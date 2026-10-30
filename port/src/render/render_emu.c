@@ -210,6 +210,7 @@ void render_emu_report(void)
 	if (!g_cmp_every)
 		return;
 	/* stderr: session.py (storytest) keeps only the port's stderr */
+	fflush(stdout);              /* don't land in the middle of a buffered stdout line */
 	fprintf(stderr, "rendercmp: sampled %ld frames, %ld differ; all %ld frames, %ld differ; split-line-only %ld\n",
 	        g_cmp_frames, g_cmp_bad, g_cmp_all, g_cmp_all_bad, g_cmp_split_race);
 	if (g_frame_stats)

@@ -58,7 +58,7 @@ tot = [0, 0, 0, 0, 0]; bad = []; progs = 0
 model = os.environ.get("SCOOBY_RENDER_SPLIT") == "model"
 for f in sorted(os.listdir(d)):
     for line in open(os.path.join(d, f), errors="replace"):
-        m = re.match(r"rendercmp: sampled (\d+) frames, (\d+) differ; all (\d+) frames, (\d+) differ; split-line-only (\d+)", line)
+        m = re.search(r"rendercmp: sampled (\d+) frames, (\d+) differ; all (\d+) frames, (\d+) differ; split-line-only (\d+)", line)
         if m:
             progs += 1
             v = list(map(int, m.groups()))
