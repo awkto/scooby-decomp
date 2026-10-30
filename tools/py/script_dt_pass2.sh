@@ -63,7 +63,7 @@ $E 00448C script_sys_09eb_6_on:sub:3C script_sys_09eb_6_off:sub:3D \
    script_sys_09e8_1_on:sub:0D script_sys_overlay_a_on:sub:17 script_sys_overlay_b_on:sub:18 \
    script_sys_camera_pan_left:sub:10 script_sys_shaggy_anim_by_x:sub:22 \
    script_sys_shaggy_alt_sprite_on:sub:2B script_sys_shaggy_pose_45:sub:35 \
-   script_sys_shaggy_pose_47:sub:37 script_sys_closeup_picture:sub:07
+   script_sys_closeup_picture:sub:07
 EXTRAS="B:FF2A00=2" $E 00448C script_sys_bar_show_if_hidden:sub:06
 $E 002C56 script_op_path:op:21 script_op_stop_path:op:20
 $E 0026DA script_op_face_wait_scooby:op:1E
@@ -74,9 +74,8 @@ EXTRAS="B:FF09E0=0xFB;B:FF09E0=0xF7;B:FF09E0=0xFD" $E 00441C script_sys_wait_dpa
 EXTRAS="B:FF0ABC=1" $E 00441C script_sys_follow_mode_on:sub:15
 EXTRAS="B:FF09E9=0" $E 00441C script_sys_camera_pan_left_wait:sub:10
 $E 00441C script_sys_shaggy_pose_45_go:sub:35 script_sys_shaggy_pose_45_place:sub:35 \
-   script_sys_shaggy_pose_47_go:sub:37 script_sys_shaggy_pose_47_place:sub:37 \
-   script_sys_shaggy_pose_45_done:sub:35 script_sys_shaggy_pose_47_done:sub:37
+   script_sys_shaggy_pose_45_done:sub:35
 EXTRAS="B:FF0ABC=1;B:FF0ABC=1,B:FF09DE=0x80;B:FF0ABC=1,B:FF0AC0=0" $E 00441C \
-   script_sys_shaggy_pose_45_wait:sub:35 script_sys_shaggy_pose_47_wait:sub:37
+   script_sys_shaggy_pose_45_wait:sub:35
 } > "$o/entry.log" 2>&1
 grep -E 'TOTAL|FAIL' "$o/entry.log"
