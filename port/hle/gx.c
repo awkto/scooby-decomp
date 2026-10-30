@@ -21,6 +21,11 @@ uint32_t gx_m68k_other_sp(void) { return m68k.sp[m68k.s_flag ? 0 : 4]; }
 void gx_m68k_set_usp(uint32_t v) { if (m68k.s_flag) m68k.sp[0] = v; else m68k.dar[15] = v; }
 int gx_m68k_cycles(void) { return m68k.cycles; }
 void gx_m68k_clear_irq(void) { m68k.int_level = 0; }
+/* the interrupt level the VDP is asserting right now (VINT has priority) */
+void gx_m68k_resync_irq(void)
+{
+	m68k.int_level = ((reg[1] & vint_pending) ? 6 : (reg[0] & hint_pending) ? 4 : 0) << 8;
+}
 
 uint32_t gx_dma_length(void) { return dma_length; }
 void gx_vdp_latch(int out[6]) { vdp_hle_get_internal(out); }
@@ -67,6 +72,9 @@ void gx_vdp_untimed_end(void)
 		status = (status & ~8) | g_saved_vb;
 	g_untimed = 0;
 }
+
+unsigned gx_vdp_line_base(void) { return mcycles_vdp; }
+void gx_vdp_set_line_base(unsigned v) { mcycles_vdp = v; }
 
 /* sandbox: let the VDP line base follow the CPU (the frame loop normally does this) */
 void gx_vdp_follow_cpu(void)

@@ -8,16 +8,24 @@
  * wait_vblank calls and the 68k cycles spent outside interrupt handlers.
  * Prints run-length segments of frames with the same hooks, then first/last frame and
  * hit count of every watched address (scene-flow checkpoints).
+ * It also counts frames in which vblank_main did not run although it is the hook ("missing";
+ * "gameplay" = with VBF_FRAME_WORK set): must be 0 in gameplay (port/tools/irqtest.sh, #30).
+ * --hle SPEC enables C replacements (default none). Script mouse/click commands work.
  * --frames prints one line per frame instead of segments; --hist FROM TO prints the most
  * executed instruction addresses in that frame range (where the CPU time goes).
  */
 #include "emu.h"
 #include "hle.h"
 #include "script.h"
+#include "gx.h"
+#include "mouse.h"
+
+extern unsigned int m68k_hle_get_sr(void);   /* gpgx-hle.patch */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define MAX_WATCH 128
 
@@ -32,7 +40,7 @@ static watch g_w[MAX_WATCH];
 static int g_nw;
 
 /* per-frame counters */
-static unsigned g_vbl, g_hbl, g_loop, g_wait;
+static unsigned g_vbl, g_hbl, g_loop, g_wait, g_vmain;
 
 static void add_watch(uint32_t a, const char *name)
 {
@@ -58,6 +66,7 @@ static void hook(int type, int width, unsigned addr, unsigned value)
 		g_hist[addr]++;
 	switch (addr) {
 	case 0x0008BC: g_vbl++; break;
+	case 0x00A65C: g_vmain++; break;
 	case 0x0008AA: g_hbl++; break;
 	case 0x000D38: g_loop++; break;
 	case 0x00974C: g_wait++; break;
@@ -93,6 +102,8 @@ int main(int argc, char **argv)
 	const char *scripts[16];
 	int ns = 0;
 	bool per_frame = false;
+	const char *hle_spec = "none";
+	unsigned long no_vbl_main = 0, frames_main_hook = 0, no_vbl_play = 0, frames_play = 0;
 	for (int i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "--script") && i + 1 < argc)
 			scripts[ns++] = argv[++i];
@@ -107,6 +118,8 @@ int main(int argc, char **argv)
 			g_hist_from = atol(argv[++i]);
 			g_hist_to = atol(argv[++i]);
 			g_hist = calloc(0x400000, sizeof *g_hist);
+		} else if (!strcmp(argv[i], "--hle") && i + 1 < argc) {
+			hle_spec = argv[++i];
 		} else if (!strcmp(argv[i], "--frames"))
 			per_frame = true;
 		else {
@@ -123,7 +136,11 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s\n", rom ? err : "rom not found");
 		return 1;
 	}
+	mkdir("runs", 0777);
+	mkdir("runs/frameprof", 0777);
 	hle_set_all(false);
+	if (!hle_configure(hle_spec))
+		return 2;
 	emu_add_hook(hook);
 
 	uint32_t seg_vh = 0xFFFFFFFF, seg_hh = 0xFFFFFFFF;
@@ -147,10 +164,29 @@ int main(int argc, char **argv)
 			return 1;
 		unsigned pad;
 		while (script_step(s, &pad)) {
-			g_vbl = g_hbl = g_loop = g_wait = 0;
-			emu_set_pad(0, pad);
+			g_vbl = g_hbl = g_loop = g_wait = g_vmain = 0;
+			emu_set_pad(0, mouse_frame(pad));   /* script mouse/click commands (#23) */
 			emu_run_frame();
 			uint32_t vh = emu_ram32(0xFF0000), hh = emu_ram32(0xFF0004);
+			if (vh == 0x00A65C) {
+				/* gameplay: vblank_main must run every frame (regression check for #30) */
+				frames_main_hook++;
+				/* lost = gameplay frame without vblank_main although the CPU ends the frame with
+				 * the VBlank interrupt unmasked (frames inside masked code - room loads, which
+				 * run with SR=$2700 - are legitimately without VBlank) */
+				bool unmasked = ((m68k_hle_get_sr() >> 8) & 7) < 6;
+				if (emu_ram8(0xFF09DC) & 0x40) {      /* gameplay: VBF_FRAME_WORK set */
+					frames_play++;
+					no_vbl_play += !g_vmain && unmasked;
+				}
+				if (!g_vmain) {
+					no_vbl_main++;
+					if ((emu_ram8(0xFF09DC) & 0x40) && unmasked && no_vbl_play <= 40)
+						fprintf(stderr, "frame %ld: no vblank_main (VBlank vector taken %u times), pc $%06X sr %04X"
+						        " flags %02X cycles %d\n", g_frame, g_vbl, gx_m68k_pc(), m68k_hle_get_sr(),
+						        emu_ram8(0xFF09DC), gx_m68k_cycles());
+				}
+			}
 			if (per_frame) {
 				printf("%6ld pad=%02X %-18s %-16s vbl=%u hbl=%u loops=%u waits=%u flags=%02X\n", g_frame, pad,
 				       hook_name(vh), hook_name(hh), g_vbl, g_hbl, g_loop, g_wait, emu_ram8(0xFF09DC));
@@ -174,6 +210,8 @@ int main(int argc, char **argv)
 		script_close(s);
 	}
 	FLUSH();
+	printf("\nvblank_main: missing in %lu of %lu frames with the vblank_main hook\n", no_vbl_main, frames_main_hook);
+	printf("vblank_main gameplay: lost in %lu of %lu gameplay frames (VBlank unmasked, no vblank_main)\n", no_vbl_play, frames_play);
 	printf("\n%-8s %-28s %8s %8s %10s\n", "addr", "watch", "first", "last", "hits");
 	for (int i = 0; i < g_nw; i++)
 		printf("$%06X  %-28s %8ld %8ld %10lu\n", g_w[i].addr, g_w[i].name, g_w[i].first, g_w[i].last, g_w[i].hits);

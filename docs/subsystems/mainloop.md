@@ -243,6 +243,9 @@ in difftest, where IRQs are held so the original never returns. The rule (also i
 - The wait primitives (`wait_vblank` `$974C`, `wait_vblanks` `$9742`) and the spin loops
   stay in 68k. In the native port each becomes "yield to the host until the next VBlank":
   the host runs the VBlank hook, then resumes the game code.
+- Nested 68k calls from C run with interrupts held and the VDP line base following the
+  CPU (#30, see `docs/porting.md`). `port/tools/irqtest.sh` checks that every gameplay
+  frame still runs `vblank_main`.
 - HV-counter *reads* without a wait (`sub_005C8E`, `sub_00AF24` decide whether there is
   still time for a DMA) are fine in C. In difftest the sandbox V counter is constant. In
   real play the C code reads earlier than the 68k would, which only shifts a DMA by a
@@ -281,7 +284,8 @@ noted (`--script port/scripts/lobby.txt --script port/scripts/pointer_play.txt` 
 | `$00069A` | factory_test | port-2 test-fixture detection | C, 3/3 (test screen at `$6F2`: 68k tail jump, unverified path) |
 | `$00A248` | game_init | DMA wait, RNG seed + HV-based step | **68k**: HV value reaches the X flag |
 | `$00A27A` | game_reset | reset game variables | C, 5/5 |
-| `$0008CE` | boot_init (range → `$9AC`) | hooks, sound, VDP regs, logo 1 setup | C, 3/3 |
+| `$0008CE` | boot_init (range → `$916`) | hooks, sound init, title music (stops before `jsr game_init`, which waits for the boot VRAM fill DMA) | C |
+| `$00091C` | boot_vdp_init (range → `$9AC`) | clear VRAM/CRAM, VDP regs, logo 1 setup | C |
 | `$0009B2` `$0009BC` `$0009E0` `$0009FA` | logo1_hold, logo1_shine, logo1_shine_upload, logo1_shine_next | logo 1 hold / palette shine loop | C, 3/3, 3/3, 24/24, 24/24 |
 | `$000A0E` `$000A68` | logo2, logo2_hold | logo 2 | C, 3/3 |
 | `$000A78` `$000B0E` `$000B18` | logo3, logo3_slide, logo3_slide_step | logo 3 + plane B slide | C, 3/3, 3/3, 200/200 |

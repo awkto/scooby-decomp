@@ -99,7 +99,7 @@ static void clear_vram(hle_ctx *ctx)
  * reset vector). Table at $00028E: d5-d7, a0-a4, 24 VDP register values, the VRAM-fill
  * command, a 38-byte Z80 program, two more VDP register writes, the CRAM and VSRAM write
  * commands and 4 PSG mute bytes. Ends with every register 0, USP 0 and SR = $2700. */
-HLE_RANGE(0x000200, boot_hw_init, 300000, 0x0002FA)
+HLE_RANGE(0x000200, boot_hw_init, 120000, 0x0002FA)
 {
 	uint32_t ctl = bus_r32(0xA10008);
 	cc_logic32(ctx, ctl);
@@ -317,10 +317,8 @@ HLE_FUNC(0x00A27A, game_reset, 900)
 
 /* ================================================================== boot sequence */
 
-/* $0008CE boot_init: hooks, sound driver, title music, game_init, clear VRAM/CRAM, VDP
- * registers 0-18 from $010123, then logo 1 (12x4 map $023226 at $C594, tiles LZSS
- * $023286) up to its fade-in (palette $0236A0) with interrupts enabled. */
-HLE_RANGE(0x0008CE, boot_init, 20000, 0x0009AC)
+/* $0008CE boot_init: interrupt hooks, sound driver, title music; stops at jsr game_init. */
+HLE_RANGE(0x0008CE, boot_init, 3000, 0x000916)
 {
 	RAM32_W(VBLANK_HOOK, 0x00A65C);              /* vblank_main */
 	RAM32_W(HBLANK_HOOK, 0x01006C);              /* hblank_verb_bar */
@@ -335,7 +333,17 @@ HLE_RANGE(0x0008CE, boot_init, 20000, 0x0009AC)
 	RAM32_W(0xFF06A6, 0x2F);                     /* ram_cur_music */
 	cc_logic32(ctx, 0x2F);
 	hle_call68k(ctx, 0x009762);                  /* sound_play($2F): title music */
-	hle_call68k(ctx, 0x00A248);                  /* game_init */
+	/* jsr game_init: it spins on the VDP's DMA-busy bit, and boot_hw_init's 64 KiB VRAM
+	 * fill is still running at power-on. A fill (unlike a 68k->VDP DMA) advances with
+	 * the raster, which stands still inside C, so this is a blocking call (#30). */
+	hle_jump(ctx, 0x000916);
+}
+
+/* $00091C boot_vdp_init: clear VRAM/CRAM, VDP registers 0-18 from $010123, then logo 1
+ * (12x4 map $023226 at $C594, tiles LZSS $023286) up to its fade-in (palette $0236A0)
+ * with interrupts enabled. */
+HLE_RANGE(0x00091C, boot_vdp_init, 20000, 0x0009AC)
+{
 	set_w_logic(ctx, 0, 0);
 	set_w_logic(ctx, 1, 0x8000);
 	hle_call68k(ctx, VDP_CLEAR);

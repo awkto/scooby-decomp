@@ -284,8 +284,8 @@ through the call graph, including script opcodes called through the opcode table
     vdp_dma_vram             ok
     tools/py/blocking.py --all            # all 91, with the reason
 
-DMA-busy polls (VDP status bit 1) don't count: the sandbox finishes DMA at once and GPGX
-stalls the CPU during DMA. It's a heuristic. If a difftest original "did not return",
+DMA-busy polls (VDP status bit 1) don't count, except after a VRAM fill/copy (see #30
+below): the sandbox finishes DMA at once and GPGX stalls the CPU during a 68k→VDP DMA. It's a heuristic. If a difftest original "did not return",
 look for a wait it missed.
 
 ### The rule: stop in front of the blocking call
@@ -316,6 +316,28 @@ look for a wait it missed.
    the middle of a function leaves working values in registers, so reproduce them all.
    `port/src/game/cc68k.h` has helpers for the exact condition codes: `cc_sub`,
    `cc_add`, `cmpw`, `cc_btst`, `lslw`, `lsrw`.
+
+### What nested 68k calls hide from the rest of the machine (#30)
+
+68k code that runs nested inside C (`hle_call68k`, `hle_run68k_until`) executes within
+one time slice of the emulator's frame loop. The raster can't advance until the C
+function returns. The layer makes that safe (`nest_begin()` in hle.c):
+- Interrupts are held off during nested execution. An SR-writing instruction would
+  otherwise take a pending HBlank in the middle. They are re-raised from the VDP's
+  pending flags afterwards, and the CPU takes them right after the C function.
+- The VDP line base follows the CPU during nested execution, and is restored
+  afterwards. Without this, a nested 68k VDP data-port write that ran far ahead of the
+  raster pushed GPGX's FIFO model past `fifo_timing[]`. That stalled the CPU by ~15
+  frames, and those VBlanks (`vblank_main`, i.e. pad reading) were lost. That was #30:
+  only 323 of 390 frames ran vblank_main in `mouse/look.txt` with `--hle all`.
+- A VRAM **fill/copy** DMA started before a C function doesn't progress during it, so
+  a nested poll of the DMA-busy bit hangs. `game_init` after `boot_hw_init`'s fill does
+  this, which is why `boot_init` stops in front of it.
+
+difftest holds IRQs, so it can't see any of this. `port/tools/irqtest.sh` (frameprof
+"lost VBlank" count over the pointer, inventory and mouse routes, `--hle all` and
+`none`) is the regression check. Run it with hosttest after changing C code that calls
+68k code.
 
 ### Tail jumps into 68k (HLE_FUNC + hle_jump)
 
@@ -358,6 +380,8 @@ It may call anything non-blocking through `hle_call68k`.
   counts, first/last hits of watched addresses, and the hottest instructions. Use it to
   see where code runs and how often.
 - `tools/py/blocking.py`: see above.
+- `port/tools/irqtest.sh`: no gameplay frame may miss vblank_main with IRQs unmasked
+  (uses `frameprof --hle SPEC`, which also counts this).
 
 ## Functions replaced so far
 

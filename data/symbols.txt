@@ -230,7 +230,8 @@
 0002FA region_check      # Reset piece: console region must be in the header ("JUE")
 000400 region_print      # lockout screen: print string a0 at row d1
 00069A factory_test      # controller-port-2 test fixture -> ROM checksum screen; normally returns
-0008CE boot_init         # Reset piece: hooks, sound, game_init, VDP regs, logo 1
+0008CE boot_init         # Reset piece: hooks, sound init, music; stops at jsr game_init
+00091C boot_vdp_init     # Reset piece: clear VRAM/CRAM, VDP regs, logo 1
 000BC8 logo5_frame       # DMA animation frame d3 of logo 5 to $C410
 000CB8 game_start        # Reset piece: after the title menu started a game
 000D38 main_loop         # jsr sub_00AFDA; the C ranges start at $000D3E
