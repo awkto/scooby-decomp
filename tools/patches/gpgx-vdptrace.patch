@@ -1,0 +1,51 @@
+--- a/core/vdp_ctrl.c
++++ b/core/vdp_ctrl.c
+@@ -73,6 +73,7 @@
+ uint8 ALIGNED_(4) vram[0x10000];  /* Video RAM (64K x 8-bit) */
+ uint8 ALIGNED_(4) cram[0x80];     /* On-chip color RAM (64 x 9-bit) */
+ uint8 ALIGNED_(4) vsram[0x80];    /* On-chip vertical scroll RAM (40 x 11-bit) */
++unsigned int hook_dma_src = 0xFFFFFFFF; /* scooby-decomp: 68k source of current DMA word */
+ uint8 reg[0x20];                  /* Internal VDP registers (23 x 8-bit) */
+ uint8 hint_pending;               /* 0= Line interrupt is pending */
+ uint8 vint_pending;               /* 1= Frame interrupt is pending */
+@@ -3101,6 +3102,7 @@
+       data = *(uint16 *)(m68k.memory_map[source>>16].base + (source & 0xFFFF));
+     }
+  
++    hook_dma_src = source;
+     /* Increment source address */
+     source += 2;
+ 
+@@ -3111,6 +3113,7 @@
+     vdp_bus_w(data);
+   }
+   while (--length);
++  hook_dma_src = 0xFFFFFFFF;
+ 
+   /* Update DMA source address */
+   dma_src = (source >> 1) & 0xffff;
+@@ -3129,6 +3132,7 @@
+     /* access Work-RAM by default  */
+     data = *(uint16 *)(work_ram + (source & 0xFFFF));
+    
++    hook_dma_src = source;
+     /* Increment source address */
+     source += 2;
+ 
+@@ -3139,6 +3143,7 @@
+     vdp_bus_w(data);
+   }
+   while (--length);
++  hook_dma_src = 0xFFFFFFFF;
+ 
+   /* Update DMA source address */
+   dma_src = (source >> 1) & 0xffff;
+--- a/libretro/link.T
++++ b/libretro/link.T
+@@ -1,5 +1,5 @@
+ {
+-   global: retro_*; set_cpu_hook; m68k;
++   global: retro_*; set_cpu_hook; m68k; hook_dma_src; vram; cram; vsram; reg;
+    local: *;
+ };
+ 
