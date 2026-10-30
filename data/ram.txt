@@ -30,7 +30,7 @@ FF0016 2    ram_title_fade_a # vblank_title_fade state (palette step table posit
 FF0018 2    ram_title_fade_b
 FF001A 2    ram_title_fade_c
 FF001D 1    ram_title_scroll # title sprite tile offset base (>>3)
-FF0328 128  ram_script_stack # a5-based script/object record area? (initialised at $005D1C)
+FF0328 128  ram_inv_nametable # inventory name table rows (inventory_build_page), also minigame_tug meters; not a script stack (#19)
 FF0428 4    ram_rng_state    # seeded 45C3F2D1 at game_init, stepped by rng_next
 FF0484 12   ram_list_484     # six-entry list walked at $00B0F8 (a6) ?
 FF0488 2    ram_cur_index    # index used by the $0FC760 table (spritesheet/frame lookup ?)
@@ -103,8 +103,8 @@ FF09EA 1    ram_09ea
 FF09EB 1    ram_09eb
 FF09ED 1    ram_09ed         # bit3: RLE decompressor side effect
 FF0AB5 1    ram_0ab5
-FF0AC9 1    ram_script_flags # bit0 = stop running script
-FF0ACA 1    ram_script_flags2
+FF0AC9 1    ram_script_flags # bit0 stop, 1 match case (verb pass), 2 collect talk_choice, 4 match on_event, 5 waits for 2nd object, 6 a verb script ran, 7 walk-on script done (docs/script.md)
+FF0ACA 1    ram_script_flags2 # bit0 Start pressed, 1 cutscene skippable, 2 end TALK menu, 3 TALK after this action
 
 # ---- buffers
 FF1200 2048 ram_objects      # object/sprite record table (records walked from $FF1200, +6 = state word)
@@ -196,3 +196,16 @@ FF069E 2    ram_room_entry_ofs  # entry point number * 4, set by the room-change
 # (dup, superseded) FF06AE 2    ram_hotspot_id      # object index + 3 under Shaggy ($0012CC), 0 = none
 # (dup, superseded) FF06F4 2    ram_obj_last        # index of the last object in ram_objects (count - 1)
 # (dup, superseded) FF0688 2    ram_spawn_timer     # counts down 100 frames between spawn-point events
+# ---- #19 script interpreter (docs/script.md, port/src/game/script.c)
+FF06B0 2    ram_obj_script_hdr2 # object script header word 2: high byte pronoun bits (that/him/her), low byte TALK text colour/palette
+FF06DA 2    ram_then_talk_obj # object to TALK to after the action (sys then_talk)
+FF080E 2    ram_talk_count   # talk_choice ops collected for the TALK menu (max 5)
+FF0824 10   ram_talk_pose    # w[5] actor pose while the reply is said
+FF082E 10   ram_talk_len     # w[5] body length
+FF0838 20   ram_talk_text    # l[5] choice text
+FF084C 20   ram_talk_reply   # l[5] reply text
+FF0860 20   ram_talk_body    # l[5] body address
+FF0876 2    ram_bar_saved    # plane address of the verb bar saved by sys bar_hide
+FF087C 40   ram_palcyc       # palette cycling slots (op pal_cycle): w[5] first, +$A last, +$14 timer, +$1E speed
+FF0ACD 1    ram_palcyc_on    # bit n: cycling slot n on
+FF0ABF 1    ram_actors_frozen # bit n: actor n frozen by a script (op freeze / unfreeze_wait)

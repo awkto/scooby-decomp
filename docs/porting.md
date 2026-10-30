@@ -433,3 +433,12 @@ per-function results are in `docs/subsystems/mainloop.md`:
 | $00069A | factory_test | reset.c | 3/3 |
 | $00A27A | game_reset | reset.c | 5/5 |
 | $000BC8 | logo5_frame | reset.c | 183/183 |
+
+#19 (script interpreter), file `script.c`. Byte code: `docs/script.md`; per-function list,
+split into ranges and difftest results: `docs/subsystems/script.md`. Summary: the two dispatch
+loops (4 ranges), the non-blocking handlers (case_verb, talk_choice, if, set, set_verb,
+sound, set_hotspot, on_event, freeze, pal_cycle, 9 sub-ops) as functions, the blocking ones
+(if_else, move_obj, anim_wait, set_state, sys, wait, goto_room(_cut), wait_anim,
+unfreeze_wait, bar_hide/bar_show) as ranges around their waits, and the drivers
+action_execute, run_object_events, the room scripts and the TALK menu loop as ranges.
+`tools/py/script_dt_all.sh` / `script_dt_pokes.sh` run them all.
