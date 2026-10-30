@@ -492,3 +492,11 @@ sound, set_hotspot, on_event, freeze, pal_cycle, 9 sub-ops) as functions, the bl
 unfreeze_wait, bar_hide/bar_show) as ranges around their waits, and the drivers
 action_execute, run_object_events, the room scripts and the TALK menu loop as ranges.
 `tools/py/script_dt_all.sh` / `script_dt_pokes.sh` run them all.
+
+#14 (decompressors), file `decomp.c`, details in `docs/subsystems/decomp.md`; test driver
+`port/tools/dt-decomp` (captured states plus one variant per LZSS/RLE stream in the ROM):
+
+| Address | Name | File | difftest result |
+| --- | --- | --- | --- |
+| $0097AA | lzss_decompress (per-token cycle model, called directly by room.c / reset.c) | decomp.c | 484/484 (60 route states + 212 stream variants x 2 states) |
+| $009C64 | rle_decompress | decomp.c | 248/248 (8 route states + 31 title/logo streams, with and without the $FF09ED bit 3 side effect) |
