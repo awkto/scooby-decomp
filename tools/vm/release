@@ -1,0 +1,3 @@
+#!/bin/bash
+. "$(dirname "$0")/common.sh"
+rm -rf "$LEASES/${1:?usage: release VM}" && echo "released $1"

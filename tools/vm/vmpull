@@ -1,0 +1,7 @@
+#!/bin/bash
+# vmpull VM REMOTE_REL [LOCAL_REL] — copy results (e.g. runs/x, build/foo.png) from the VM's copy of this worktree.
+. "$(dirname "$0")/common.sh"
+vm=${1:?usage: vmpull VM REMOTE_REL [LOCAL_REL]}; src=${2:?}; dst=${3:-$2}
+ip=$(vm_ip "$vm"); top=$(git rev-parse --show-toplevel); w=$(basename "$top")
+mkdir -p "$(dirname "$top/$dst")"
+rsync -a -e "ssh ${SSH_OPTS[*]}" "root@$ip:/work/$w/$src" "$top/$dst"

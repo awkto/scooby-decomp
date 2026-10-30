@@ -1,0 +1,5 @@
+#!/bin/bash
+. "$(dirname "$0")/common.sh"
+while read -r name ip; do
+  o=$(cat "$LEASES/$name/owner" 2>/dev/null || echo free); echo "$name $ip  $o"
+done < "$VM_LIST"

@@ -1,0 +1,18 @@
+#!/bin/bash
+# lease OWNER  -> prints a free VM name and holds it until `release NAME`.
+# Waits (polling every 30 s, up to 1 h) if all are busy. Stale leases (>6 h) are reclaimed.
+. "$(dirname "$0")/common.sh"
+owner=${1:?usage: lease OWNER}
+for try in $(seq 120); do
+  while read -r name ip; do
+    [ -n "$name" ] || continue
+    d=$LEASES/$name
+    if [ -d "$d" ] && [ $(( $(date +%s) - $(stat -c %Y "$d") )) -gt 21600 ]; then rm -rf "$d"; fi
+    if mkdir "$d" 2>/dev/null; then
+      echo "$owner $(date -Is)" > "$d/owner"; echo "$name"; exit 0
+    fi
+  done < "$VM_LIST"
+  [ "$try" = 1 ] && echo "all VMs busy, waiting..." >&2
+  sleep 30
+done
+die "no VM free after 1 h"

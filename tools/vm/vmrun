@@ -1,0 +1,11 @@
+#!/bin/bash
+# vmrun VM CMD...  — sync the current git worktree to VM:/work/<worktree-name> and run CMD there.
+# The remote copy has rom/, ext/ (GPGX core with cpuhook+vdptrace patches, built) and .venv linked in.
+# Results stay remote; fetch them with vmpull. Excludes .git, build/, runs/ from the upload.
+. "$(dirname "$0")/common.sh"
+vm=${1:?usage: vmrun VM CMD...}; shift
+ip=$(vm_ip "$vm"); [ -n "$ip" ] || die "unknown VM $vm"
+top=$(git rev-parse --show-toplevel) || die "run inside a worktree"
+w=$(basename "$top")
+rsync -a --delete -e "ssh ${SSH_OPTS[*]}" --exclude .git --exclude /build --exclude /runs --exclude /rom --exclude /ext --exclude /.venv --exclude /.claude --exclude /.vm "$top/" "root@$ip:/work/$w/" || die "rsync failed"
+ssh "${SSH_OPTS[@]}" "root@$ip" "cd /work/$w && ln -sfn /opt/scooby/rom rom && ln -sfn /opt/scooby/ext ext && ln -sfn /opt/venv .venv && $*"

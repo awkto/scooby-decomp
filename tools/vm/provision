@@ -1,0 +1,9 @@
+#!/bin/bash
+# provision VM — one-time: wait for cloud-init, upload ROM, build GPGX libretro core with our patches.
+. "$(dirname "$0")/common.sh"
+vm=${1:?}; ip=$(vm_ip "$vm"); repo=/path/to/scooby-decomp
+until ssh "${SSH_OPTS[@]}" root@$ip test -f /var/lib/cloud/scooby-ready 2>/dev/null; do sleep 15; done
+ssh "${SSH_OPTS[@]}" root@$ip "mkdir -p /opt/scooby/rom /work"
+rsync -aL -e "ssh ${SSH_OPTS[*]}" "$repo/rom/baserom.md" root@$ip:/opt/scooby/rom/baserom.md
+rsync -a -e "ssh ${SSH_OPTS[*]}" "$repo/tools/patches/" root@$ip:/opt/scooby/patches/
+ssh "${SSH_OPTS[@]}" root@$ip 'set -e; cd /opt/scooby && rm -rf ext && mkdir ext && git clone -q https://github.com/libretro/Genesis-Plus-GX ext/gpgx && cd ext/gpgx && git checkout -q 60bee4c && for p in /opt/scooby/patches/gpgx-*.patch; do patch -p1 --binary -s < $p || patch -p1 -s < $p; done && make -s -f Makefile.libretro HOOK_CPU=1 -j4 >/tmp/build.log 2>&1 && ls -la genesis_plus_gx_libretro.so && sha1sum /opt/scooby/rom/baserom.md'

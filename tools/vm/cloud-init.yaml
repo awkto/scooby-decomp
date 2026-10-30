@@ -1,0 +1,5 @@
+#cloud-config
+package_update: true
+packages: [build-essential, git, rsync, cmake, pkg-config, python3-venv, python3-pip, binutils-m68k-linux-gnu, libsdl2-dev, imagemagick, z80asm, xvfb, zlib1g-dev]
+runcmd:
+  - [bash, -c, "python3 -m venv /opt/venv && /opt/venv/bin/pip -q install capstone && touch /var/lib/cloud/scooby-ready"]

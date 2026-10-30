@@ -7,3 +7,4 @@ tools/harness/harness
 *.zip
 __pycache__/
 .claude/
+.vm/
