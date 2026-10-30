@@ -61,19 +61,19 @@ FF069A 4    ram_room_idle_spots # -> up to 8 Scooby idle spots (long each, -1 en
 FF06A6 4    ram_cur_music    # id of the "current music" ($2F at boot)
 FF06AA 2    ram_mystery_idx  # 0 = Blake's Hotel, 1 = Ha Ha Carnival
 FF06AC 2    ram_room_index   # current room number (starts at 2)
-FF06C0 2    ram_6c0
-FF06C2 2    ram_6c2
+FF06C0 2    ram_verb_cur  # verb id selected (0 none; 1 Pull 2 Take 3 Open 4 Shut 5 Use 6 Give 7 Push 8 Talk 9 Eat 10 Look)
+FF06C2 2    ram_verb_redraw  # verb id whose label verb_label_redraw redraws
 FF06C6 2    ram_map_width    # room width in cells
 FF06C8 2    ram_map_height   # room height in cells
 FF06CA 2    ram_camera_x     # world x of the left screen edge
 FF06CE 2    ram_camera_y     # world y shown at screen line 16
 FF06D2 4    ram_room_name_ptr # absolute pointer to the room name string
-FF06DC 2    ram_6dc
-FF06DE 2    ram_6de
+FF06DC 2    ram_pointer_x  # pointer-mode crosshair X, screen px of its top-left (0..$F7)
+FF06DE 2    ram_pointer_y  # crosshair Y screen px (0..$CF); >= $A8 = over the verb bar
 FF06E4 2    ram_ui_tile_base_b
 FF06E6 2    ram_ui_tile_base_c
 FF06E8 2    ram_ui_tile_base_d
-FF06EC 2    ram_6ec
+FF06EC 2    ram_inv_page  # inventory scroll row (list index of the first slot = 4*this)
 FF06F8 128  ram_pal_cur      # current CRAM image (64 words), DMA'd to CRAM each frame
 FF0778 128  ram_pal_target   # palette fade target
 FF07B8 64   ram_room_pal23   # room palettes 2-3 copy (32 words)
@@ -162,5 +162,14 @@ FF0ABE 1    ram_actors_depth_new
 FF0AC0 1    ram_actors_on_path
 FF0AC2 1    ram_actors_no_zone
 FF0AC3 1    ram_actors_path_once
-FF0ACB 1    ram_verb_bar_slide
 FF0ACC 1    ram_shaggy_turning # bit0 R 1 L 2 U 3 D: turn animation running
+# ---- verb bar / inventory / pointer mode (docs/subsystems/verbs.md, #17)
+FF06AE 2    ram_target_obj    # object under the crosshair: 0 none, 1 Shaggy, 2 Scooby, n>=3 = object slot n-3
+FF06B6 2    ram_target2_obj   # second object (Use X with Y / Give X to Y)
+FF06BE 2    ram_action_verb   # verb id handed to action_execute ($0019B0); 11 = walk/default
+FF06C4 2    ram_default_verb  # default verb of the hovered object (hover colour variant 2)
+FF06E0 2    ram_pointer_dx    # pointer X speed (2; $28 = cell jump on the bar)
+FF06E2 2    ram_pointer_dy    # pointer Y speed
+FF06EA 2    ram_ui_slot       # bar/inventory cell under the pointer (verb view 1-10, inventory 0-10; 5 and 10 = page arrows)
+FF0A1E 2    ram_inv_list      # carried object indices (words), terminated by a negative word
+FF0ACB 1    ram_bar_slide     # verb-bar slide counter ($10 .. 1 while sliding, $FF idle)
