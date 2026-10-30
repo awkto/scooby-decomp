@@ -1648,3 +1648,242 @@ HLE_RANGE(0x002BE2, script_op_anim_wait_looped, 40, 0x002BDC, 0x002BF6)
 	}
 	anim_wait_store(ctx);
 }
+
+/* ------------------------------------------------------------------ TALK menu */
+/* $001C0C talk_menu (sub_001C0C, called by action_execute for TALK): when the object script
+ * has talk_choice ops, the verb bar slides away and up to 5 choice texts are listed in its
+ * place; Up/Down move the red bar ($FF06F0 = text line of the bar, $FF06F2 = its height in
+ * lines << 8), B or A picks. Picked choices are marked in $FF0874 and not listed again;
+ * a choice's body may hold nested talk_choice ops (a sub-menu), the menu depth is $FF0810
+ * with the parent's A5/A6 in $FF0812/$FF0816. Ported here: the set-up and the menu loop up
+ * to the pick ($001E72). Running the picked choice (reply text, pose, body, nesting) stays
+ * 68k: it is all stack pushes around blocking calls.
+ *   $001C10 talk_menu_begin   no choices -> rts; clear the text line, hide the pointer
+ *   $001C4A talk_menu_save    save the bar's name table, start the slide-out
+ *   $001C9E talk_menu_slide   wait for the slide; remember A5/A6, depth 0, nothing used
+ *   $001CDC talk_menu_level   (after collecting a level's choices) none left -> $00204A
+ *   $001D22 talk_menu_draw    list the unused choices, put the bar on the first one
+ *   $001DB8 talk_menu_input   Up/Down edges move the bar over unused choices
+ *   $001E5A talk_menu_pick    B or A picks, else next frame */
+#define RAM_TALK_LINES    0xFF081A   /* 5 words: text lines of each listed choice */
+#define RAM_TALK_USED     0xFF0874   /* word: bit n = choice n already picked */
+#define RAM_TALK_DEPTH    0xFF0810
+#define RAM_TALK_A5       0xFF0812
+#define RAM_TALK_A6       0xFF0816
+#define RAM_MENU_BAR_Y    0xFF06F0
+#define RAM_MENU_BAR_H    0xFF06F2
+#define RAM_POINTER_HIDE  0xFF06EE
+#define TEXT_LINE_CLEAR   0x00A054   /* sub_00A054: draw string A0 in the top text line */
+#define VRAM_READ_WORD    0x009996
+#define BAR_PLANE_FILL    0x0022F2   /* sub_0022F2: blank the bar rows at D4 */
+#define CHOICE_DRAW       0x009FA2   /* sub_009FA2: draw choice text A0 at line D0, column D1 */
+
+HLE_RANGE(0x001C10, talk_menu_begin, 120, 0x001C1A, 0x001C40)
+{
+	uint16_t n = RAM16(RAM_TALK_COUNT);
+	cc_logic16(ctx, n);
+	if (!n) {
+		hle_jump(ctx, 0x001C1A);
+		return;
+	}
+	RAM8(RAM_TEXT_BUF) = 0;
+	ctx->a[0] = RAM_TEXT_BUF;
+	hle_call68k(ctx, TEXT_LINE_CLEAR);
+	RAM16(RAM_POINTER_HIDE) = 0xFFFF;
+	cc_logic16(ctx, 0xFFFF);
+	bit_set(ctx, RAM_VERB_STATE, 2);
+	hle_jump(ctx, 0x001C40);                               /* spin until the bar is idle */
+}
+
+HLE_RANGE(0x001C4A, talk_menu_save, 9000, 0x001C98)
+{
+	bit_clr(ctx, VBLANK_FLAGS, 3);
+	ctx->d[0] = 0;
+	if (!bit_test(ctx, VBLANK_FLAGS, 4))
+		set_w(&ctx->d[0], 0x40);
+	set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 0xAA80, 16)); /* bar rows in the plane at $A000 */
+	set_w(&ctx->d[4], (uint16_t)ctx->d[0]);
+	ctx->a[0] = 0xFF2C00;
+	set_w(&ctx->d[3], 5);
+	for (;;) {
+		set_w(&ctx->d[2], 0x1F);
+		for (;;) {
+			hle_call68k(ctx, VRAM_READ_WORD);
+			RAM16(ctx->a[0]) = (uint16_t)ctx->d[1];
+			ctx->a[0] += 2;
+			set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 2, 16));
+			uint16_t c = (uint16_t)(ctx->d[2] - 1);
+			set_w(&ctx->d[2], c);
+			if (c == 0xFFFF)
+				break;
+		}
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 0x40, 16));
+		uint16_t r = (uint16_t)(ctx->d[3] - 1);
+		set_w(&ctx->d[3], r);
+		if (r == 0xFFFF)
+			break;
+	}
+	hle_call68k(ctx, BAR_PLANE_FILL);
+	RAM8(RAM_BAR_SLIDE) = 0x10;
+	cc_logic8(ctx, 0x10);
+	hle_jump(ctx, 0x001C98);
+}
+
+HLE_RANGE(0x001C9E, talk_menu_slide, 60, 0x001C98, 0x001CC4)
+{
+	uint8_t s = RAM8(RAM_BAR_SLIDE);
+	cc_logic8(ctx, s);
+	if (!(s & 0x80)) {
+		hle_jump(ctx, 0x001C98);
+		return;
+	}
+	RAM32_W(RAM_TALK_A5, ctx->a[5]);
+	RAM32_W(RAM_TALK_A6, ctx->a[6]);
+	RAM16(RAM_TALK_DEPTH) = 0;
+	RAM16(RAM_TALK_USED) = 0;
+	cc_logic16(ctx, 0);
+	hle_jump(ctx, 0x001CC4);
+}
+
+HLE_RANGE(0x001CDC, talk_menu_level, 200, 0x00204A, 0x001CEA)
+{
+	uint16_t n = RAM16(RAM_TALK_COUNT);
+	cc_logic16(ctx, n);
+	if (!n) {
+		hle_jump(ctx, 0x00204A);
+		return;
+	}
+	hle_call68k(ctx, BAR_PLANE_FILL);
+	hle_jump(ctx, 0x001CEA);
+}
+
+HLE_RANGE(0x001D22, talk_menu_draw, 3000, 0x001DB2)
+{
+	ctx->d[2] = 0;
+	set_w(&ctx->d[6], 0);
+	ctx->a[2] = RAM_TALK_TEXT;
+	ctx->a[3] = RAM_TALK_LINES;
+	set_w(&ctx->d[3], RAM16(RAM_TALK_COUNT));
+	for (;;) {
+		ctx->a[0] = bus_r32(ctx->a[2]);
+		ctx->a[2] += 4;
+		set_w(&ctx->d[0], (uint16_t)ctx->d[2]);
+		ctx->d[1] = 0;
+		if (bit_test(ctx, VBLANK_FLAGS, 4))
+			set_w(&ctx->d[1], 0x20);                       /* inventory view: other half */
+		if (!bit_test(ctx, RAM_TALK_USED, ctx->d[6])) {
+			hle_call68k(ctx, CHOICE_DRAW);                 /* D0 = lines drawn */
+			RAM16(ctx->a[3]) = (uint16_t)ctx->d[0];
+			set_w(&ctx->d[2], cc_add(ctx, ctx->d[2], ctx->d[0], 16));
+		}
+		cc_logic16(ctx, RAM16(ctx->a[3]));
+		ctx->a[3] += 2;
+		set_w(&ctx->d[6], cc_add(ctx, ctx->d[6], 1, 16));
+		uint16_t left = (uint16_t)cc_sub(ctx, ctx->d[3], 1, 16, true);
+		set_w(&ctx->d[3], left);
+		bool n = ctx->sr & CC_N, v = ctx->sr & CC_V;
+		if ((ctx->sr & CC_Z) || n != v)                    /* ble */
+			break;
+		if (cmpw(ctx, ctx->d[2], 5) >= 0)                  /* 5 lines full */
+			break;
+	}
+	ctx->d[2] = 0;
+	ctx->a[0] = RAM_TALK_LINES;
+	set_w(&ctx->d[0], RAM16(RAM_TALK_LINES));
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
+	set_w(&ctx->d[0], lslw(ctx, lslw(ctx, ctx->d[0], 4), 4));
+	RAM16(RAM_MENU_BAR_H) = (uint16_t)ctx->d[0];
+	RAM16(RAM_MENU_BAR_Y) = 0;
+	RAM16(RAM_POINTER_HIDE) = 0;
+	cc_logic16(ctx, 0);
+	/* D3 = first unused choice, D6 = number of unused ones (scanned from 4 down) */
+	ctx->d[0] = 4;
+	ctx->d[6] = 0;
+	cc_logic32(ctx, 0);
+	for (;;) {
+		if (!bit_test(ctx, RAM_TALK_USED, ctx->d[0])) {
+			set_w(&ctx->d[3], (uint16_t)ctx->d[0]);
+			cc_logic16(ctx, ctx->d[0]);
+			set_w(&ctx->d[6], cc_add(ctx, ctx->d[6], 1, 16));
+		}
+		uint16_t c = (uint16_t)(ctx->d[0] - 1);
+		set_w(&ctx->d[0], c);
+		if (c == 0xFFFF)
+			break;
+	}
+	bit_set(ctx, VBLANK_FLAGS, 0);                         /* $001DAA */
+	hle_jump(ctx, 0x001DB2);
+}
+
+/* the bar position from D3 (current choice) and D2 (its first line) */
+static void talk_menu_bar(hle_ctx *ctx)
+{
+	RAM16(RAM_MENU_BAR_Y) = (uint16_t)ctx->d[2];
+	set_w(&ctx->d[0], (uint16_t)ctx->d[3]);
+	set_w(&ctx->d[0], lslw(ctx, ctx->d[0], 1));
+	set_w(&ctx->d[0], RAM16(ctx->a[0] + (int16_t)ctx->d[0]));
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
+	set_w(&ctx->d[0], lslw(ctx, lslw(ctx, ctx->d[0], 4), 4));
+	RAM16(RAM_MENU_BAR_H) = (uint16_t)ctx->d[0];
+	cc_logic16(ctx, ctx->d[0]);
+	hle_jump(ctx, 0x001E4E);                               /* spin until VBlank */
+}
+
+HLE_RANGE(0x001DB8, talk_menu_input, 200, 0x001E4E)
+{
+	/* Up edge (pad active low: pressed now, not last frame): previous unused choice */
+	if (!bit_test(ctx, PAD1_CUR, 0) && bit_test(ctx, PAD1_PREV, 0)) {
+		set_w(&ctx->d[0], (uint16_t)ctx->d[3]);
+		cc_logic16(ctx, ctx->d[0]);
+		if ((uint16_t)ctx->d[0] != 0) {
+			set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
+			for (;;) {
+				if (!bit_test(ctx, RAM_TALK_USED, ctx->d[0])) {
+					set_w(&ctx->d[3], (uint16_t)ctx->d[0]);
+					cc_logic16(ctx, ctx->d[0]);
+					set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], ctx->d[0], 16));
+					set_w(&ctx->d[2], cc_sub(ctx, ctx->d[2],
+					      RAM16(ctx->a[0] + (int16_t)ctx->d[0]), 16, true));
+					talk_menu_bar(ctx);
+					return;
+				}
+				set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
+				if (ctx->d[0] & 0x8000)
+					break;
+			}
+		}
+	}
+	/* Down edge: next unused choice */
+	if (!bit_test(ctx, PAD1_CUR, 1) && bit_test(ctx, PAD1_PREV, 1)) {
+		set_w(&ctx->d[0], (uint16_t)ctx->d[3]);
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 1, 16));
+		if (cmpw(ctx, ctx->d[0], RAM16(RAM_TALK_COUNT)) < 0 && cmpw(ctx, ctx->d[0], 5) < 0) {
+			for (;;) {
+				if (!bit_test(ctx, RAM_TALK_USED, ctx->d[0])) {
+					set_w(&ctx->d[3], cc_add(ctx, ctx->d[3], ctx->d[3], 16));
+					set_w(&ctx->d[2], cc_add(ctx, ctx->d[2],
+					      RAM16(ctx->a[0] + (int16_t)ctx->d[3]), 16));
+					set_w(&ctx->d[3], (uint16_t)ctx->d[0]);
+					cc_logic16(ctx, ctx->d[0]);
+					break;
+				}
+				set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 1, 16));
+				if (cmpw(ctx, ctx->d[0], 5) == 0)
+					break;
+			}
+		}
+	}
+	talk_menu_bar(ctx);
+}
+
+HLE_RANGE(0x001E5A, talk_menu_pick, 60, 0x001DB2, 0x001E7A)
+{
+	if (bit_test(ctx, PAD1_CUR, 4) && bit_test(ctx, PAD1_CUR, 6)) {   /* neither B nor A */
+		bit_set(ctx, VBLANK_FLAGS, 0);                     /* next frame: $001DAA */
+		hle_jump(ctx, 0x001DB2);
+		return;
+	}
+	RAM16(RAM_POINTER_HIDE) = 0xFFFF;
+	cc_logic16(ctx, 0xFFFF);
+	hle_jump(ctx, 0x001E7A);
+}
