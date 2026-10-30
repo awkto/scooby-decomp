@@ -219,7 +219,7 @@ HLE_FUNC(0x00A054, text_box_print, 0)
 		cc_set(ctx, CC_X | CC_N | CC_Z | CC_V | CC_C,
 		       (((t >> 12) & 1) ? CC_X : 0) | ((r & 0x8000) ? CC_N : 0) | (r ? 0 : CC_Z));
 	}
-	ctx->cycles = 277500 + 270 * glyphs;   /* original avg 284.9k: 1024 blank words + the glyphs */
+	ctx->cycles = 280600 + 270 * glyphs;   /* original avg 284.9k: 1024 blank words + the glyphs */
 }
 
 /* ------------------------------------------------------------------ talk_line_print $009FA2 */
@@ -305,7 +305,7 @@ HLE_FUNC(0x00A172, text_clear, 0)
  *     verb_state bit1 = "redraw the status line"
  * The pushes around the blocking call keep the 68k's stack, so it is four ranges that exit
  * in front of the push, the wait call, the pop and the final rts. */
-HLE_RANGE(0x00A130, text_show, 40, 0x00A13A)
+HLE_RANGE(0x00A130, text_show, 24, 0x00A13A)
 {
 	uint8_t f = RAM8(RAM_VBLANK_FLAGS);
 	uint8_t r = f & 8;
@@ -318,7 +318,7 @@ HLE_RANGE(0x00A13C, text_show_print, 60, 0x00A148)
 	cc_btst(ctx, RAM8(RAM_VBLANK_FLAGS), 3);
 	RAM8(RAM_VBLANK_FLAGS) &= ~8;                      /* bclr #3: pointer mode off */
 	text_box_print(ctx);
-	ctx->cycles += 60;
+	ctx->cycles += 20;
 	hle_jump(ctx, 0x00A148);                           /* bsr text_wait */
 }
 HLE_RANGE(0x00A14C, text_show_clear, 60, 0x00A160)
@@ -327,10 +327,10 @@ HLE_RANGE(0x00A14C, text_show_clear, 60, 0x00A160)
 	vdp_ctrl_w(0x9200 | 2);                            /* window height back to 2 rows */
 	RAM8(RAM_WINDOW_ROWS) = 2;
 	cc_logic8(ctx, 2);
-	ctx->cycles += 60;
+	ctx->cycles += 40;
 	hle_jump(ctx, 0x00A160);                           /* movew (sp)+,d0 */
 }
-HLE_RANGE(0x00A162, text_show_done, 40, 0x00A170)
+HLE_RANGE(0x00A162, text_show_done, 44, 0x00A170)
 {
 	uint8_t v = RAM8(RAM_VBLANK_FLAGS) | (uint8_t)ctx->d[0];
 	RAM8(RAM_VBLANK_FLAGS) = v;                        /* restore pointer mode */
@@ -356,13 +356,13 @@ HLE_RANGE(0x00A162, text_show_done, 40, 0x00A170)
  *   $A1B2  range: Start-skip test, cutscene call          -> exits A234 / A1E2 / A1E8
  *   $A1E8  bsr wait_vblank                                (68k)
  *   $A1EC  range: timer -= table, button tests            -> exits A234, A1AA, A20C, A228 */
-HLE_RANGE(0x00A18C, text_wait, 30, 0x00A192)
+HLE_RANGE(0x00A18C, text_wait, 21, 0x00A192)
 {
 	uint16_t v = RAM16(RAM_TEXT_TIMER);
 	RAM16(RAM_TEXT_TIMER) = (uint16_t)lsr16(ctx, v, 1);
 	hle_jump(ctx, 0x00A192);
 }
-HLE_RANGE(0x00A1B2, text_wait_frame, 40, 0x00A234, 0x00A1E2, 0x00A1E8)
+HLE_RANGE(0x00A1B2, text_wait_frame, 93, 0x00A234, 0x00A1E2, 0x00A1E8)
 {
 	uint8_t sf = RAM8(RAM_SCRIPT_FLAGS2);
 	cc_btst(ctx, sf, 1);
@@ -385,7 +385,7 @@ HLE_RANGE(0x00A1B2, text_wait_frame, 40, 0x00A234, 0x00A1E2, 0x00A1E8)
 	}
 	hle_jump(ctx, 0x00A1E8);                           /* bsr wait_vblank */
 }
-HLE_RANGE(0x00A1EC, text_wait_tick, 40, 0x00A234, 0x00A1AA, 0x00A20C, 0x00A228)
+HLE_RANGE(0x00A1EC, text_wait_tick, 121, 0x00A234, 0x00A1AA, 0x00A20C, 0x00A228)
 {
 	set_w(&ctx->d[0], RAM16(RAM_TEXT_SPEED));
 	uint16_t step = ROM16(ROM_PACING_TABLE + (uint16_t)ctx->d[0]);
