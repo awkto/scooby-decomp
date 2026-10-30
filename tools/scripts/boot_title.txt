@@ -1,0 +1,10 @@
+# Boot to the title menu (PLAY BLAKE'S HOTEL / PLAY HA HA CARNIVAL / SOUND TEST) and save it.
+# Deterministic: same ROM + this script => same savestate.
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+save titlemenu

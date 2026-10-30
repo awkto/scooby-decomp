@@ -1,0 +1,36 @@
+# Enable the hidden DEBUG pause menu (ROOMS / OBJECTS) in mystery 0, starting from the password-warp state of room 16.
+# Cheat code (table $010118, checked by loc_008DA6 in the pause menu): A B A C A B Left Right A B Left,
+# each pressed alone and released; sets bit1 of $FF09ED. The pause menu must be rebuilt afterwards (CONTINUE, pause again)
+# to show 4 items. In ROOMS pick a room with B; OBJECTS is the object editor. Saves state dbgmenu_w0.
+load pw_w0_r16_init
+run 30
+press S 5
+run 250
+press A 8
+run 10
+press B 8
+run 10
+press A 8
+run 10
+press C 8
+run 10
+press A 8
+run 10
+press B 8
+run 10
+press L 8
+run 10
+press R 8
+run 10
+press A 8
+run 10
+press B 8
+run 10
+press L 8
+run 10
+run 40
+press S 6
+run 200
+press S 5
+run 250
+save dbgmenu_w0

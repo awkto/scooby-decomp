@@ -1,0 +1,9 @@
+load nat_w0_r16
+press D 30
+press R 30
+run 100
+press U 40
+press L 20
+run 200
+ram b
+save b

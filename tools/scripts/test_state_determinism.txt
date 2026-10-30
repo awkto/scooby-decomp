@@ -1,0 +1,24 @@
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+press D 30
+press R 30
+run 100
+press U 40
+press L 20
+run 200
+ram a
+save a

@@ -1,0 +1,111 @@
+load start
+record r1
+press B 4
+run 52
+press UR 77
+run 6
+press C 5
+run 54
+press R 16
+run 15
+press D 57
+run 35
+press C 3
+run 29
+press A 2
+run 41
+press R 11
+run 51
+press R 62
+run 22
+press L 59
+run 15
+press B 2
+run 13
+press B 6
+run 33
+press L 26
+run 5
+press C 2
+run 18
+press B 3
+run 15
+press C 3
+run 23
+press UR 35
+run 39
+press C 3
+run 16
+press A 3
+run 29
+press UL 12
+run 28
+press DL 31
+run 14
+press UL 18
+run 26
+press UL 87
+run 42
+press U 86
+run 48
+press A 4
+run 9
+press UL 55
+run 57
+press UL 71
+run 49
+press UR 33
+run 35
+press DR 32
+run 8
+press UL 12
+run 52
+press UR 61
+run 6
+press A 5
+run 28
+press DL 84
+run 58
+press U 67
+run 7
+press A 3
+run 44
+press R 25
+run 53
+press R 69
+run 27
+press A 4
+run 38
+press UL 69
+run 11
+press B 4
+run 60
+press UL 14
+run 32
+press D 36
+run 26
+press A 6
+run 28
+press L 53
+run 22
+press A 6
+run 10
+press UL 50
+run 24
+press L 20
+run 45
+press L 49
+run 35
+press L 16
+run 10
+press B 6
+run 30
+press U 40
+run 52
+stoprecord
+ram a
+peek room FF06AC 2
+load start
+replay r1.inp
+ram b
+peek room FF06AC 2
