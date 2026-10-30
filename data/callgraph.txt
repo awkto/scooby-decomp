@@ -15,7 +15,7 @@
 00197e sub_00197E -> -
 0019b0 action_execute -> sub_001BDA sub_001C0C script_run_nested script_run script_run_frame strcpy sub_00A130
 001bda sub_001BDA -> verb_label_redraw
-001c0c sub_001C0C -> sub_0020DA sub_0022F2 script_run_nested script_run_frame inventory_arrows_update inventory_refresh font_tiles_load wait_vblank sub_009996 vdp_dma_vram sub_009FA2 sub_00A054 sub_00A130 sub_00A18C actor_animate
+001c0c sub_001C0C -> sub_0020DA sub_0022F2 script_run_nested script_run_frame inventory_arrows_update inventory_refresh font_tiles_load wait_vblank vram_read_word vdp_dma_vram draw_text_wrapped draw_status_line sub_00A130 sub_00A18C actor_animate
 0020d2 sub_0020D2 -> -
 0020da sub_0020DA -> rng_next
 002138 room_load -> run_load_script inventory_arrows_update sub_00758A wait_vblank actor_animate
@@ -119,8 +119,8 @@
 004548 script_subop_02_room_fade_in -> room_fade_in
 00454e script_subop_03_fade_out -> palette_read_cram
 004568 script_subop_04_wait_button -> run_object_events actor_animate
-0045a4 script_subop_05_fullscreen_picture -> script_subop_1D_bar_hide room_draw_view sub_009716 sub_009722 wait_vblanks wait_vblank vdp_copy_to_vram vdp_dma_cram vdp_clear_cram status_line_update actor_animate
-0047ac sub_0047AC -> vdp_write_word sub_009996
+0045a4 script_subop_05_fullscreen_picture -> script_subop_1D_bar_hide room_draw_view plane_a_clear plane_b_clear wait_vblanks wait_vblank vdp_copy_to_vram vdp_dma_cram vdp_clear_cram status_line_update actor_animate
+0047ac sub_0047AC -> vdp_write_word vram_read_word
 00481a script_subop_06_bar_show_if_hidden -> script_subop_1C_bar_show
 00482e script_subop_1D_bar_hide -> sub_0047AC actor_animate
 004862 script_subop_1C_bar_show -> font_tiles_load vdp_dma_vram actor_animate
@@ -203,8 +203,8 @@
 00879e title_anim -> -
 008876 title_strip_dma -> vdp_dma_vram
 0088a2 debug_rooms -> menu_open^ rooms_browser menu_load_screen vdp_dma_vram
-0088d8 rooms_browser -> wait_vblank sub_009F46
-008ab4 objects_browser -> wait_vblank sub_009F46
+0088d8 rooms_browser -> wait_vblank draw_text_labelled
+008ab4 objects_browser -> wait_vblank draw_text_labelled
 008c40 debug_objects -> font_tiles_load menu_open^ rooms_browser objects_browser menu_load_screen vdp_dma_vram
 008cd6 menu_start_game -> palette_read_cram
 008d36 menu_choose -> menu_refresh_planes vdp_dma_vram rle_decompress
@@ -215,7 +215,7 @@
 008f9a soft_reset -> Reset* palette_read_cram
 008fb8 menu_play_blake -> mystery_menu^
 008fc2 menu_play_carnival -> -
-008fca mystery_menu -> game_state_init menu_open^ password_show menu_start_game^ menu_choose menu_refresh_planes password_key_noop* password_cancel* password_check* password_cursor_left* password_cursor_right* password_switch_row* password_clear* wait_vblank sound_play vdp_dma_vram rle_decompress sub_009F58 sub_00E40C sub_00F272
+008fca mystery_menu -> game_state_init menu_open^ password_show menu_start_game^ menu_choose menu_refresh_planes password_key_noop* password_cancel* password_check* password_cursor_left* password_cursor_right* password_switch_row* password_clear* wait_vblank sound_play vdp_dma_vram rle_decompress draw_text_plane_a_hi sub_00E40C sub_00F272
 009162 password_key_noop -> -
 00927a password_cancel -> menu_open^ wait_vblank
 009298 password_check -> password_unscramble menu_start_game^ password_read_byte wait_vblanks sound_play
@@ -226,11 +226,11 @@
 0093cc password_switch_row -> sound_play
 0093dc password_clear -> password_show sound_play
 0093f8 password_unused_start -> menu_start_game^
-00940c sound_test -> menu_open^ menu_refresh_planes wait_vblank sound_play vdp_write_word vdp_dma_vram rle_decompress sub_009F30 draw_text_plane_a sub_00E40C sub_00F272 sound_cmd_stop_all
+00940c sound_test -> menu_open^ menu_refresh_planes wait_vblank sound_play vdp_write_word vdp_dma_vram rle_decompress draw_text_centered draw_text_plane_a sub_00E40C sub_00F272 sound_cmd_stop_all
 0096f4 menu_load_screen -> wait_vblank vdp_dma_vram rle_decompress
-009716 sub_009716 -> vdp_clear_vram^
-009722 sub_009722 -> vdp_clear_vram^
-00972e sub_00972E -> -
+009716 plane_a_clear -> vdp_clear_vram^
+009722 plane_b_clear -> vdp_clear_vram^
+00972e vdp_reg_set -> -
 009742 wait_vblanks -> wait_vblank
 00974c wait_vblank -> -
 009762 sound_play -> sound_cmd_play
@@ -241,8 +241,8 @@
 0098f8 sub_0098F8 -> -
 00992c vdp_copy_to_vram -> -
 009964 vdp_write_word -> -
-009996 sub_009996 -> -
-0099c4 sub_0099C4 -> -
+009996 vram_read_word -> -
+0099c4 cram_write_word -> -
 0099f6 vdp_dma_vram -> vdp_dma_setup
 009a3c vdp_dma_setup -> z80_bus_request_keep z80_bus_release_keep
 009b10 vdp_dma_cram -> z80_bus_request_keep z80_bus_release_keep
@@ -254,14 +254,14 @@
 009d34 pad_read -> z80_bus_request z80_bus_release
 009de0 palette_read_cram -> wait_vblanks wait_vblank vdp_dma_cram
 009e7e palette_fade -> wait_vblanks vdp_dma_cram
-009f30 sub_009F30 -> draw_text_plane_a^
-009f46 sub_009F46 -> sub_009F58
-009f58 sub_009F58 -> draw_text_plane_a
+009f30 draw_text_centered -> draw_text_plane_a^
+009f46 draw_text_labelled -> draw_text_plane_a_hi
+009f58 draw_text_plane_a_hi -> draw_text_plane_a
 009f72 draw_text_plane_a -> vdp_write_word
-009fa2 sub_009FA2 -> vdp_write_word strlen
-00a054 sub_00A054 -> sub_00972E vdp_write_word strlen
-00a130 sub_00A130 -> sub_00A054 sub_00A172 sub_00A18C
-00a172 sub_00A172 -> sub_00A054
+009fa2 draw_text_wrapped -> vdp_write_word strlen
+00a054 draw_status_line -> vdp_reg_set vdp_write_word strlen
+00a130 sub_00A130 -> draw_status_line sub_00A172 sub_00A18C
+00a172 sub_00A172 -> draw_status_line
 00a18c sub_00A18C -> sub_0020DA wait_vblank run_object_events actor_animate
 00a236 strlen -> -
 00a248 game_init -> rng_next
@@ -271,7 +271,7 @@
 00a65c vblank_main -> hud_dma player_update object_timers pad_read meters_draw palette_cycle actor_dma camera_update
 00a704 meters_draw -> vdp_write_word
 00a7ce palette_cycle -> vdp_dma_cram
-00a828 status_line_update -> strcpy object_name_ptr sub_00A054
+00a828 status_line_update -> strcpy object_name_ptr draw_status_line
 00a984 sprite_build -> actor_draw
 00ad14 sprite_build_nop -> -
 00ad16 actor_draw -> -

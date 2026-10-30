@@ -244,3 +244,6 @@ FF0012 2    ram_title_bat_depth_b # second title piece's scale depth
 FF001E 32   ram_pw_raw           # raw password bytes r[0..31] (password_show / password_check)
 FF003E 52   ram_pw_sym           # 5-bit password symbols
 FF08BA 2    ram_cheat_progress   # keys of the DEBUG cheat code matched so far (0..11)
+
+# ---- #13 VDP helpers (vdp.c)
+FF080A 2    ram_text_count   # draw_text_wrapped: rows*300 (pause length); draw_status_line: characters*16

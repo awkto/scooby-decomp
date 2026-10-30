@@ -14,7 +14,7 @@
 # ---- VDP / palette / graphics helpers (docs/formats.md)
 00992C vdp_copy_to_vram  # d0=VRAM addr, a0=src, d1=word count
 009964 vdp_write_word    # d0=VRAM addr, d1=value
-0099F6 vdp_dma_vram      # a0=src, d0=VRAM dest, d1=words; splits at 128 KiB boundaries, calls vdp_dma_setup
+0099F6 vdp_dma_vram      # a0=src, d0=VRAM dest, d1=words; splits at 64 KiB source boundaries, calls vdp_dma_setup; C (#13)
 009A3C vdp_dma_setup     # programs DMA length/source regs (bus request around it)
 009B10 vdp_dma_cram      # CRAM DMA, same args as vdp_dma_vram
 009BE4 vdp_fill_vram     # d0=addr, d1=count, d2=value
@@ -329,3 +329,17 @@
 010118 cheat_code_pad       # 11 bytes (active high): A B A C A B Left Right A B Left
 0085DC menu_actions_main    # 3 handlers of the title menu
 0085E8 menu_actions_pause   # 4 handlers of the pause menu
+
+# ---- #13 VDP helpers (C in port/src/game/vdp.c, palette.c; docs/subsystems/vdp.md).
+# C names of the older #11 functions: vdp_copy_to_vram=vram_write_words, vdp_write_word=vram_write_word,
+# vdp_fill_vram=vram_fill_words.
+009996 vram_read_word       # d0=VRAM addr -> d1.w
+0099C4 cram_write_word      # d0=CRAM addr, d1=value (no static caller)
+00972E vdp_reg_set          # d0=register, d1=value: writes $8000|reg<<8|val to the control port
+009716 plane_a_clear        # fill plane A nametable ($C000, $800 words) with 0
+009722 plane_b_clear        # same for plane B ($E000)
+009F30 draw_text_centered   # a0=cstring, d2=row: column = (32-len)/2, then draw_text_plane_a
+009F46 draw_text_labelled   # draws the string at $02FFF4 at column 0, then falls into draw_text_plane_a_hi
+009F58 draw_text_plane_a_hi # draw_text_plane_a with tile priority (font base bit 15) set
+009FA2 draw_text_wrapped    # a0=cstring, d0=row, d1=col: plane at $AA82+row*128+col*2, wraps at 30 chars; d0.w=rows used
+00A054 draw_status_line     # a0=cstring: clears plane $D000 (1024 words) then draws wrapped text, sets reg $12 and $FF080A
