@@ -227,9 +227,25 @@ static int sess_end(void)
 	return n > 0 ? n : 0;
 }
 
+static const hle_def *g_cur_def;   /* innermost C function running (NULL at 68k top level) */
+
+int hle_nest_depth(void) { return g_nest; }
+const hle_def *hle_current_def(void) { return g_cur_def; }
+/* would the CPU hand this pc to a C function instead of executing the instruction? (profilers) */
+bool hle_pc_replaced(uint32_t pc)
+{
+	if (pc == STALL_PC)
+		return true;
+	if (pc >= 0x400000 || !(g_bitmap[pc >> 4] & (1u << ((pc >> 1) & 7))) || pc == m68k_hle_skip_pc)
+		return false;
+	entry *e = find_addr(pc);
+	return e && e->enabled;
+}
+
 static int run_def(const hle_def *def, entry *e)
 {
 	hle_ctx c;
+	const hle_def *outer_def = g_cur_def;
 	bool top = g_nest == 0 && !g_top;
 	if (top)
 		g_top = true;
@@ -241,7 +257,9 @@ static int run_def(const hle_def *def, entry *e)
 	if (e)
 		e->calls++;
 	g_frame_calls++;
+	g_cur_def = def;
 	def->fn(&c);
+	g_cur_def = outer_def;
 	if (def->exits) {
 		/* HLE_RANGE: must leave through a declared exit */
 		if (!c.jumped || !hle_exit_match(def->exits, c.pc, c.a[7], sp0)) {
@@ -274,7 +292,7 @@ static int run_def(const hle_def *def, entry *e)
 	return (int)total;
 }
 
-void hle_state_reset(void) { g_stall_debt = 0; g_sess = false; g_top = false; g_nest = 0; }
+void hle_state_reset(void) { g_cur_def = NULL; g_stall_debt = 0; g_sess = false; g_top = false; g_nest = 0; }
 
 /* STALL_PC: burn the next slice of g_stall_debt; then rts to the continuation */
 static int stall(void)

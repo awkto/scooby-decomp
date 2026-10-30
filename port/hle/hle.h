@@ -122,6 +122,12 @@ int hle_nested_cycles(void);
 void hle_dma_begin(void);
 void hle_dma_complete(void);
 void hle_dma_end(void);
+/* profiling support (port/src/ipprof.c): depth of nested 68k execution (0 = top level), the
+ * innermost running C function (NULL at top level), and whether the CPU is about to hand pc
+ * to an enabled C function instead of executing the instruction there */
+int hle_nest_depth(void);
+const hle_def *hle_current_def(void);
+bool hle_pc_replaced(uint32_t pc);
 /* forget layer state that is not in the savestate (pending cycle debt): emu reset/load */
 void hle_state_reset(void);
 

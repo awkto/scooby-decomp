@@ -15,6 +15,7 @@
  * executed instruction addresses in that frame range (where the CPU time goes).
  */
 #include "emu.h"
+#include "ipprof.h"
 #include "hle.h"
 #include "script.h"
 #include "gx.h"
@@ -163,6 +164,7 @@ int main(int argc, char **argv)
 	if (!hle_configure(hle_spec))
 		return 2;
 	emu_add_hook(hook);
+	ipprof_init(hle_spec);   /* SCOOBY_IPPROF=file: interpreted-instruction profile (src/ipprof.c) */
 
 	uint32_t seg_vh = 0xFFFFFFFF, seg_hh = 0xFFFFFFFF;
 	long seg_start = 0;
