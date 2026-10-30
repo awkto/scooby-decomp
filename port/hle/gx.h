@@ -22,7 +22,8 @@ void gx_m68k_set_pc(uint32_t pc);
 uint32_t gx_m68k_other_sp(void); /* inactive stack pointer */
 void gx_m68k_set_usp(uint32_t v);      /* move An,usp */
 int gx_m68k_cycles(void);        /* master clocks (7 per 68k cycle) */
-void gx_m68k_set_cycles(int c);  /* rewind/advance the CPU clock (room.c: nested heavy 68k calls) */
+void gx_vdp_fifo_clamp(void);    /* FIFO read-out stamps <= CPU clock (after a rewind) */
+void gx_m68k_set_cycles(int c);  /* rewind the CPU clock (hle.c, after nested calls) */
 void gx_m68k_clear_irq(void);
 void gx_m68k_resync_irq(void);   /* int level = what the VDP asserts (after holding it off) */
 
