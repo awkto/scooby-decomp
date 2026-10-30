@@ -136,6 +136,19 @@ class Game:
     def run_script(self, path, record=True):
         """replay the state-changing lines (run/press/poke) of a harness script file"""
         cmds = [l.strip() for l in open(path) if l.split()[:1] and l.split()[0] in ("run", "press", "poke")]
+        pmin = int(os.environ.get("STORY_PRESS_MIN", "0"))
+        if pmin:
+            cmds = [f"press {c.split()[1]} {max(int(c.split()[2]), pmin)}" if c.startswith("press ") else c for c in cmds]
+        slack = int(os.environ.get("STORY_SLACK", "1"))      # >1: stretch the long waits (menu/title timing differs under --hle)
+        if slack > 1:
+            def stretch(c):
+                w = c.split()
+                if w[0] == "run":
+                    return f"run {int(w[1]) * slack if int(w[1]) >= 100 else max(int(w[1]), 8)}"
+                if w[0] == "press":
+                    return f"press {w[1]} {max(int(w[2]), 8)}"
+                return c
+            cmds = [stretch(c) for c in cmds]
         for i in range(0, len(cmds), 400):
             (self.do if record else self.send)(*cmds[i:i + 400])
 
@@ -382,6 +395,8 @@ def said(self, fn, frames=0):
     idx = _text_index()
     out = []
     seen_frame = {}
+    if not os.path.exists(tp):          # backend without a bus trace (the native port): no text, closed-loop uses RAM only
+        return []
     for ln in open(tp):
         p = ln.split()
         if p[0] != "R":
@@ -450,8 +465,11 @@ def ensure_visible(self, tid):
     if k not in self.points:
         return
     wx, wy = self.points[k]
+    room0 = self.w(0xFF06AC, r)
     for _ in range(4):
         r = self.ram()
+        if self.w(0xFF06AC, r) != room0:
+            return                      # walked through an exit on the way (timing differs between backends)
         sx, sy = wx - self.w(0xFF06CA, r), wy - self.w(0xFF06CE, r)
         if 8 <= sx <= 236 and 24 <= sy <= 152:
             return
@@ -464,7 +482,10 @@ Game.ensure_visible = ensure_visible
 
 def locate(self, tid):
     """crosshair point (screen coords) that hits object tid: from a scan, or in strict mode from points.json"""
+    room0 = self.w(0xFF06AC)
     self.ensure_visible(tid)
+    if self.w(0xFF06AC) != room0:
+        return None
     if self.strict:
         r = self.ram()
         k = f"{self.w(0xFF06AA, r)}:{self.w(0xFF06AC, r)}:{tid}"
@@ -604,10 +625,19 @@ Game.name = lambda self, tid: obj_name(self.w(0xFF06AA), tid)
 
 
 # ---- closed-loop checkpoints (port/tools/storytest.sh): after every high-level step record room/inventory/story ----
+# story byte 10 ($FF2A0A) is seeded from the RNG during the intro (value depends on how many frames the 68k spent:
+# $01 in the harness / --hle none, $D9 with the HLE replacements); it is not story state, so checkpoints mask it
+VOLATILE_STORY_BYTES = (10,)
+
+
 def checkpoint(self, label):
     r = self.ram()
     self.cp = getattr(self, "cp", [])
-    self.cp.append(dict(label=label, room=self.w(0xFF06AC, r), inv=self.inventory(r), story=self.story(r).hex()))
+    st = bytearray(self.story(r))
+    raw = st.hex()
+    for i in VOLATILE_STORY_BYTES:
+        st[i] = 0
+    self.cp.append(dict(label=label, room=self.w(0xFF06AC, r), inv=self.inventory(r), story=st.hex(), raw=raw))
 
 
 def _wrap(name):

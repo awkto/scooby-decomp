@@ -12,7 +12,7 @@ root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
 routes=${*:-"w0_cafe_items w0_mine_wheels w0_office w0_kitchen w1_front_lot w1_boathouse"}
 out=runs/storytest; rm -rf "$out"; mkdir -p "$out/gen"
-export STORY_OUT="$out/gen" SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
+export STORY_PRESS_MIN=5 STORY_OUT="$out/gen" SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 fail=0
 
 run_one() { # ROUTE SPEC TAG
