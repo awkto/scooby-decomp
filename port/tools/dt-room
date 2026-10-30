@@ -76,7 +76,7 @@ for f in $fns; do
 	room_draw_view) v=$cam; ign=$IGN ;;
 	room_setup_actors) v=$act; ign=$IGN ;;
 	game_state_init) ign=$IGN ;;
-	objects_update) ign=$IGN ;;
+	objects_update) ign="--ignore-flags" ;;
 	overlay_apply) ign="--ignore-flags"; v=$ovl ;;
 	esac
 	# shellcheck disable=SC2086

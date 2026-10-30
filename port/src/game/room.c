@@ -11,6 +11,7 @@
  */
 #include "game.h"
 #include <string.h>
+#include "gx.h"
 
 /* ---- mystery header field offsets (all absolute longs, see docs/formats.md) */
 enum {
@@ -55,13 +56,24 @@ enum {
 #define FLAGS_09DE        0xFF09DE  /* byte: room/scene mode flags (bit2, bit3, bit5, bit6, bit7 used here) */
 #define GAME_STATE        0xFF2A00
 
+/* Run 68k code that costs millions of cycles (LZSS) without advancing the CPU clock: advancing
+ * it inside one HLE call made the next Z80 bus request catch the Z80/YM2612 up by several frames,
+ * which overflowed the YM buffer (segfault in YM2612Update, found by the mouse soak test).  The
+ * cost is part of the function's charged cycles instead. */
+static void nested68k(hle_ctx *ctx, uint32_t addr)
+{
+	int c0 = gx_m68k_cycles();
+	hle_call68k(ctx, addr);
+	gx_m68k_set_cycles(c0);
+}
+
 /* LZSS: a0 = stream (after the u32 length), a1 = ring buffer, a2 = output; size left at (a1).l */
 static void lzss(hle_ctx *ctx, uint32_t stream, uint32_t out)
 {
 	ctx->a[0] = stream;
 	ctx->a[1] = LZSS_RING;
 	ctx->a[2] = out;
-	hle_call68k(ctx, 0x0097AA);
+	nested68k(ctx, 0x0097AA);
 }
 
 /* VRAM helpers (register-free wrappers around the vdp.c routines). */
@@ -136,7 +148,7 @@ HLE_FUNC(0x007A2A, font_tiles_load, 0)
 		cc_logic32(ctx, pair);
 		cc_set(ctx, CC_X, x_carry ? CC_X : 0);
 	}
-	ctx->cycles = 100 + 0x5F0 * 330;
+	ctx->cycles = 1021000;
 }
 
 /* $007950: draw the 32 x 19 cell window of the room at the camera (CAM_X, CAM_Y; multiples of
@@ -177,7 +189,7 @@ HLE_FUNC(0x007950, room_draw_view, 0)
 	hle_call68k(ctx, 0x00FD5E);
 	hle_call68k(ctx, 0x00FE74);
 	hle_call68k(ctx, 0x00FF68);
-	ctx->cycles = 80000;
+	ctx->cycles = 380000;
 }
 
 /* $007A8C: (re)initialise the per-room actor slots after a load.
@@ -258,7 +270,7 @@ HLE_FUNC(0x007A8C, room_setup_actors, 0)
 	RAM8(0xFF0AB9) = 0;
 	if (RAM8(FLAGS_09DE) & 0x80)
 		RAM8(0xFF0ABF) |= 0x02;
-	ctx->cycles = 3000;
+	ctx->cycles = 10500;
 }
 
 /* $00758A: load the current room (RAM ROOM_INDEX of mystery MYSTERY_HDR) into VRAM / RAM.
@@ -431,7 +443,7 @@ HLE_FUNC(0x00758A, room_load, 0)
 	RAM16(CAM_Y) = (uint16_t)(cy << 3);
 	room_draw_view(ctx);
 	room_setup_actors(ctx);
-	ctx->cycles = 400000;
+	ctx->cycles = 8800000;   /* original avg; includes the rewound LZSS time */   /* C-side share only: the nested 68k calls (LZSS...) are charged as they run; original total avg 8.8M */
 }
 
 /* $007F22: copy the initial game-state block of mystery MYSTERY_IDX into FF2A00 (the first 256
@@ -512,7 +524,7 @@ HLE_FUNC(0x007F66, object_table_init, 0)
  *   R+D 0, L+U 1, R+U 2, L+D 3, L 4, R 5, U 6, D 7; no direction pressed leaves D0 unchanged.
  * CCR: after `moveq` N=0, Z=(result==0), V=C=0, X unchanged; in the "none pressed" case only
  * Z=0 (from the last `btst`) changes. */
-HLE_FUNC(0x00750A, pad_direction, 40)
+HLE_FUNC(0x00750A, pad_direction, 114)
 {
 	uint8_t pad = RAM8(0xFF09E0);
 	int up = !(pad & 0x01), down = !(pad & 0x02), left = !(pad & 0x04), right = !(pad & 0x08);
@@ -598,13 +610,13 @@ static void zone_probe(hle_ctx *ctx, uint32_t xaddr, uint32_t yaddr, int bounded
 
 /* $0073D6: probe the pixel at the cursor (ram_cursor_x/y = $FF0642/$FF0646).  D2/D3 = largest
  * allowed x/y (pixels): outside 0..D2 / 0..D3 nothing is probed.  Zone index mask $7FFF. */
-HLE_FUNC(0x0073D6, zone_probe_cursor, 300)
+HLE_FUNC(0x0073D6, zone_probe_cursor, 248)
 {
 	zone_probe(ctx, 0xFF0642, 0xFF0646, 1, 0x7FFF);
 }
 
 /* $007476: same for the point ($FF064A, $FF064E) with no upper bound; zone index mask $07FF. */
-HLE_FUNC(0x007476, zone_probe_point, 300)
+HLE_FUNC(0x007476, zone_probe_point, 216)
 {
 	zone_probe(ctx, 0xFF064A, 0xFF064E, 0, 0x07FF);
 }
@@ -688,7 +700,7 @@ HLE_FUNC(0x007D54, overlay_apply, 0)
 		}
 		for (int i = 0; i < 4; i++) c->d[i] = s03[i];
 		c->a[0] = sa01[0]; c->a[1] = sa01[1];
-		ctx->cycles = 2000;
+		ctx->cycles = 7400;
 		return;
 	}
 
@@ -733,7 +745,7 @@ HLE_FUNC(0x007D54, overlay_apply, 0)
 	}
 	memcpy(ctx->d, sd, sizeof sd);
 	memcpy(ctx->a, sa, sizeof sa);
-	ctx->cycles = 40000;
+	ctx->cycles = 7400;
 }
 
 /* $007C04: per-frame object update (called from the VBlank-driven main loop, flag bit 2 of
@@ -741,7 +753,9 @@ HLE_FUNC(0x007D54, overlay_apply, 0)
  * and apply the overlay of every non-actor object of the current room whose bit0 flag is set
  * (set by room_load or by scripts that change an object).  Overlay word: bit 15 = restore the
  * background, bit 14 = clear the overlay word afterwards.
- * Registers/flags are dead for the caller (the VBlank handler restores them). */
+ * Registers: D5.w = $FFFF, D6.w = room, A3 = end of the table and D0.w = overlay word of the last
+ * object processed are left behind exactly as the original does, because vblank_main goes on to call
+ * $005E4A without reloading them.  Flags are not reproduced (dt_ignores). */
 HLE_FUNC(0x007C04, objects_update, 0)
 {
 	uint16_t room = RAM16(ROOM_INDEX);
@@ -758,7 +772,7 @@ HLE_FUNC(0x007C04, objects_update, 0)
 		if (!(fl & 0x01) || RAM16(o + OBJ_ROOM) != room || (fl & 0x02))
 			continue;
 		uint16_t ovl = RAM16(o + OBJ_OVERLAY) & 0xBFFF;
-		ctx->d[0] = ovl;
+		set_w(&ctx->d[0], ovl);
 		overlay_apply(ctx);
 		if (ovl & 0x8000) {
 			if (RAM8(o + OBJ_OVERLAY) & 0x40)
@@ -767,5 +781,8 @@ HLE_FUNC(0x007C04, objects_update, 0)
 		}
 		RAM8(o + OBJ_FLAGS) &= ~0x01;
 	}
-	ctx->cycles = 3000;
+	set_w(&ctx->d[5], 0xFFFF);
+	set_w(&ctx->d[6], room);
+	ctx->a[3] = o;
+	ctx->cycles = 14500;
 }

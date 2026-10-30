@@ -20,6 +20,7 @@ void gx_m68k_set_pc(uint32_t pc) { m68k.pc = pc; }
 uint32_t gx_m68k_other_sp(void) { return m68k.sp[m68k.s_flag ? 0 : 4]; }
 void gx_m68k_set_usp(uint32_t v) { if (m68k.s_flag) m68k.sp[0] = v; else m68k.dar[15] = v; }
 int gx_m68k_cycles(void) { return m68k.cycles; }
+void gx_m68k_set_cycles(int c) { m68k.cycles = c; }
 void gx_m68k_clear_irq(void) { m68k.int_level = 0; }
 
 uint32_t gx_dma_length(void) { return dma_length; }
