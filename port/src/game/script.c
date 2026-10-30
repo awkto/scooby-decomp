@@ -1276,3 +1276,285 @@ HLE_RANGE(0x004874, script_sys_bar_show_loop, 600, 0x004870, 0x0048B4)
 	bit_clr(ctx, RAM_GAME_STATE, 1);
 	hle_jump(ctx, 0x0048B4);
 }
+
+/* ------------------------------------------------------------------ move_obj */
+/* $0028A0 op $05 move_obj [05][who | $8000][room]: put an object into a room (1 = carried).
+ * Shaggy / Scooby are ignored.
+ *   actor objects (+$18 bit 1): leaving the current room frees the actor slot; arriving in
+ *     the current room takes the first free slot 2..5, finds the sprite set whose first
+ *     word is the object's hot-spot id in the 36-entry table $032670 (speeds in the table
+ *     $94 bytes before it), places the actor at the object's x/y, and runs actor frames
+ *     (jsr sub_00B0B8 at $0029E4) until its first animation loop finished;
+ *   other objects: leaving the current room hides it (+$00 |= $8000, redraw) and waits a
+ *     frame (bsr wait_vblank at $002A28); entering it redraws it; into / out of the
+ *     inventory updates ram_inv_list and the inventory page. Unless bit 15 (or the bar is
+ *     hidden) the inventory is then rebuilt by the 68k at $002ABA (push A5, wait_vblank,
+ *     inventory_refresh, inventory_arrows_update). */
+#define RAM_ACTORS_ACTIVE   0xFF0AB4
+#define RAM_ACTORS_DEPTH_ON 0xFF0AB8
+#define RAM_ACTORS_LOOPED   0xFF0ABD
+#define RAM_ACTOR_START     0xFF0AB5   /* bit n: start actor n's animation */
+#define RAM_ACTOR_SPRITE    0xFF0470   /* 6 longs: sprite set */
+#define RAM_ACTOR_ANIM      0xFF0488   /* 6 words: animation (ram_cur_index...) */
+#define RAM_ACTOR_TIMER     0xFF0618
+#define RAM_ACTOR_TARGET_X  0xFF05DC
+#define RAM_INV_LIST        0xFF0A1E
+#define RAM_INV_PAGE        0xFF06EC
+#define SPRITE_SETS         0x032670   /* 36 longs */
+#define MO_SKIP             0x002ACA
+#define MO_RTS              0x002ACE
+
+static void move_obj_tail(hle_ctx *ctx);
+
+static void move_obj_skip(hle_ctx *ctx)
+{
+	ctx->a[5] += 6;
+	hle_jump(ctx, MO_RTS);
+}
+
+/* actor object arriving in the current room: claim a slot and start it */
+static void move_obj_spawn_actor(hle_ctx *ctx)
+{
+	uint32_t rec = ctx->a[0];
+	ctx->d[0] = 2;
+	cc_logic32(ctx, 2);
+	for (;;) {
+		if (!bit_test(ctx, RAM_ACTORS_ACTIVE, ctx->d[0]))
+			break;
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 1, 16));
+		if (cmpw(ctx, ctx->d[0], 6) == 0) {               /* no free slot */
+			move_obj_skip(ctx);
+			return;
+		}
+	}
+	set_w(&ctx->d[2], RAM16(rec + OBJ_HOTSPOT));
+	cc_logic16(ctx, ctx->d[2]);
+	ctx->a[1] = SPRITE_SETS;
+	ctx->d[1] = 0x23;
+	cc_logic32(ctx, 0x23);
+	for (;;) {
+		ctx->a[2] = bus_r32(ctx->a[1]);
+		ctx->a[1] += 4;
+		if (cmpw(ctx, ctx->d[2], bus_r16(ctx->a[2])) == 0)
+			break;
+		uint16_t n = (uint16_t)(ctx->d[1] - 1);
+		set_w(&ctx->d[1], n);
+		if (n == 0xFFFF) {                                 /* unknown sprite set */
+			move_obj_skip(ctx);
+			return;
+		}
+	}
+	uint16_t slot = (uint16_t)ctx->d[0];
+	set_w(&ctx->d[1], slot);
+	cc_logic16(ctx, slot);
+	set_w(&ctx->d[2], slot);
+	cc_logic16(ctx, slot);
+	set_w(&ctx->d[2], lslw(ctx, ctx->d[2], 1));
+	set_w(&ctx->d[1], lslw(ctx, ctx->d[1], 2));
+	int16_t l = (int16_t)ctx->d[1], w = (int16_t)ctx->d[2];
+	ctx->a[3] = 0xFF0514;                                  /* ram_actor_step_x */
+	ctx->d[3] = bus_r32(ctx->a[1] - 0x94);                 /* walk speed of this sprite set */
+	cc_logic32(ctx, ctx->d[3]);
+	RAM32_W(0xFF0514 + l, ctx->d[3]);
+	{
+		uint32_t v = ctx->d[3];
+		ctx->d[3] = v >> 1;                                /* lsr.l #1 */
+		cc_set(ctx, CC_X | CC_N | CC_Z | CC_V | CC_C,
+		       ((v & 1) ? CC_X | CC_C : 0) | (ctx->d[3] ? 0 : CC_Z));
+	}
+	RAM32_W(0xFF0514 + 0x14 + l, ctx->d[3]);
+	cc_logic32(ctx, ctx->d[3]);
+	ctx->a[1] = RAM_ACTOR_SPRITE;
+	RAM32_W(RAM_ACTOR_SPRITE + l, ctx->a[2]);
+	cc_logic32(ctx, ctx->a[2]);
+	ctx->a[1] = RAM_ACTOR_ANIM;
+	RAM16(RAM_ACTOR_ANIM + w) = RAM16(rec);
+	cc_logic16(ctx, RAM16(rec));
+	RAM16(RAM_ACTOR_ANIM + 0x54 + l) = RAM16(rec + 0x12);   /* actor x (16.16 high word) */
+	RAM16(RAM_ACTOR_ANIM + 0x6C + l) = RAM16(rec + 0x14);   /* actor y */
+	cc_logic16(ctx, RAM16(rec + 0x14));
+	ctx->a[1] = RAM_ACTOR_TIMER;
+	RAM16(RAM_ACTOR_TIMER + l) = 0xFFFF;
+	cc_logic16(ctx, 0xFFFF);
+	ctx->a[1] = RAM_ACTOR_TARGET_X;
+	RAM16(RAM_ACTOR_TARGET_X + w) = RAM16(rec + 0x12);
+	RAM16(RAM_ACTOR_TARGET_X + 0xC + w) = RAM16(rec + 0x14);
+	set_w(&ctx->d[1], slot);
+	set_w(&ctx->d[1], cc_sub(ctx, ctx->d[1], 2, 16, true));
+	RAM8(rec + OBJ_ACTOR) = (uint8_t)ctx->d[1];
+	cc_logic8(ctx, ctx->d[1]);
+	bit_clr(ctx, RAM_ACTORS_DEPTH_ON, slot);
+	if (bit_test(ctx, rec + OBJ_FLAGS, 3))
+		bit_set(ctx, RAM_ACTORS_DEPTH_ON, slot);
+	bit_clr(ctx, 0xFF0AB6, slot);
+	bit_clr(ctx, 0xFF0AB9, slot);
+	bit_clr(ctx, RAM_ACTORS_LOOPED, slot);
+	bit_set(ctx, RAM_ACTOR_START, slot);
+	bit_set(ctx, RAM_ACTORS_ACTIVE, slot);
+	hle_jump(ctx, 0x0029E4);                               /* wait for the first loop */
+}
+
+HLE_RANGE(0x0028A0, script_op_move_obj, 300, 0x0029E4, 0x002A28, 0x002ABA, MO_RTS)
+{
+	if (!exec_mode(ctx)) {
+		move_obj_skip(ctx);
+		return;
+	}
+	set_w(&ctx->d[0], opw(ctx, 2) & 0x7FFF);
+	cc_logic16(ctx, ctx->d[0]);
+	if ((uint16_t)ctx->d[0] == 0) {
+		move_obj_skip(ctx);
+		return;
+	}
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
+	if ((uint16_t)ctx->d[0] == 0) {                        /* Shaggy */
+		move_obj_skip(ctx);
+		return;
+	}
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
+	if ((uint16_t)ctx->d[0] == 0) {                        /* Scooby */
+		move_obj_skip(ctx);
+		return;
+	}
+	ctx->d[0] = obj_mul(ctx, ctx->d[0], 1);
+	ctx->a[0] = obj_addr(ctx->d[0], 0);
+	uint32_t rec = ctx->a[0];
+	if (bit_test(ctx, rec + OBJ_FLAGS, 1)) {               /* actor object */
+		set_w(&ctx->d[0], RAM16(RAM_ROOM_INDEX));
+		if (cmpw(ctx, ctx->d[0], RAM16(rec + OBJ_ROOM)) == 0) {
+			/* leaves the current room: free its actor slot */
+			set_b(&ctx->d[1], RAM8(rec + OBJ_ACTOR));
+			set_w(&ctx->d[1], ctx->d[1] & 0xFF);
+			set_w(&ctx->d[1], cc_add(ctx, ctx->d[1], 2, 16));
+			bit_clr(ctx, RAM_ACTORS_ACTIVE, ctx->d[1]);
+			bit_clr(ctx, 0xFF0AB6, ctx->d[1]);
+			RAM8(rec + OBJ_ACTOR) = 0xFF;
+			cc_logic8(ctx, 0xFF);
+		}
+		RAM16(rec + OBJ_ROOM) = opw(ctx, 4);
+		cc_logic16(ctx, opw(ctx, 4));
+		if (cmpw(ctx, ctx->d[0], opw(ctx, 4)) != 0) {
+			move_obj_skip(ctx);
+			return;
+		}
+		move_obj_spawn_actor(ctx);
+		return;
+	}
+	/* static object */
+	set_w(&ctx->d[0], RAM16(rec + OBJ_ROOM));
+	set_w(&ctx->d[1], opw(ctx, 4));
+	cc_logic16(ctx, ctx->d[1]);
+	if (cmpw(ctx, ctx->d[0], RAM16(RAM_ROOM_INDEX)) == 0) {
+		cc_logic16(ctx, opw(ctx, 2));
+		if (!(opw(ctx, 2) & 0x8000)) {
+			uint16_t st = RAM16(rec);
+			cc_logic16(ctx, st);
+			if (st) {
+				st |= 0x8000;                              /* hide it */
+				RAM16(rec) = st;
+				cc_logic16(ctx, st);
+				uint8_t f = RAM8(rec + OBJ_FLAGS) | 1;
+				RAM8(rec + OBJ_FLAGS) = f;
+				cc_logic8(ctx, f);
+				hle_jump(ctx, 0x002A28);                   /* bsr wait_vblank */
+				return;
+			}
+		}
+	}
+	move_obj_tail(ctx);
+}
+
+/* $002A2C: the static-object part after the optional wait */
+static void move_obj_tail(hle_ctx *ctx)
+{
+	uint32_t rec = ctx->a[0];
+	uint16_t to = (uint16_t)ctx->d[1];
+	RAM16(rec + OBJ_ROOM) = to;
+	cc_logic16(ctx, to);
+	if (cmpw(ctx, to, RAM16(RAM_ROOM_INDEX)) == 0) {
+		cc_logic16(ctx, opw(ctx, 2));
+		if (!(opw(ctx, 2) & 0x8000)) {
+			uint8_t f = RAM8(rec + OBJ_FLAGS) | 1;         /* draw it */
+			RAM8(rec + OBJ_FLAGS) = f;
+			cc_logic8(ctx, f);
+		}
+	}
+	bool add = false;
+	if (cmpw(ctx, ctx->d[0], 1) == 0) {
+		/* taken out of the inventory: remove it from the list */
+		set_w(&ctx->d[0], opw(ctx, 2) & 0x7FFF);
+		set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 3, 16, true));
+		ctx->a[0] = RAM_INV_LIST;
+		do {
+			cmpw(ctx, ctx->d[0], RAM16(ctx->a[0]));
+			ctx->a[0] += 2;
+		} while (!(ctx->sr & CC_Z));
+		uint16_t v;
+		do {
+			v = RAM16(ctx->a[0]);
+			ctx->a[0] += 2;
+			RAM16(ctx->a[0] - 4) = v;
+			cc_logic16(ctx, v);
+		} while (!(v & 0x8000));
+		if (cmpw(ctx, ctx->d[1], 1) != 0)
+			goto refresh;
+		add = true;
+	} else {
+		add = cmpw(ctx, ctx->d[1], 1) == 0;
+	}
+	if (!add) {
+		move_obj_skip(ctx);
+		return;
+	}
+	/* into the inventory: append, and show the last row */
+	ctx->a[0] = RAM_INV_LIST;
+	ctx->d[0] = 0;
+	cc_logic32(ctx, 0);
+	for (;;) {
+		uint16_t v = RAM16(ctx->a[0]);
+		ctx->a[0] += 2;
+		cc_logic16(ctx, v);
+		if (v & 0x8000)
+			break;
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 1, 16));
+	}
+	set_w(&ctx->d[1], opw(ctx, 2) & 0x7FFF);
+	set_w(&ctx->d[1], cc_sub(ctx, ctx->d[1], 3, 16, true));
+	RAM16(ctx->a[0] - 2) = (uint16_t)ctx->d[1];
+	RAM16(ctx->a[0]) = 0xFFFF;
+	cc_logic16(ctx, 0xFFFF);
+	set_w(&ctx->d[0], lsrw(ctx, ctx->d[0], 2));
+	set_w(&ctx->d[1], RAM16(RAM_INV_PAGE));
+	set_w(&ctx->d[1], cc_add(ctx, ctx->d[1], 1, 16));
+	if (cmpw(ctx, ctx->d[1], ctx->d[0]) != 0) {
+		RAM16(RAM_INV_PAGE) = (uint16_t)ctx->d[0];
+		cc_logic16(ctx, ctx->d[0]);
+	}
+refresh:
+	if (bit_test(ctx, RAM_VERB_STATE, 2)) {                /* bar hidden: no refresh */
+		move_obj_skip(ctx);
+		return;
+	}
+	cc_logic16(ctx, opw(ctx, 2));
+	if (opw(ctx, 2) & 0x8000) {
+		move_obj_skip(ctx);
+		return;
+	}
+	hle_jump(ctx, 0x002ABA);
+}
+
+HLE_RANGE(0x0029EA, script_op_move_obj_wait, 60, 0x0029E4, MO_RTS)
+{
+	if (!bit_test(ctx, RAM_ACTORS_LOOPED, ctx->d[0])) {
+		hle_jump(ctx, 0x0029E4);
+		return;
+	}
+	RAM16(ctx->a[0] + OBJ_ROOM) = opw(ctx, 4);
+	cc_logic16(ctx, opw(ctx, 4));
+	move_obj_skip(ctx);
+}
+
+HLE_RANGE(0x002A2C, script_op_move_obj_static, 200, 0x002ABA, MO_RTS)
+{
+	move_obj_tail(ctx);
+}

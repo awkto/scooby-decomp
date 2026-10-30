@@ -1,0 +1,85 @@
+# #19: TALK to the Bellhop in the Lobby without moving: lobby route, then poke a TALK action
+# (ram_target_obj = 6, ram_action_verb = ram_verb_cur = 8, VBF_SCRIPT) and press B through the dialog.
+# Title -> Lobby (harness route from the README/brief), then a screenshot
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+shot lobby
+poke FF06AE 2 0006
+poke FF06BE 2 0008
+poke FF06C0 2 0008
+poke FF09DC 1 C4
+run 300
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
+press B 5
+run 90
