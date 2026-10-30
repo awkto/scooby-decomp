@@ -61,3 +61,8 @@ target_compile_options(frameprof PRIVATE -Wall -Wextra -Wno-unused-parameter)
 # ---- mouse mapping unit test ----
 add_executable(mousemap_test tools/mousemap_test.c)
 target_link_libraries(mousemap_test PRIVATE scooby_common)
+
+# ---- password codec unit test (GitLab #21) ----
+add_executable(password_test tools/password_test.c src/game/password.c)
+target_include_directories(password_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/game")
+target_compile_options(password_test PRIVATE -Wall -Wextra)
