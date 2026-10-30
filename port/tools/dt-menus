@@ -26,7 +26,7 @@ ALL="title_mask_irq title_setup title_bats_start title_bats_first title_bats_fra
  sound_test sound_test_show sound_test_frame sound_test_poll sound_test_name sound_test_exit
  rooms_browser rooms_page rooms_rows rooms_input objects_browser objects_page objects_rows objects_input
  menu_load_screen menu_load_screen_dma debug_rooms debug_rooms_pick debug_rooms_done debug_objects
- debug_objects_pick debug_objects_move debug_objects_done"
+ debug_objects_pick debug_objects_move debug_objects_done scaled_blit_120x40 scaled_blit_64x32"
 ONLY=; [ $# -gt 0 ] && { ALL="$*"; ONLY=1; }
 mkdir -p runs/dt-menus
 # captures and checks run 4 at a time (each replays the tours from power-on)

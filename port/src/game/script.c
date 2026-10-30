@@ -637,7 +637,9 @@ static void roe_walk(hle_ctx *ctx)
 {
 	for (;;) {
 		uint32_t rec = ctx->a[0];
+		ctx->cycles += 16 + 10 + 26;                       /* btst, branch, advance (lea, lea, dbra) */
 		if (bit_test(ctx, rec + OBJ_FLAGS, 2)) {
+			ctx->cycles += 50;                             /* room test */
 			uint16_t room = RAM16(rec + OBJ_ROOM);
 			set_w(&ctx->d[1], room);
 			bool here = cmpw(ctx, room, 1) == 0;            /* carried */
@@ -671,8 +673,24 @@ static void roe_walk(hle_ctx *ctx)
 	}
 }
 
-HLE_RANGE(0x00AFEA, run_object_events_setup, 200, ROE_CALL_SCAN, ROE_DONE)
+/* the saved context run_object_events keeps on the stack: movem.l d0-d7/a0-a6 (60), script_cb (4),
+ * script_flags (2, a byte push) */
+#define ROE_FRAME 66
+
+/* $00AFDA run_object_events: save the registers, the script callback and the script flags (the
+ * scans below overwrite them), then set up the walk: header pointers, object count, first object.
+ * Exits are the walk's: in front of a scan, or ROE_DONE, both with the 66 bytes pushed. */
+HLE_RANGE(0x00AFDA, run_object_events_setup, 390,
+          HLE_EXIT_SP(ROE_CALL_SCAN, -ROE_FRAME), HLE_EXIT_SP(ROE_DONE, -ROE_FRAME))
 {
+	for (int i = 6; i >= 0; i--)
+		push32(ctx, ctx->a[i]);                       /* movem.l d0-d7/a0-a6,-(sp) */
+	for (int i = 7; i >= 0; i--)
+		push32(ctx, ctx->d[i]);
+	push32(ctx, RAM32(RAM_SCRIPT_CB));
+	ctx->a[7] -= 2;
+	bus_w8(ctx->a[7], RAM8(RAM_SCRIPT_FLAGS));
+	cc_logic8(ctx, RAM8(RAM_SCRIPT_FLAGS));
 	uint32_t hdr = RAM32(RAM_MYSTERY_HDR);
 	ctx->a[0] = hdr;
 	ctx->a[1] = bus_r32(hdr + 0x28);                      /* object script table */
@@ -681,6 +699,23 @@ HLE_RANGE(0x00AFEA, run_object_events_setup, 200, ROE_CALL_SCAN, ROE_DONE)
 	set_w(&ctx->d[0], RAM16(0xFF06F4));                   /* ram_obj_last */
 	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 1, 16, true));
 	roe_walk(ctx);
+}
+
+/* $00B0A6: the walk is over: pop the flags, the callback and every register, then the `rts`
+ * ($00B0B6) returns.  Flags: the last flag-setting instruction is the callback's `move.l`. */
+#define ROE_RTS 0x00B0B6
+HLE_RANGE(0x00B0A6, run_object_events_done, 150, HLE_EXIT_SP(ROE_RTS, ROE_FRAME))
+{
+	RAM8(RAM_SCRIPT_FLAGS) = bus_r8(ctx->a[7]);
+	ctx->a[7] += 2;
+	uint32_t cb = pop32(ctx);
+	RAM32_W(RAM_SCRIPT_CB, cb);
+	cc_logic32(ctx, cb);
+	for (int i = 0; i < 8; i++)
+		ctx->d[i] = pop32(ctx);
+	for (int i = 0; i < 7; i++)
+		ctx->a[i] = pop32(ctx);
+	hle_jump(ctx, ROE_RTS);
 }
 
 HLE_RANGE(0x00B05E, run_object_events_matched, 60, ROE_CALL_RUN, ROE_CALL_SCAN, ROE_DONE)

@@ -18,8 +18,8 @@
 #define A_PALETTE_FADE   0x009E7E   /* a0 = target palette (waits for VBlank) */
 #define A_WAIT_VBLANK    0x00974C
 #define A_WAIT_VBLANKS   0x009742   /* d0.w + 1 frames */
-#define A_SPRITES_E40C   0x00E40C   /* sprite subsystem: scaled sprite draw, step 1 */
-#define A_SPRITES_F272   0x00F272   /*   ... step 2 */
+#define A_SPRITES_E40C   0x00E40C   /* scaled_blit_120x40 (blit.c): shrink the 120x40 picture to tiles */
+#define A_SPRITES_F272   0x00F272   /* scaled_blit_64x32 (blit.c): the 64x32 picture */
 #define A_TEXT_9F58      0x009F58   /* text subsystem: draw string a0 at (d1, d2) with bit 7 of the font base set */
 #define A_TEXT_9F46      0x009F46   /* same, d1 preserved, a0 = string (moveml d1/a0) */
 #define A_TEXT_9F30      0x009F30   /* center string a0 at row d2 (d1 = 1 keeps) */

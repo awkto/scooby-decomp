@@ -180,8 +180,8 @@ HLE_RANGE(0x00840E, title_bats_first, 20, BATS_FRAME)
 }
 
 /* $008416 title_bats_frame: one picture of the bat animation.  The bats fly in as scaled
- * sprites: the frame ($017064 list) is unpacked to the ring buffer, then drawn through the
- * sprite subsystem ($E40C, $F272) at the current scale depth; the depth ($FF0010, then
+ * pictures: the frame ($017064 list) is unpacked to the ring buffer, then shrunk by the
+ * scaled blits (scaled_blit_120x40 $E40C, scaled_blit_64x32 $F272) at the current scale depth; the depth ($FF0010, then
  * $FF0012) shrinks by $20 per picture until it reaches 0.  Sound $0B (the flap) on pictures
  * 27 and 13 (counting d6 down).  Ends in front of `bsr wait_vblank` ($0084AA).
  * Live out: d6, a6 (d0-d5, a0-a5: the movem pair around the scaler restores them, the rest is

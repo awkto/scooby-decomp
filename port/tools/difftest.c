@@ -321,6 +321,14 @@ static const struct {
 	{ 0x008C60, 0x0000, 0x1F },   /* debug_objects_pick: flags only (d0 = location, d1/d2/a0 untouched or pushed) */
 	{ 0x008C78, 0x7FFF, 0x1F },   /* debug_objects_move: nothing live at $008CC0 */
 	{ 0x008CC0, 0x0000, 0x1F },
+	/* scaled blits (blit.c): d3-d7 are the loop counters; every caller restores the registers or is a
+	 * range that leaves them undefined.  Flags are compared. */
+	{ 0x00E40C, 0x00F8, 0x00 },
+	{ 0x00F272, 0x00F8, 0x00 },
+	/* camera_update: d0-d3, a0 scratch and flags dead for its only caller vblank_main (camera.c) */
+	{ 0x00FA78, 0x010F, 0x1F },
+	/* palette_cycle: only caller vblank_main (palcycle.c); everything it touches is scratch */
+	{ 0x00A7CE, 0x033F, 0x1F },
 };
 
 static int do_run(const hle_def *target, const opts *o)

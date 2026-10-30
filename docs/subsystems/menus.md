@@ -43,7 +43,7 @@ The addresses of the ranges are the instruction after the original's wait.
 | `$00819A` | `title_mask_irq` | `move #$2700,sr` (split off so the long set-up below is charged masked, not in 1000-cycle slices) | range |
 | `$00819E` | `title_setup` | VRAM clear, tile art (LZSS `$01155A`), 3 RLE pieces, font, plane B, title RLE table -> `$FF3800/$FF5000`, palette, interrupt hooks = `vblank_title_fade` / `hblank_nop`, password pre-fill; ends before `jsr palette_fade` | range |
 | `$0083E8` | `title_bats_start` | bat animation set-up (`a6` = frame list `$017064`, `d6` = 27) | range |
-| `$00840E`, `$008416` | `title_bats_first`, `title_bats_frame` | one bat picture: RLE unpack, scaled sprite draw through the sprite subsystem (`$E40C`, `$F272`), depth `$FF0010`/`$FF0012` shrinking by `$20`; sound `$0B` on pictures 27 and 13 | range |
+| `$00840E`, `$008416` | `title_bats_first`, `title_bats_frame` | one bat picture: RLE unpack, scaled picture blits (`$E40C`, `$F272`, now C: `blit.c`, docs/subsystems/blit.md), depth `$FF0010`/`$FF0012` shrinking by `$20`; sound `$0B` on pictures 27 and 13 | range |
 | `$0084AE` | `title_bats_wait` | after a VBlank: key pressed -> menu; countdown over -> DMA the picture, `dbra` | range |
 | `$00879E` | `title_anim` | (#12) VBlank-side title animation | C (mainloop.c) |
 | `$008876` | `title_strip_dma` | DMA of `$FF8C00` to VRAM `$DC00`; **never called** | C, no states possible |
