@@ -108,7 +108,7 @@ VSRAM).
 The native model is a `render_band`: from `line` = 168 to the end of the frame the renderer uses those
 register / scroll values instead of the VDP's. `verb_bar_band()` (frameloop.c) builds it from RAM;
 the C `hblank_verb_bar` records it with `render_emu_set_band()` and does nothing else (it stores the
-constant `$A750` in `ram_hblank_hv`, which nothing reads, and charges 2150 cycles, the measured
+constant `$A750` in `ram_hblank_hv`, which nothing reads, and charges 2740 cycles, the measured
 average of the original's spin from the interrupt to its `rts`). The band is cleared after every
 frame, so a frame whose HBlank hook is not `hblank_verb_bar` has none.
 
@@ -175,7 +175,36 @@ inputs from a few explicit values. The planned extensions:
 
 ## Measurements
 
-(see "Verification" below; filled in by the rendertest runs)
+`port/tools/rendertest.sh` (raster mode, every frame compared, `--hle all` and `none`):
+
+| groups | programs | frames compared | differing |
+|---|---:|---:|---:|
+| mouse, menus (tours 1-3), intros (w0, w1), extra (boot screens, Lobby, verbs, inventory, pointer, TALK, password, sound test, 20k-frame random capture route) | 42 | 338,542 | 0 |
+| story (6 closed-loop routes, none + all) and mouse | 28 | 141,556 | 0 |
+
+This includes the H40 legal screen, the shadow/highlight title effects, the window-split dialogue rows,
+palette fades with CRAM writes in HBlank, and every scene change of the routes.
+
+`RENDERTEST_SPLIT=model` (bottom band from the model) on menus, intros and extra: 297,254 frames, 1,988
+differ, **all of them only in line 168**: in those frames the 68k's final register `$12` write landed
+after the VDP had drawn line 168, which GPGX then shows with the transient `$921C` value (the whole
+line is window, i.e. black) - a beam race of the original that the band model does not reproduce on
+purpose (one frame in intro_w0 differs in line 168 the other way: `ram_verb_bar_window` changed between
+the interrupt at line 163, when the model reads it, and the 68k's late write). rendertest allows
+exactly these line-168-only differences in model mode and nothing else.
+
+Cost of the original split: 2743 68k cycles per frame on average (Lobby, `SCOOBY_RENDER_SPLIT=model`
+prints it), now the charge of the C `hblank_verb_bar`.
+
+Interpreted 68k after step 2 (`SCOOBY_RENDERER=native port/tools/ipprof.sh`, docs/remaining68k.md):
+**1.19 %** of the original's instructions on the #24 gate routes, down from 2.85 % with the GPGX
+renderer. `hblank_verb_bar` (38.7 % of the remaining work before), `actor_dma` (20.3 %) and `hud_dma`
+(0.6 %) no longer execute; the nested share fell from 8.6 M to 74 K instructions.
+
+`SCOOBY_RENDERCMP_FRAME=1` additionally renders every frame in frame mode from a snapshot taken
+before line 0 and counts frames that differ from GPGX's (mid-frame VDP writes of the emulated game).
+Use it with `SCOOBY_RENDER_SPLIT=model` (or the native group), otherwise every gameplay frame differs
+in the verb-bar band, which the snapshot does not have.
 
 ## Verification
 

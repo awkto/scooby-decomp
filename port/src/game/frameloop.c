@@ -60,8 +60,9 @@ void verb_bar_band(render_band *b)
  * band of this frame for the renderer. The original's register effects are invisible to its
  * callers (the HBlank vector saves d0-a6 and rte restores SR); its only RAM effect is the HV
  * value in RAM_HBLANK_HV, which nothing reads. Charge: the original spends the time from the
- * HBlank interrupt (line 163) to line 167 H $50 spinning, about 4.4 lines of 488 cycles. */
-HLE_FUNC_GROUP(0x01006C, hblank_verb_bar, 2150, "native")
+ * HBlank interrupt (line 163) to line 167 H $50 spinning: 2743 cycles on average (Lobby,
+ * SCOOBY_RENDER_SPLIT=model measures it), about 5.6 lines. */
+HLE_FUNC_GROUP(0x01006C, hblank_verb_bar, 2740, "native")
 {
 	render_band b;
 	verb_bar_band(&b);
