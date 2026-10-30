@@ -53,6 +53,8 @@ static void add_watch(uint32_t a, const char *name)
 }
 
 static long g_frame;
+static unsigned g_ww = 0xFFFFFFFF;   /* --wwatch ADDR: 68k writes to a RAM byte, and changes per frame */
+static int g_ww_last = -1;
 static unsigned g_vw_lo = 1, g_vw_hi = 0, g_vw_n, g_vw_zero;   /* --vramw LO HI: VRAM writes */
 static long g_hist_from = -1, g_hist_to = -1;
 static unsigned *g_hist;    /* executed-instruction count per address (--hist FROM TO) */
@@ -60,6 +62,12 @@ static unsigned *g_hist;    /* executed-instruction count per address (--hist FR
 static void hook(int type, int width, unsigned addr, unsigned value)
 {
 	(void)width; (void)value;
+	if (type == EMU_HOOK_WRITE && g_ww != 0xFFFFFFFF && (addr & 0xFFFFFF) <= g_ww &&
+	    (addr & 0xFFFFFF) + (unsigned)width > g_ww) {
+		fprintf(stderr, "frame %ld: 68k write.%d $%06X = $%X (pc $%06X)\n", g_frame, width, addr & 0xFFFFFF, value,
+		        gx_m68k_pc());
+		return;
+	}
 	if (type == EMU_HOOK_VRAM_W) {
 		if (addr >= g_vw_lo && addr < g_vw_hi) {
 			g_vw_n++;
@@ -128,6 +136,8 @@ int main(int argc, char **argv)
 			g_hist = calloc(0x400000, sizeof *g_hist);
 		} else if (!strcmp(argv[i], "--hle") && i + 1 < argc) {
 			hle_spec = argv[++i];
+		} else if (!strcmp(argv[i], "--wwatch") && i + 1 < argc) {
+			g_ww = (unsigned)strtoul(argv[++i], NULL, 16) & 0xFFFFFF;
 		} else if (!strcmp(argv[i], "--vramw") && i + 2 < argc) {
 			g_vw_lo = (unsigned)strtoul(argv[++i], NULL, 16);
 			g_vw_hi = (unsigned)strtoul(argv[++i], NULL, 16);
@@ -180,6 +190,10 @@ int main(int argc, char **argv)
 			emu_set_pad(0, mouse_frame(pad));   /* script mouse/click commands (#23) */
 			emu_run_frame();
 			uint32_t vh = emu_ram32(0xFF0000), hh = emu_ram32(0xFF0004);
+			if (g_ww != 0xFFFFFFFF && emu_ram8(g_ww) != g_ww_last) {
+				fprintf(stderr, "frame %ld: $%06X now $%02X\n", g_frame, g_ww, emu_ram8(g_ww));
+				g_ww_last = emu_ram8(g_ww);
+			}
 			if (g_vw_n)
 				fprintf(stderr, "frame %ld: %u VRAM writes in $%04X-$%04X (%u zero)\n", g_frame, g_vw_n, g_vw_lo, g_vw_hi,
 				        g_vw_zero);

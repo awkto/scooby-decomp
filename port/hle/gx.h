@@ -38,6 +38,9 @@ void gx_vdp_untimed_begin(void); /* bracket a VDP data port write made by C code
 void gx_vdp_untimed_end(void);
 void gx_vdp_follow_cpu(void);
 unsigned gx_vdp_line_base(void);         /* mcycles_vdp */
+int gx_vdp_vcounter(void);
+void gx_vdp_set_vcounter(int v);
+void gx_vdp_follow_cpu_lines(void);      /* like follow_cpu, also advancing the V counter */
 void gx_vdp_set_line_base(unsigned v);    /* sandbox: advance the VDP line base to the CPU time */
 
 #endif
