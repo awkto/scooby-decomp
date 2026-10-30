@@ -120,12 +120,21 @@ def w1_part(g):
     """Ha Ha Carnival, power-on to the Dart + Ball (story_full.carnival_1..5): pole cheat -> Magnet -> Tokens -> Crane Game ->
     Tickets -> Dart Game -> Teddy Bear -> Ball; Fun House -> Bumper Cars duel -> Dart.  The rest (Paint Brush from the roller coaster,
     Sign, Application + Rubber Stamp, Clown in the Back Lot, then Dart on Ball) is mapped in docs/walkthrough.md but not driven."""
-    story_full.carnival_all(g)
+    story_full.carnival_part(g)
     return finish(g, "w1_part", "Ha Ha Carnival: power-on -> Dart and Ball in the inventory (partial walkthrough, first five segments)",
                   dict(myst=1, room=7))
 
 
-ROUTES = {f.__name__: f for f in (w0_cafe_items, w0_mine_wheels, w0_office, w0_kitchen, w1_front_lot, w1_boathouse, w0_full, w1_part)}
+def w1_full(g):
+    """Ha Ha Carnival, power-on to the credits (story_full.carnival_1 .. carnival_13): w1_part, then Boardwalk (Trash Can, Zelda's Head),
+    Boathouse, Hall of Mirrors, gang rescue, Haunted House, Front Office / Dressing Room, Bungee Bucket, Inky, Kid + roller coaster
+    (Paint Brush), painted Sign, Application, the Clown, Dart on Ball."""
+    story_full.carnival_all(g)
+    return finish(g, "w1_full", "Ha Ha Carnival: complete walkthrough, power-on -> unmasking -> credits -> Sega logo (reset)",
+                  dict(room=0))
+
+
+ROUTES = {f.__name__: f for f in (w0_cafe_items, w0_mine_wheels, w0_office, w0_kitchen, w1_front_lot, w1_boathouse, w0_full, w1_part, w1_full)}
 
 if __name__ == "__main__":
     # usage: story_routes.py SESSION_DIR [--learn] NAME...

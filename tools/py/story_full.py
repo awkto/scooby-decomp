@@ -534,7 +534,284 @@ def carnival_5(g):
     need(g, has(g, 12), "dart")
 
 
-CARNIVAL = [carnival_1, carnival_2, carnival_3, carnival_4, carnival_5]
+def fun_house(g, key, room):
+    """Boardwalk -> Fun House, then answer the prompt (script op wait_dpad_choice: D = Bumper Cars (5), L = Haunted House (21),
+    R = Hall of Mirrors (9))"""
+    need(g, g.exit_via(105), "boardwalk -> fun house")
+    g.run(90)
+    need(g, in_room(g, 23), "fun house")
+    g.run(200)
+    g.press(key, 40, 0)
+    g.run(300)
+    g.settle(maxframes=3000, quiet=60)
+    need(g, in_room(g, room), f"fun house choice {key}")
+
+
+def wait_menu(g, prefix, frames=1500):
+    """wait until the TALK menu is up and one of its entries starts with `prefix`"""
+    for _ in range(frames // 10):
+        g.run(10)
+        if g.w(0xFF080E) and any(c.startswith(prefix) for c in g.talk_choices()):
+            g.run(40)
+            return True
+    return False
+
+
+def quick_use(g, tid, leave=True):
+    """click USE on `tid` as fast as possible, without waiting for scripts (the roller-coaster brakes are timed by the ride)"""
+    if leave:
+        g.leave_pointer()
+    pt = g.locate(tid)
+    g.select_verb("Use")
+    g.set_pointer(*pt)
+    for _ in range(15):
+        if g.w(0xFF06AE) == tid:
+            break
+        g.run(2)
+    g.press("B", 4, 0)
+
+
+def carnival_6(g):
+    """Bumper Cars -> Boardwalk: open the Trash Can for the Mummy Bandages; Tokens in Madame Zelda, ask the meaning of life (she blows
+    up, the glass breaks) and take her Head (needed to make the Kid 'tall enough' later)."""
+    need(g, g.exit_via(15) and in_room(g, 24), "bumper cars -> boardwalk")
+    calm(g)
+    g.act("Open", 108)
+    g.act("Take", 109)
+    need(g, has(g, 109), "mummy bandages")
+    g.use(139, 94)                     # Tokens in Madame Zelda
+    g.run(120)
+    need(g, in_room(g, 4) and wait_menu(g, "Um, where"), "madame zelda")
+    g.talk_choose("What's the meaning")
+    g.run(300)
+    g.settle(maxframes=9000, quiet=90)
+    need(g, in_room(g, 24) and story_bit(g, 6, 2), "madame zelda exploded")
+    g.act("Take", 95)                  # Head
+    need(g, has(g, 95), "head")
+
+
+def carnival_7(g):
+    """Boathouse: the Bottle (open it: the Note says the manager is a prisoner in the Fun House) and the Boat."""
+    need(g, g.exit_via(106) and in_room(g, 14), "boardwalk -> boathouse")
+    calm(g)
+    g.act("Take", 111)
+    g.act_inv("Open", 111)
+    g.act("Take", 113)
+    need(g, has(g, 112) and has(g, 113), "note + boat")
+    need(g, story_bit(g, 6, 6), "bandages + note (F06.6)")
+
+
+def carnival_8(g):
+    """Hall of Mirrors (Fun House, R): push the Mirror, the Clown drops the Spark Plug; Boat + Spark Plug; Front Lot -> Pond: the
+    Boat rescues the gang (they wait in the Front Office); take the Help Wanted Sign."""
+    need(g, g.exit_via(110) and in_room(g, 24), "boathouse -> boardwalk")
+    calm(g)
+    fun_house(g, "R", 9)
+    g.act("Push", 26)
+    g.run(200)
+    g.settle(maxframes=3000)
+    need(g, story_bit(g, 7, 6), "mirror pushed")
+    g.act("Take", 29)
+    g.use_inv(113, 29)                 # Boat + Spark Plug
+    need(g, has(g, 114), "boat with spark plug")
+    for t in (28, 104, 93):
+        need(g, g.exit_via(t), f"exit {t}")
+        calm(g)
+    need(g, in_room(g, 10), "pond")
+    g.use(114, 33)                     # the Boat on the Pond
+    g.run(300)
+    g.settle(maxframes=9000, quiet=90)
+    need(g, in_room(g, 12) and story_bit(g, 7, 3), "gang rescued")
+    g.act("Take", 87)                  # Help Wanted Sign
+    need(g, has(g, 87), "sign")
+
+
+def carnival_9(g):
+    """Haunted House (Fun House, L): Boots; open the Coffin and pull the Bandage (needs the Mummy Bandages + the Note): the Manager
+    is freed and the staff-only Dressing Room opens."""
+    need(g, g.exit_via(91) and in_room(g, 24), "front lot -> boardwalk")
+    calm(g)
+    fun_house(g, "L", 21)
+    g.act("Take", 153)                 # Boots
+    g.act("Open", 155)                 # Coffin
+    g.run(100)
+    g.settle()
+    g.act("Pull", 157)                 # Bandage: the mummy is the carnival manager
+    g.run(300)
+    g.settle(maxframes=9000, quiet=90)
+    need(g, story_bit(g, 9, 4) and in_room(g, 12), "manager freed (Front Lot)")
+
+
+def carnival_10(g):
+    """Front Office: Rubber Stamp.  Game Tent -> Dressing Room: an Application, the Trunk (Wrench), Stamp on the Application."""
+    need(g, g.exit_via(89) and in_room(g, 11), "front office")
+    calm(g)
+    g.act("Take", 79)                  # Rubber Stamp
+    need(g, has(g, 79), "rubber stamp")
+    need(g, g.exit_via(78) and in_room(g, 12), "front office -> front lot")
+    calm(g)
+    need(g, g.exit_via(90) and in_room(g, 19), "game tent")
+    calm(g)
+    need(g, g.exit_via(66), "tent flap -> dressing room")
+    g.run(90)
+    need(g, in_room(g, 17), "dressing room")
+    g.act("Take", 69)                  # Application (rejected)
+    g.act("Open", 71)                  # Trunk
+    g.act("Take", 72)                  # Wrench
+    need(g, has(g, 69) and has(g, 72), "application + wrench")
+    g.use_inv(79, 69)                  # Rubber Stamp on the Application: accepted
+    need(g, has(g, 70), "accepted application")
+
+
+def carnival_11(g):
+    """Wrench on the Bolts (Haunted House); Back Lot -> Bungee Jump: take the Bucket on its way down; fill it at the Boardwalk Faucet;
+    Diving Bell: Bucket of Water on Inky."""
+    for t in (68, 65, 91):
+        need(g, g.exit_via(t), f"exit {t}")
+        calm(g)
+    need(g, in_room(g, 24), "boardwalk")
+    fun_house(g, "L", 21)
+    g.use(72, 154)                     # Wrench on the Bolts
+    need(g, has(g, 154), "bolts")
+    need(g, g.exit_via(152) and in_room(g, 24), "haunted house -> boardwalk")
+    calm(g)
+    need(g, g.exit_via(107) and in_room(g, 13), "back lot")
+    calm(g)
+    g.act("Use", 123)                  # Ladder to the Bungee Jump
+    g.run(200)
+    g.settle(maxframes=3000)
+    need(g, in_room(g, 22), "bungee platform")
+    g.act("Use", 126)                  # Harness: the jump starts, the Bucket is the landing target
+    g.run(60)
+    need(g, in_room(g, 15), "bungee jump")
+    g.act("Take", 128)                 # Bucket (while it is in the jump script)
+    need(g, has(g, 128), "bucket")
+    g.run(120)
+    g.settle(maxframes=3000)
+    g.act("Use", 127)                  # Ladder back down
+    g.run(200)
+    g.settle(maxframes=3000)
+    need(g, in_room(g, 13), "back lot")
+    need(g, g.exit_via(124) and in_room(g, 24), "back lot -> boardwalk")
+    calm(g)
+    g.use(128, 96)                     # Bucket on the Faucet
+    need(g, has(g, 129), "bucket of water")
+    need(g, g.exit_via(107) and in_room(g, 13), "boardwalk -> back lot")
+    calm(g)
+    need(g, g.exit_via(125) and in_room(g, 20), "back lot -> diving bell")
+    calm(g)
+    g.act("Use", 137)                  # Valve: dive
+    g.run(300)
+    g.settle(maxframes=6000, quiet=60)
+    need(g, in_room(g, 18), "diving bell (under water)")
+    g.use(129, 143)                    # Bucket of Water on Inky
+    g.run(200)
+    g.settle(maxframes=6000, quiet=60)
+    need(g, has(g, 131), "bucket with inky")
+    g.act("Use", 140)                  # Valve: back up
+    g.run(300)
+    g.settle(maxframes=6000, quiet=60)
+    need(g, in_room(g, 20), "surface")
+
+
+def roller_coaster(g):
+    """The ride (room 8; stages in object #17 +0E, ticked by Shaggy's path): the track is broken (F08.2) and the car crashes at stage 1
+    unless the first Brake (#18, F08.3) is on; that stops it (F08.0): Bolts on the Track fix it, release the Brake.  The camera pans
+    to the right, and at stage 4 the second Brake (#19, F08.4) stops the car again, next to the Shed: Paint Brush.  Both clicks are
+    timed by the ride (~100 frames), so they are made without waiting for the scripts."""
+    quick_use(g, 18)                                   # first Brake, at once
+    for _ in range(300):
+        if story_bit(g, 8, 0):
+            break
+        g.run(2)
+    need(g, story_bit(g, 8, 3) and story_bit(g, 8, 0), "coaster stopped at the first brake")
+    g.use(154, 20)                                     # Bolts on the Track (Wrench in hand)
+    need(g, not story_bit(g, 8, 2), "track fixed")
+    quick_use(g, 18)                                   # release it: the camera pans right
+    for _ in range(100):
+        if g.w(0xFF06CA) >= 256:
+            break
+        g.run(2)
+    quick_use(g, 19, leave=False)                      # second Brake before stage 4
+    for _ in range(300):
+        if story_bit(g, 8, 0):
+            break
+        g.run(2)
+    need(g, story_bit(g, 8, 4) and story_bit(g, 8, 0) and in_room(g, 8), "coaster stopped at the second brake")
+    g.act("Open", 21)                                  # Shed
+    g.act("Take", 22)                                  # Paint Brush
+    need(g, has(g, 22), "paint brush")
+    g.act("Use", 19)                                   # release: the ride ends at the Boardwalk
+    for _ in range(60):
+        g.run(30)
+        if not in_room(g, 8):
+            break
+    g.run(100)
+    g.settle(maxframes=3000)
+    need(g, in_room(g, 24), "ride over (Boardwalk)")
+
+
+def carnival_12(g):
+    """Kid (Front Lot): 'Wanna ride the roller coaster' - he follows to the Boardwalk, the Attendant says he is too short; Boots on the
+    Kid (with Madame Zelda's Head in the inventory) and the party may ride: the roller coaster.  Then the Paint Brush gets inky and
+    paints the Help Wanted Sign."""
+    need(g, g.exit_via(132) and in_room(g, 13), "diving bell -> back lot")
+    calm(g)
+    for t in (124, 104):
+        need(g, g.exit_via(t), f"exit {t}")
+        calm(g)
+    need(g, in_room(g, 12), "front lot")
+    g.talk_to(85)
+    for text, nxt in (("How come", "Have you tried"), ("Wanna ride", None)):
+        for _ in range(4):             # a pick can be lost while the menu is still building: retry until the menu moves on
+            need(g, wait_menu(g, text[:6]), f"kid: menu with {text!r}")
+            g.talk_choose(text)
+            if nxt is None or wait_menu(g, nxt, 300):
+                break
+    g.run(300)
+    g.settle(maxframes=9000, quiet=90)
+    need(g, in_room(g, 24) and any(t == 85 for t, n, r in g.room_objects()), "kid on the boardwalk")
+    g.use(153, 85, verb="Give")        # Boots on the Kid
+    for _ in range(100):
+        if in_room(g, 8):
+            break
+        g.run(3)
+    need(g, in_room(g, 8), "roller coaster")
+    roller_coaster(g)
+    g.use_inv(22, 131)                 # Paint Brush in the Bucket with Inky
+    need(g, has(g, 23), "inky brush")
+    g.use_inv(23, 87)                  # Inky Brush on the Sign
+    need(g, has(g, 88), "painted sign")
+
+
+def carnival_13(g):
+    """Back Lot: hang the painted Sign.  Dressing Room: the accepted Application on the Bulletin Board: the Clown shows up in the
+    Back Lot; the Dart on the Ball (Charlie, the Dart Attendant, is the Clown): unmasking, credits."""
+    need(g, g.exit_via(107) and in_room(g, 13), "boardwalk -> back lot")
+    calm(g)
+    g.act_inv("Use", 88)
+    g.run(100)
+    g.settle()
+    need(g, story_bit(g, 4, 2), "sign hung up")
+    for t in (124, 104, 90, 66):
+        need(g, g.exit_via(t), f"exit {t}")
+        calm(g)
+    need(g, in_room(g, 17), "dressing room")
+    g.use(70, 67)                      # accepted Application on the Bulletin Board
+    g.run(300)
+    g.settle(maxframes=6000, quiet=60)
+    need(g, in_room(g, 13) and story_bit(g, 5, 5), "clown in the back lot")
+    g.use_inv(12, 121)                 # Dart on the Ball
+    ending(g)
+
+
+CARNIVAL_PART = [carnival_1, carnival_2, carnival_3, carnival_4, carnival_5]
+CARNIVAL = CARNIVAL_PART + [carnival_6, carnival_7, carnival_8, carnival_9, carnival_10, carnival_11, carnival_12, carnival_13]
+
+
+def carnival_part(g):
+    for f in CARNIVAL_PART:
+        f(g)
 
 
 def carnival_all(g):

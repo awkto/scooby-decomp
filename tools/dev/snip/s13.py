@@ -1,0 +1,11 @@
+from story_full import *
+g.mark("c13")
+need(g, g.exit_via(107) and in_room(g, 13), "back lot")
+calm(g)
+g.act("Use", 123)
+g.run(200); g.settle(maxframes=3000)
+print(g.state()['room'], [(t,n) for t,n,r in g.room_objects()])
+g.act("Use", 126)
+g.run(60)
+print(g.state()['room'], [(t,n) for t,n,r in g.room_objects()])
+g.shot("b0")

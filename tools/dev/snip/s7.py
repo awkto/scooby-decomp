@@ -1,0 +1,11 @@
+from story_full import *
+g.use_inv(113, 29)
+print(g.state()['inv'], story_bit(g,1,5))
+need(g, g.exit_via(28) and in_room(g, 24), "boardwalk")
+calm(g)
+need(g, g.exit_via(104) and in_room(g, 12), "front lot")
+calm(g)
+print([(t,n) for t,n,r in g.room_objects()])
+need(g, g.exit_via(93), "pond exit")
+g.run(90)
+print(g.state()['room'], [(t,n) for t,n,r in g.room_objects()])

@@ -4,7 +4,7 @@
 # Closed loop = tools/py/story.py decides every next input from RAM it reads back from the live port (session.py
 # with SCOOBY_BACKEND=port:SPEC), so C replacements that take ~0 emulated time cannot desync it.
 #   port/tools/storytest.sh [ROUTE...]     (run on a VM after building build/port; default: the six short routes)
-#   port/tools/storytest.sh long           the long walkthroughs: w0_full (Blake's Hotel, power-on to credits) and w1_part (Carnival up to the Dart + Ball); ~10 min each per --hle spec
+#   port/tools/storytest.sh long           the long walkthroughs: w0_full (Blake's Hotel, power-on to credits) and w1_full (Ha Ha Carnival, power-on to credits); ~10 min each per --hle spec
 # PASS per route = checkpoints identical for --hle none and --hle all.  The end room is also compared with the
 # harness-verified header of tools/scripts/story/ROUTE.txt (reported as a note).
 # On a none/all mismatch, STORYTEST_BISECT=1 bisects with --hle all,-FUNC and names the replacement whose removal restores agreement.
@@ -12,7 +12,7 @@ set -u
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
 routes=${*:-"w0_cafe_items w0_mine_wheels w0_office w0_kitchen w1_front_lot w1_boathouse"}
-[ "$routes" = "long" ] && routes="w0_full w1_part"
+[ "$routes" = "long" ] && routes="w0_full w1_full"
 out=runs/storytest; rm -rf "$out"; mkdir -p "$out/gen"
 export STORY_PRESS_MIN=5 STORY_OUT="$out/gen" SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 fail=0
