@@ -1,0 +1,24 @@
+# Click-to-walk across the Lobby (port/tools/mousetest.sh).  Starts from the Lobby state
+# (Shaggy at 288,64, camera 160,0).  The first target, the alcove left of the top door at
+# world (226,50), is not in a straight line from Shaggy (the wall between the two alcoves
+# is in the way), so the walk has several legs; the second goes back out of the alcove
+# down to the bottom of the room.  The test reads the camera right before each click and
+# checks that Shaggy ends where the click pointed.
+peek camx1 FF06CA
+peek camy1 FF06CE
+click L 66 66
+run 20
+peek moving1 FF0AB7 1
+run 700
+peek sx1 FF04DC
+peek sy1 FF04F4
+peek stop1 FF0AB7 1
+peek camx2 FF06CA
+peek camy2 FF06CE
+click L 40 150
+run 800
+peek sx2 FF04DC
+peek sy2 FF04F4
+peek stop2 FF0AB7 1
+peek room FF06AC
+shot walk_end

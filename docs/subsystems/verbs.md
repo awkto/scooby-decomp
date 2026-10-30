@@ -163,6 +163,12 @@ the cell center (`x = 40*col + $14 (+8)`), so a mouse should rewrite x every fra
 
 ## 6. What a mouse click must do
 
+(Implemented in #23: [docs/mouse.md](../mouse.md). Two corrections from that work:
+* On the bar the game rewrites the crosshair x (cell snap) every frame.
+* `ram_target_obj` can lag the crosshair by several frames, because the main loop is
+  slower than the VBlank.
+Wait until it equals a C copy of the hit test before clicking.)
+
 Everything is state the game reads from RAM each VBlank, so a mouse driver (host side, in
 `pad_read` HLE or before each frame) needs:
 

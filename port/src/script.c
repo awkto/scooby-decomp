@@ -3,6 +3,7 @@
 #include "emu.h"
 #include "gx.h"
 #include "hle.h"
+#include "mouse.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,7 @@ struct script {
 	bool release_after;    /* press: clear pad when done */
 	int line;
 	int errors;
+	FILE *peek;            /* OUTDIR/peek.log (harness format) */
 };
 
 script *script_open(const char *path, const char *outdir)
@@ -110,6 +112,35 @@ bool script_step(script *s, unsigned *pad)
 			for (int i = 8; i < 16; i++)
 				fprintf(stderr, " %08X", r[i]);
 			fprintf(stderr, "\n");
+		} else if (!strcmp(cmd, "peek") && sscanf(line, "%*s %511s %511s", a1, a2) == 2) {
+			int w = 2;
+			sscanf(line, "%*s %*s %*s %d", &w);
+			uint32_t a = (uint32_t)strtoul(a2 + (a2[0] == '$'), NULL, 16), v = 0;
+			for (int i = 0; i < w && i < 4; i++)
+				v = (v << 8) | emu_ram8(a + (uint32_t)i);
+			if (!s->peek) {
+				snprintf(path, sizeof path, "%s/peek.log", s->outdir);
+				s->peek = fopen(path, "a");
+			}
+			if (s->peek) {
+				fprintf(s->peek, "%ld %s %0*x\n", emu_frame_count(), a1, w * 2, v);
+				fflush(s->peek);
+			}
+		} else if (!strcmp(cmd, "mouse") && sscanf(line, "%*s %511s %511s", a1, a2) == 2) {
+			if (!strcmp(a1, "leave"))
+				mouse_leave();
+			else
+				mouse_move(atoi(a1), atoi(a2));
+		} else if (!strcmp(cmd, "mouse") && sscanf(line, "%*s %511s", a1) == 1 && !strcmp(a1, "leave")) {
+			mouse_leave();
+		} else if (!strcmp(cmd, "click") && sscanf(line, "%*s %511s", a1) == 1) {
+			int x, y;
+			if (sscanf(line, "%*s %*s %d %d", &x, &y) == 2)
+				mouse_move(x, y);
+			int b = a1[0] == 'R' || a1[0] == 'r' ? MOUSE_RIGHT : a1[0] == 'M' || a1[0] == 'm' ? MOUSE_MIDDLE : MOUSE_LEFT;
+			mouse_click(b);
+		} else if (!strcmp(cmd, "wheel") && sscanf(line, "%*s %ld", &n) == 1) {
+			mouse_wheel((int)n);
 		} else if (!strcmp(cmd, "echo")) {
 			fputs(line + 5 < line + strlen(line) ? line + 5 : "\n", stderr);
 		} else {
@@ -125,6 +156,8 @@ void script_close(script *s)
 {
 	if (!s)
 		return;
+	if (s->peek)
+		fclose(s->peek);
 	fclose(s->f);
 	free(s);
 }

@@ -15,12 +15,15 @@ port/
   hle/sandbox.[ch]      run one function in isolation, snapshot and compare machine state
   hle/gx.[ch]           the only code that touches GPGX internals
   src/emu.[ch]          core wrapper (libretro entry points called directly), ROM sha1 check
-  src/script.[ch]       harness-compatible scripts (run/press/shot/ram/vdp/save/load/hle/capture/regs)
+  src/script.[ch]       harness-compatible scripts (run/press/shot/ram/vdp/save/load/hle/capture/regs/peek, mouse/click/wheel)
   src/capture.[ch]      entry-state capture (savestate + pad state when PC hits ADDR)
   src/main.c            SDL2 host
   src/game/*.c          decompiled game code, grouped by subsystem (io.c, vdp.c, util.c,
                         mainloop.c + reset.c (#12), ...); cc68k.h = exact-flag helpers
   src/game/game.h       prototypes of decompiled functions + named RAM variables
+  src/game/walkpath.*   click-to-walk: collision queries, A* pathfinder, auto-walk driver (docs/mouse.md)
+  src/game/mousehook.*  game-side state for the mouse (pointer mode, hit test, verb bar geometry)
+  src/mouse/            host-side mouse control (SDL-free; main.c feeds it events, scripts drive it)
   tools/difftest.c      differential tester
   tools/dt              one-command build + capture + difftest
   tools/frameprof.c     per-frame profile: hooks, VBlank/HBlank/main-loop counts, hot spots
@@ -85,6 +88,10 @@ Gamepads use the SDL GameController mapping:
 | B, RB | C |
 | Start | Start |
 | Back | pause |
+
+The mouse plays the whole game too (left click walks / uses, right click looks, middle
+click is Start, wheel pages the inventory); `--no-mouse` turns it off. See
+[docs/mouse.md](mouse.md); tests: `port/tools/mousetest.sh`.
 
 The picture is always scaled by a whole number and letterboxed.
 

@@ -1,0 +1,34 @@
+# Verb, then object (port/tools/mousetest.sh), from the Lobby state (camera 160,0).
+# Hovering opens pointer mode; a left click on LOOK selects the verb ($FF06C0 = 10); a
+# left click on the window (object record 36, cells 47,4 6x5 = screen 216..255 x 48..87;
+# not reachable, so no walk) runs the action: $FF09DC bit 7 (action running), $FF06BE = 10.
+# A click while the text is up is a plain B press and closes it.
+mouse 128 100
+run 10
+peek open FF09DC 1
+click L 72 183
+run 10
+peek verb FF06C0
+click L 230 70
+run 30
+peek act1 FF09DC 1
+peek actverb FF06BE
+run 30
+peek act2 FF09DC 1
+shot look_text
+run 60
+peek act3 FF09DC 1
+click L
+run 120
+peek after FF09DC 1
+# right click = Look: the rug (record 35, cells 17,10 8x4 = screen -24..39 x 96..127);
+# a left click there would walk onto it (its default verb is Look and it is floor)
+mouse 128 100
+run 10
+peek verb2 FF06C0
+click R 20 110
+run 40
+peek ract FF09DC 1
+peek ractverb FF06BE
+peek rtarget FF06AE
+shot rlook_text
