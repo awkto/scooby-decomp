@@ -1,0 +1,4 @@
+# Extra code seeds for disasm.py: hex address [name]
+# 008876: complete routine (move sr,-(sp) / VDP autoinc 4 / bsr loc_0099F6 / rts) placed right after
+#   table dat_008828; never executed in traces and no reference found -> dead code, disassembled anyway.
+008876
