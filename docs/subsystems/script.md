@@ -44,7 +44,7 @@ See "Difftest results" for the numbers.
 | $002406 / $002432 | script_run_frame, script_run_frame_next | execute-mode loop incl. the Start-skip test | C |
 | $002320 | script_run_nested | TALK choice collection (flags 4, count 0, saves A5/A6/cb) | 68k (only stack juggling around script_run) |
 | $0019B0 | action_execute, _verb_pass ($1A16), _run_case ($1A46), _after ($1A84), _after_talk ($1A9C), _done ($1BA0) | verb on object: header, TALK collection, `case` scan, body, failure text "I can't ...", then_talk | C (6 ranges; pushes, script calls and `sub_00A130` text stay 68k) |
-| $001C0C | sub_001C0C | TALK dialog menu (choices, nested dialogs) | 68k (pad/bar-slide waits; open) |
+| $001C0C | talk_menu_begin ($1C10), _save ($1C4A), _slide ($1C9E), _level ($1CDC), _draw ($1D22), _input ($1DB8), _pick ($1E5A) | TALK dialog menu: bar slide-out, list unused choices, Up/Down, pick | C up to the pick; running the picked choice ($1E7A-$20D0: reply text, pose, body, nesting, bar slide-in) stays 68k |
 | $00221A / $002278 | room_enter_script ($2226 + $2266), room_after_fade_script ($2284 + $22C4) | room scripts | C (ranges around the pushes) |
 | $00AFDA | run_object_events_setup ($AFEA), _matched ($B05E), _next ($B09A) | the object walk of the event scan; scan/run calls stay 68k | C |
 
@@ -90,6 +90,7 @@ See "Difftest results" for the numbers.
 | 01 | $00453E | end | C (SUBOP_BIT) |
 | 0D / 0E | $004482 / $00448C | camera lock on / off | C |
 | 1A / 1B | $004274 / $004298 | pal_flash on / off | C |
+| 04 | $004570 | wait_button (test after the two calls) | C (range) |
 | 1C | $004862 (+ $4874) | bar_show | C (ranges) |
 | 1D | $00482E (+ $4844, $4850) | bar_hide | C (ranges; the wait-for-idle spin $4836 stays 68k) |
 | 38 / 39 | $002FD6 / $002FE0 | skippable off / on | C |
