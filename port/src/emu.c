@@ -370,8 +370,10 @@ bool emu_write_ppm(const char *path)
 		fprintf(f, "P6\n%d %d\n255\n", nw, nh);
 		for (int y = 0; y < nh; y++)
 			for (int x = 0; x < nw; x++) {
-				uint32_t c = nat[y * RENDER_MAX_W + x];
-				uint8_t rgb[3] = { (uint8_t)c, (uint8_t)(c >> 8), (uint8_t)(c >> 16) };
+				/* through RGB565 like GPGX's frames, so shots of both renderers (and the
+				 * harness) compare byte for byte */
+				uint16_t p = render_rgba_to_565(nat[y * RENDER_MAX_W + x]);
+				uint8_t rgb[3] = { (uint8_t)((p >> 11) << 3), (uint8_t)(((p >> 5) & 63) << 2), (uint8_t)((p & 31) << 3) };
 				fwrite(rgb, 1, 3, f);
 			}
 		fclose(f);
