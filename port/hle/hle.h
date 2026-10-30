@@ -50,6 +50,10 @@ typedef struct hle_def {
 	 * with a stack delta (HLE_EXIT_SP): the SP at that exit must be the entry SP + delta.
 	 * NULL for an ordinary function (exit = rts). */
 	const uint32_t *exits;
+	/* opt-in group (HLE_FUNC_GROUP), NULL for ordinary replacements: such a function is only
+	 * enabled by "all" while its group is active (hle_set_group). Used for C versions that need
+	 * a host feature, e.g. "native" = the native renderer draws the verb-bar split (#25). */
+	const char *group;
 } hle_def;
 
 /* Range exit with a declared stack delta (docs/porting.md, "Ranges that push or pop"):
@@ -79,7 +83,18 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
 
 #define HLE_FUNC(ADDR, NAME, CYCLES)                                                    \
 	void NAME(hle_ctx *ctx);                                                            \
-	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__, 0 }; \
+	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__, 0, 0 }; \
+	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
+	{ hle_register_def(&hle_def_##NAME); }                                              \
+	void NAME(hle_ctx *ctx)
+
+/* HLE_FUNC_GROUP(addr, name, cycles, "group"): an HLE_FUNC that belongs to an opt-in group
+ * (see hle_def.group, hle_set_group). It starts disabled; "all" enables it only while the group
+ * is active, "+name" always does. */
+#define HLE_FUNC_GROUP(ADDR, NAME, CYCLES, GROUP)                                       \
+	void NAME(hle_ctx *ctx);                                                            \
+	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__, 0, \
+	                                        (GROUP) };                                  \
 	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
 	{ hle_register_def(&hle_def_##NAME); }                                              \
 	void NAME(hle_ctx *ctx)
@@ -98,7 +113,7 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
 	void NAME(hle_ctx *ctx);                                                            \
 	static const uint32_t hle_exits_##NAME[] = { __VA_ARGS__, 0 };                      \
 	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__,   \
-	                                        hle_exits_##NAME };                         \
+	                                        hle_exits_##NAME, 0 };                      \
 	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
 	{ hle_register_def(&hle_def_##NAME); }                                              \
 	void NAME(hle_ctx *ctx)
@@ -138,6 +153,10 @@ void hle_install(void);                 /* hook the CPU (called by emu_init) */
 bool hle_configure(const char *spec);
 bool hle_set_enabled(const char *name_or_addr, bool on);
 void hle_set_all(bool on);
+/* activate / deactivate an opt-in group: its members follow the "all" state of the ordinary
+ * replacements (on if any ordinary one is on), or go off. */
+void hle_set_group(const char *group, bool on);
+bool hle_group_active(const char *group);
 const hle_def *hle_find(const char *name_or_addr);
 int hle_count(void);
 const hle_def *hle_get(int i);

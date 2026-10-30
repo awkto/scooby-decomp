@@ -38,6 +38,7 @@
  *   -v                    print one line per state
  */
 #include "capture.h"
+#include "frameloop.h"
 #include "emu.h"
 #include "hle.h"
 #include "sandbox.h"
@@ -254,7 +255,10 @@ static const struct {
 	{ 0x00D468, 0x3EFF, 0x1F },   /* frame_scale_48x80 */
 	{ 0x00DA6A, 0x3EFF, 0x1F },   /* frame_scale_80x48 */
 	{ 0x00B0B8, 0x0000, 0x1F },   /* actor_animate: flags only (registers restored by movem) */
-	{ 0x00AF24, 0x0040, 0x00 },   /* actor_dma (only with -DSPRITE_ACTOR_DMA_C): D6 = HV counter read; dead */
+	{ 0x00AF24, 0x0040, 0x00 },   /* actor_dma ("native" group): D6 = HV counter read; dead */
+	/* hud_dma ("native" group, frameloop.c): X = bit 7 of the HV word (the H counter, which the
+	 * sandbox does not freeze); its only caller is vblank_main, which reads no flags */
+	{ 0x005C8E, 0x0000, 0x10 },
 	/* ---- #21 menus (menus.c, menu_password.c, menu_debug.c, soundtest.c): the proofs are in the
 	 * comment of each function ("live out").  Flags are dead everywhere in the menu code: the only
 	 * instructions that read X are the roxl in the password routines ($008710, $009392, $009382),
@@ -531,6 +535,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s\n", err);
 		return 1;
 	}
+	/* frame-loop model (#25): HV readers in C read the live counter here (the sandbox freezes
+	 * the V counter for both sides), so they compare with the 68k */
+	frameloop_set_hv_live(true);
 	g_saved_enable = calloc(hle_count() + 1, sizeof *g_saved_enable);
 	for (int i = 0; i < hle_count(); i++)
 		g_saved_enable[i] = hle_is_enabled(i);
@@ -582,7 +589,8 @@ int main(int argc, char **argv)
 	for (int i = 0; i < npos; i++) {
 		if (!strcmp(pos[i], "all")) {
 			for (int k = 0; k < hle_count() && nt < 512; k++)
-				targets[nt++] = hle_get(k);
+				if (hle_get(k)->addr != 0x01006C)   /* hblank_verb_bar: raster wait, not comparable */
+					targets[nt++] = hle_get(k);
 			continue;
 		}
 		const hle_def *d = hle_find(pos[i]);

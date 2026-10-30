@@ -12,7 +12,7 @@ set(GPGX_DIR "${SCOOBY_ROOT}/ext/gpgx" CACHE PATH "Genesis-Plus-GX git checkout 
 option(GPGX_CLONE "Clone Genesis-Plus-GX into GPGX_DIR if it does not exist (network)" OFF)
 
 # applied in this order (gpgx-hle.patch appends to vdp_ctrl.c after the vdptrace hunks)
-set(GPGX_PATCHES gpgx-cpuhook.patch gpgx-vdptrace.patch gpgx-hle.patch)
+set(GPGX_PATCHES gpgx-cpuhook.patch gpgx-vdptrace.patch gpgx-hle.patch gpgx-render.patch)
 
 set(GPGX_SRC "${CMAKE_BINARY_DIR}/gpgx-src")
 

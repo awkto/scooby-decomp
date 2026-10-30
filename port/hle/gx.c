@@ -101,3 +101,17 @@ void gx_vdp_follow_cpu(void)
 	while (m68k.cycles >= (int)(mcycles_vdp + MCYCLES_PER_LINE))
 		mcycles_vdp += MCYCLES_PER_LINE;
 }
+
+/* ---- native renderer (#25, tools/patches/gpgx-render.patch) ---- */
+extern void (*scooby_render_line_cb)(int line);
+extern void (*scooby_parse_satb_cb)(int line);
+extern void (*scooby_remap_line_cb)(int line);
+void gx_set_render_hooks(void (*line)(int), void (*parse)(int), void (*remap)(int))
+{
+	scooby_render_line_cb = line;
+	scooby_parse_satb_cb = parse;
+	scooby_remap_line_cb = remap;
+}
+uint8_t *gx_sat(void) { return sat; }
+int gx_viewport_w(void) { return bitmap.viewport.w; }
+int gx_viewport_h(void) { return bitmap.viewport.h; }

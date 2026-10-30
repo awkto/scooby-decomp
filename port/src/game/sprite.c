@@ -22,6 +22,7 @@
  *                           (DMA_DONE), draw the pieces.
  */
 #include "sprite.h"
+#include "frameloop.h"
 #include "cc68k.h"
 
 #define RLE_DECOMPRESS 0x009C64
@@ -491,13 +492,11 @@ HLE_FUNC(0x00A984, sprite_build, 5279)
 }
 
 /* ================================================================== actor_dma */
-/* NOT ENABLED: actor_dma stays 68k (docs/porting.md "HV counter reads", #33). It decides on
- * the beam position (HV counter), and C code must not read $C00008: in the live game the
- * nested-time window of vblank_main makes the 68k read see the right line, C would not.
- * This translation passed difftest (200/200, D6 ignored) before #33 and is kept as the
- * reference for the native port; build with -DSPRITE_ACTOR_DMA_C to register it. */
-#ifdef SPRITE_ACTOR_DMA_C
-
+/* Part of the opt-in HLE group "native" (game/frameloop.c, #25): enabled with the native
+ * renderer, where the raster test reads the frame-loop HV model (frameloop_hv: the VBlank hook
+ * runs at the start of the blank, so the test passes) instead of the beam. Without the native
+ * group actor_dma stays 68k (docs/porting.md "HV counter reads", #33): C code must not read
+ * $C00008. difftest reads the live counter (frozen in its sandbox) and passes with D6 ignored. */
 /* $00AF24 actor_dma (VBlank, from vblank_main): upload the tiles of at most one slot,
  * then build and upload the sprite table and count down the script timers.
  * Slots are tried in order 0..5; the first active slot with TILES_READY is DMA'd, but only
@@ -509,7 +508,7 @@ HLE_FUNC(0x00A984, sprite_build, 5279)
  * tiles go up this frame. In follow mode ($09E8 bit 3) Shaggy's partner slot and any slot
  * entered with D0.w = 0 skip the raster test.
  * After a DMA: DMA_DONE cleared (sprite_build latches the frame next) and ANIM_LOOPED set. */
-HLE_FUNC(0x00AF24, actor_dma, 1500)
+HLE_FUNC_GROUP(0x00AF24, actor_dma, 1500, "native")
 {
 	uint8_t active = RAM8(ACTORS_ACTIVE);
 	uint8_t ready = RAM8(ACTORS_TILES_READY);
@@ -529,7 +528,7 @@ HLE_FUNC(0x00AF24, actor_dma, 1500)
 			if (RAM8(GAME_FLAGS_09E8) & 0x08)
 				raster_test = !(slot == RAM16(FOLLOW_SLOT) || (ctx->d[0] & 0xFFFF) == 0);
 			if (raster_test) {
-				uint16_t hv = bus_r16(0xC00008);
+				uint16_t hv = frameloop_hv();
 				set_w(&ctx->d[6], hv);
 				if ((int16_t)hv < (int16_t)0xE000 || (int16_t)hv > (int16_t)0xF000)
 					break;
@@ -575,7 +574,6 @@ HLE_FUNC(0x00AF24, actor_dma, 1500)
 	if (ctx->cycles < 500)
 		ctx->cycles = 500;
 }
-#endif
 
 /* ================================================================== actor_animate */
 /* Animation script commands: (u16 op, u16 arg) pairs. */

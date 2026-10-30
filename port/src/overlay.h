@@ -7,4 +7,7 @@
 /* draw text at (x,y) with a dark backdrop; '\n' starts a new line. Returns width in px. */
 int overlay_text(uint16_t *px, int w, int h, int x, int y, uint16_t color, const char *s);
 
+/* same, RGBA (bytes R G B A) */
+int overlay_text_rgba(uint32_t *px, int w, int h, int x, int y, uint32_t color, const char *s);
+
 #endif

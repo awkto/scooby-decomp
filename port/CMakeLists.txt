@@ -19,13 +19,15 @@ include(cmake/gpgx.cmake)
 # OBJECT library so that HLE_FUNC registrations (constructors) are never dropped by the linker.
 file(GLOB GAME_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/game/*.c")
 file(GLOB MOUSE_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse/*.c")
+file(GLOB RENDER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/render/*.c")
 add_library(scooby_common OBJECT
   src/emu.c src/sha1.c src/script.c src/capture.c src/sndlog.c src/ipprof.c
   hle/hle.c hle/sandbox.c hle/gx.c
-  ${GAME_SOURCES} ${MOUSE_SOURCES})
+  ${GAME_SOURCES} ${MOUSE_SOURCES} ${RENDER_SOURCES})
 target_include_directories(scooby_common PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/hle"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/game" "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse")
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/game" "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/render")
 target_link_libraries(scooby_common PUBLIC gpgx_core)
 target_compile_options(scooby_common PRIVATE -Wall -Wextra -Wno-unused-parameter
   -fno-strict-aliasing)

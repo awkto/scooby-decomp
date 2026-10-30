@@ -604,6 +604,22 @@ void mouse_draw(uint16_t *px, int w, int h)
 		}
 }
 
+void mouse_draw_rgba(uint32_t *px, int w, int h)
+{
+	if (!M.enabled || !M.inside)
+		return;
+	/* in pointer mode the game's crosshair is centred on the mouse in the room view */
+	if (mg_mode_get() == MG_POINTER && M.my < MG_BAR_TOP && M.my >= MG_ROOM_TOP && !M.override && M.active)
+		return;
+	for (int r = 0; r < (int)(sizeof arrow / sizeof arrow[0]); r++)
+		for (int c = 0; arrow[r][c]; c++) {
+			int x = M.mx + c, y = M.my + r;
+			if (x < 0 || y < 0 || x >= w || y >= h || arrow[r][c] == ' ')
+				continue;
+			px[y * w + x] = arrow[r][c] == '#' ? 0xFF000000u : 0xFFFFFFFFu;
+		}
+}
+
 bool mouse_map_window(int wx, int wy, int out_w, int out_h, int tex_w, int tex_h, int *gx, int *gy)
 {
 	if (tex_w <= 0 || tex_h <= 0)

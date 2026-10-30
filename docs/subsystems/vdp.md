@@ -32,7 +32,7 @@ The rest of the `$C00004` writers are inline in other subsystems (list at the en
 | `$009FA2` | `draw_text_wrapped` | word-wrapped text (30 columns) into the dialogue-choice rows of the verb-bar plane, `$FF080A` = rows * 300 | C |
 | `$00A054` | `draw_status_line` | clear plane `$D000` (1024 single-word writes), draw the status/command line wrapped and right-aligned, set VDP reg `$12` and `$FF080A` | C |
 | `$009C64` | `rle_decompress` | writes `$C00004` only to set/clear the H40-interlace register `$8C08/$8C00`; ported in #14 | C (#14) |
-| `$005C8E`, `$00AF24` | `hud_dma`, `actor_dma` | read the HV counter | **68k by rule** (docs/porting.md "HV counter reads") |
+| `$005C8E`, `$00AF24` | `hud_dma`, `actor_dma` | read the HV counter | 68k by rule (docs/porting.md "HV counter reads"); C with the frame-loop HV model in the `native` group (#25, render.md) |
 
 ## Design
 

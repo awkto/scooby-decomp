@@ -1,0 +1,40 @@
+--- a/core/vdp_render.c
++++ b/core/vdp_render.c
+@@ -597,6 +597,14 @@
+ 
+ static object_info_t obj_info[2][MAX_SPRITES_PER_LINE];
+ 
++/* scooby-decomp (GitLab #25): timing hooks for the native renderer (port/src/render).
++ * Called at the moments GPGX renders a line, parses the sprite table for the next line and
++ * converts a line to output pixels, so that a renderer outside the core can draw the same line
++ * from the same VDP state. They do not change any emulator state. */
++void (*scooby_render_line_cb)(int line) = 0;
++void (*scooby_parse_satb_cb)(int line) = 0;
++void (*scooby_remap_line_cb)(int line) = 0;
++
+ /* Sprite Counter */
+ static uint8 object_count[2];
+ 
+@@ -4456,6 +4464,7 @@
+ 
+ void parse_satb_m5(int line)
+ {
++  if (scooby_parse_satb_cb) scooby_parse_satb_cb(line);
+   /* Sprite Y position */
+   int ypos;
+ 
+@@ -4861,6 +4870,7 @@
+ 
+ void render_line(int line)
+ {
++  if (scooby_render_line_cb) scooby_render_line_cb(line);
+   /* Check display status */
+   if (reg[1] & 0x40)
+   {
+@@ -4985,4 +4995,6 @@
+     }
+  #endif
+   }
++
++  if (scooby_remap_line_cb) scooby_remap_line_cb(line);
+ }

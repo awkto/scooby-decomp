@@ -101,8 +101,9 @@ line `$A7` (167), H ≥ `$50`. It then switches the bottom 56 lines to the verb/
 - hscroll (`$DC00`) = `ram_hscroll_verb` for both planes
 - reg `$12` = `$9200 | ($FF0AD1)`
 
-It also stores the HV counter value in `$FF08B2`. It is a raster effect. It must stay in
-68k while the VDP is emulated. A native renderer should do the split at line 167 itself
+It also stores the HV counter value in `$FF08B2`. It is a raster effect. It stays in
+68k while GPGX draws the picture; with the native renderer (#25, docs/subsystems/render.md) the
+split is a band of the frame and the C replacement only records it. A native renderer should do the split at line 167 itself
 (the main loop's "pointer y ≥ `$A8`" test matches the same line). frameprof shows the
 handler costs ~35 loop iterations per frame.
 
@@ -271,7 +272,7 @@ noted (`--script port/scripts/lobby.txt --script port/scripts/pointer_play.txt` 
 | `$00A38C` | vblank_title_fade | title VBlank (lightning effect) | C, 200/200 |
 | `$00879E` | title_anim | title sprite bounce + strip scroller | C, 200/200 |
 | `$01006A` | hblank_nop | `rts` | C, 200/200 |
-| `$01006C` | hblank_verb_bar | raster split at line 167 | 68k: raster busy-wait |
+| `$01006C` | hblank_verb_bar | raster split at line 167 | 68k with the GPGX renderer (raster busy-wait); with `--renderer native` C (group `native`): records the verb-bar band for the native renderer, see render.md (#25) |
 | `$00974C` | wait_vblank | set `VBF_WAITING`, spin until VBlank clears it | 68k: the wait primitive |
 | `$009742` | wait_vblanks | d0+1 × wait_vblank | 68k: the wait primitive |
 | `$000D3E` | main_loop_pass | one main-loop pass | C, 200/200 + 300/300 pointer route + 200/200 inventory route. Exits seen: `$D4A $E86 $1228 $1392 $13B0`. The pause exit `$D88` happens once on the capture route but is not among the sampled states. The inventory-arrow exits `$116C $1174 $11A8 $11B0` are reached by the populated-inventory route of `port/tools/inv_dt.sh` (400/400 there, see verbs.md). |

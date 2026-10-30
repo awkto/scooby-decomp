@@ -33,6 +33,7 @@ unsigned mouse_frame(unsigned pad_in);
 /* host cursor, drawn into the RGB565 game frame (hidden where the game's own crosshair
  * already marks the mouse position) */
 void mouse_draw(uint16_t *px, int w, int h);
+void mouse_draw_rgba(uint32_t *px, int w, int h);   /* same, RGBA buffer */
 
 /* window pixel -> game pixel for an integer-scaled, centred (letterboxed) image:
  * out_w x out_h = renderer output size in pixels, tex_w x tex_h = game image.

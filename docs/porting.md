@@ -491,8 +491,10 @@ the test screen). difftest follows such a jump: after the C function it keeps ru
   - `game_init` `$00A248`: RNG step.
   - `hblank_verb_bar` `$01006C`: raster wait.
 
-  None of them is in C. `hud_dma` and `actor_dma` are called from C `vblank_main`
-  through `hle_call68k`; `game_init` and `hblank_verb_bar` stay 68k (see below). The rules:
+  With the GPGX renderer none of them is in C. `hud_dma` and `actor_dma` are called from C
+  `vblank_main` through `hle_call68k`; `game_init` and `hblank_verb_bar` stay 68k (see below).
+  With `--renderer native` (#25) `hblank_verb_bar`, `hud_dma` and `actor_dma` are C in the
+  opt-in HLE group `native`, keyed to the frame loop instead of the beam (next item). The rules:
   1. **Keep HV reads in 68k code, and call it nested.** Inside a top-level C function, time
      runs on across its nested 68k calls. The CPU clock, the raster line base **and the V
      counter** advance with the nested instructions, so an HV read after `camera_update`
@@ -507,6 +509,20 @@ the test screen). difftest follows such a jump: after the C function it keeps ru
   4. In difftest the V counter is frozen at the entry line on both sides, so these
      functions compare equal there. The live behaviour is checked by
      `port/tools/storytest.sh` (closed-loop gameplay) and `irqtest.sh`.
+
+  5. **The frame-loop model (#25, `--renderer native`).** The native renderer draws the
+     verb-bar split from a band, so the beam is no longer needed: `hblank_verb_bar` (C) only
+     records the band (no VDP access, no raster wait); `hud_dma` and `actor_dma` (C) read
+     `frameloop_hv()`, which is the constant `$E100` ("the VBlank hook runs at the start of the
+     blank": every DMA-window test passes). That is the CPU-less contract (#24): it is
+     deterministic and needs no clock. What changes against the 68k: an upload that the original
+     postpones by a frame because its VBlank handler ran late now happens at once; GPGX's own
+     picture has no verb bar (only the native one draws the band); `ram_hblank_hv` holds the
+     constant `$A750`. difftest sets `frameloop_set_hv_live(true)`: `frameloop_hv()` then reads the
+     (frozen) sandbox counter, so `dt hud_dma` / `dt actor_dma` compare with the original;
+     `hblank_verb_bar` is not difftestable (it waits on the beam) and `dt all` skips it. The gates
+     (storytest none == all, irqtest, hosttest, mousetest) run with `SCOOBY_RENDERER=native` as well.
+     Details: docs/subsystems/render.md. A C function must still never read `$C00008` itself.
 
   **#33**: before #31, nested calls advanced the clock but not the V counter. After #31
   each nested call was rewound on its own, so in C `vblank_main` the beam was always at
@@ -638,7 +654,7 @@ formats: `docs/formats.md` "Actor sprites":
 | $00D468 / $00DA6A | frame_scale_48x80 / _80x48 (depth scalers) | sprite.c | 200/200, 115/115 (all calls on the route; regs/flags ignored) |
 | $00D3F0 / $00D42C | frame_pack_48x80 / _80x48 | sprite.c | 11/11 each (`scripts/sprite_pack.txt`, all calls) |
 | $00801A | actors_init (tail-jumps to its `bsr actor_animate`) | sprite.c | 2/2 (all calls on the route) |
-| $00AF24 | actor_dma | stays 68k (HV read, #33); C reference under `#ifdef SPRITE_ACTOR_DMA_C` | |
+| $00AF24 | actor_dma | sprite.c, group `native` (#25): HV from the frame-loop model | see #25 below |
 
 #21 (title screen, menus, password screens, sound test, DEBUG editors), files `menus.c`, `menu_password.c`,
 `menu_debug.c`, `soundtest.c`, `password.c`. Details: `docs/subsystems/menus.md`. About 70 functions/ranges (the
@@ -660,3 +676,17 @@ is `port/tools/password_test.sh`. Register exemptions are in `difftest.c` ("#21 
 
 `port/tools/soundtest.sh` compares the Z80 mailbox byte stream (`SCOOBY_SNDLOG`) of `--hle all`, `--hle none` and
 `--hle all` minus the sound functions on the Sound Test route, an in-game route and a rapid-press route.
+
+### Native renderer and frame pacing (#25, `port/src/render/`, `frameloop.c`, docs/subsystems/render.md)
+
+`--renderer native` (or `SCOOBY_RENDERER=native`) shows the native renderer's frame and activates the
+opt-in HLE group `native`:
+
+| Address | Name | File | difftest result |
+|---|---|---|---|
+| $01006C | hblank_verb_bar (records the verb-bar band; no beam, no VDP access) | frameloop.c | not difftestable (the original waits on the raster); verified by `rendertest.sh` (band model == GPGX's real split) and the gates |
+| $005C8E | hud_dma (HV from the frame-loop model) | frameloop.c | see docs/subsystems/render.md |
+| $00AF24 | actor_dma (HV from the frame-loop model) | sprite.c | see docs/subsystems/render.md |
+
+`port/tools/rendertest.sh`: native frame == GPGX frame on the gate routes (pixel for pixel).
+

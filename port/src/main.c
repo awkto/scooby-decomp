@@ -3,7 +3,8 @@
  * Keys: arrows = D-pad, Z/A = A, X/S = B, C/D = C, Enter = Start
  *       F1 debug overlay, F2 toggle all C replacements (HLE), F5 save state, F9 load state,
  *       F6/F7 previous/next state slot, P pause, N or . frame advance (pauses),
- *       Tab (hold) fast forward, F11 or Alt+Enter fullscreen, F12 screenshot, Esc quit.
+ *       Tab (hold) fast forward, F11 or Alt+Enter fullscreen, F12 screenshot, Esc quit,
+ *       F3 output filter (nearest / smooth / crt).
  * Gamepad (SDL GameController): D-pad / left stick, X/Y = A, A = B, B/RB = C, Start,
  *       Back = pause.
  * Mouse (docs/mouse.md; --no-mouse disables it): left click = walk there / use the
@@ -27,10 +28,13 @@
 void sndlog_init(void);
 #include "mouse.h"
 #include "overlay.h"
+#include "present.h"
+#include "render_emu.h"
 #include "script.h"
 
 typedef struct {
-	const char *rom, *script, *outdir, *screenshot, *window_shot, *savedir, *hle;
+	const char *rom, *script, *outdir, *screenshot, *window_shot, *savedir, *hle, *renderer;
+	present_filter filter;
 	const char *cap_dir;
 	uint32_t cap_addr;
 	int cap_n, cap_every, cap_skip;
@@ -43,7 +47,10 @@ static void usage(const char *argv0)
 {
 	printf("usage: %s [options]\n"
 	       "  --rom PATH              ROM (default rom/baserom.md; sha1 must match)\n"
-	       "  --scale N               initial window scale (default 3); integer scaling always\n"
+	       "  --scale N               initial window scale (default 3)\n"
+	       "  --renderer R            gpgx (default) | native: the C renderer draws the picture and\n"
+	       "                          the verb-bar split is a band, not a raster effect (#25)\n"
+	       "  --filter F              nearest (default, whole-number scale) | smooth | crt\n"
 	       "  --fullscreen            start fullscreen (F11 toggles)\n"
 	       "  --no-vsync              don't sync presentation to the display\n"
 	       "  --mute                  no audio\n"
@@ -124,16 +131,24 @@ static unsigned live_pad(void)
 }
 
 /* ------------------------------------------------------------------ video */
+/* The game frame is RGBA (the native renderer's frame, or GPGX's RGB565 frame converted);
+ * the overlay and the mouse pointer are drawn into a copy, then the output filter scales it
+ * (render/present.c) and SDL puts it in the window (docs/subsystems/render.md "Output"). */
 typedef struct {
 	SDL_Window *win;
 	SDL_Renderer *ren;
 	SDL_Texture *tex;
-	int tw, th;
-	uint16_t buf[512 * 512];
+	int tw, th;                 /* texture size (game frame x prescale) */
+	int gw, gh;                 /* game frame size */
+	present_filter filter;
+	uint32_t buf[RENDER_MAX_W * RENDER_MAX_H];     /* game frame + overlay + pointer */
+	uint32_t *scaled;
+	size_t scaled_cap;
 } video_t;
 
-static bool video_init(video_t *v, int scale, bool fullscreen, bool vsync)
+static bool video_init(video_t *v, int scale, bool fullscreen, bool vsync, present_filter filter)
 {
+	v->filter = filter;
 	v->win = SDL_CreateWindow("Scooby-Doo Mystery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 	                          320 * scale, 224 * scale,
 	                          SDL_WINDOW_RESIZABLE | (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0));
@@ -144,28 +159,81 @@ static bool video_init(video_t *v, int scale, bool fullscreen, bool vsync)
 		v->ren = SDL_CreateRenderer(v->win, -1, 0);
 	if (!v->ren)
 		return false;
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-	SDL_RenderSetIntegerScale(v->ren, SDL_TRUE);
 	return true;
 }
 
-static void video_present(video_t *v, const uint16_t *px, int w, int h)
+static void video_draw(video_t *v)
+{
+	int ow, oh, r[4];
+	SDL_GetRendererOutputSize(v->ren, &ow, &oh);
+	present_rect(v->filter, v->gw, v->gh, ow, oh, r);
+	SDL_Rect dst = { r[0], r[1], r[2], r[3] };
+	SDL_SetRenderDrawColor(v->ren, 0, 0, 0, 255);
+	SDL_RenderClear(v->ren);
+	if (v->tex)
+		SDL_RenderCopy(v->ren, v->tex, NULL, &dst);
+}
+
+static void video_present(video_t *v, const uint32_t *px, int w, int h)
 {
 	if (!v->ren || !px)
 		return;
-	if (!v->tex || v->tw != w || v->th != h) {
+	int ow, oh;
+	SDL_GetRendererOutputSize(v->ren, &ow, &oh);
+	/* prescale on the CPU by the whole-number fit (crt: the effect needs the pixels; smooth:
+	 * SDL does the fractional rest with linear filtering; nearest: SDL scales by k exactly) */
+	int k = v->filter == PRESENT_NEAREST ? 1 : present_fit_scale(w, h, ow, oh);
+	if (k > 8)
+		k = 8;
+	int tw = w * k, th = h * k;
+	if (!v->tex || v->tw != tw || v->th != th) {
 		if (v->tex)
 			SDL_DestroyTexture(v->tex);
-		v->tex = SDL_CreateTexture(v->ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, w, h);
-		v->tw = w;
-		v->th = h;
-		SDL_RenderSetLogicalSize(v->ren, w, h);   /* + integer scale = letterboxed whole multiples */
+		v->tex = SDL_CreateTexture(v->ren, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, tw, th);
+		SDL_SetTextureScaleMode(v->tex, v->filter == PRESENT_SMOOTH ? SDL_ScaleModeLinear : SDL_ScaleModeNearest);
+		v->tw = tw;
+		v->th = th;
 	}
-	SDL_UpdateTexture(v->tex, NULL, px, w * 2);
-	SDL_SetRenderDrawColor(v->ren, 0, 0, 0, 255);
-	SDL_RenderClear(v->ren);
-	SDL_RenderCopy(v->ren, v->tex, NULL, NULL);
+	v->gw = w;
+	v->gh = h;
+	if (k == 1) {
+		SDL_UpdateTexture(v->tex, NULL, px, w * 4);
+	} else {
+		size_t need = (size_t)tw * th;
+		if (need > v->scaled_cap) {
+			free(v->scaled);
+			v->scaled = malloc(need * 4);
+			v->scaled_cap = need;
+		}
+		present_scale(px, w, h, w, k, v->filter, v->scaled);
+		SDL_UpdateTexture(v->tex, NULL, v->scaled, tw * 4);
+	}
+	video_draw(v);
 	SDL_RenderPresent(v->ren);
+}
+
+/* the frame to show: the native renderer's, or GPGX's (RGB565 -> RGBA) */
+static bool game_frame(video_t *v, int *w, int *h)
+{
+	int nw, nh;
+	const uint32_t *nat = render_emu_kind() == RENDERER_NATIVE ? render_emu_frame(&nw, &nh) : NULL;
+	if (nat) {
+		for (int y = 0; y < nh; y++)
+			memcpy(v->buf + (size_t)y * nw, nat + (size_t)y * RENDER_MAX_W, (size_t)nw * 4);
+		*w = nw;
+		*h = nh;
+		return true;
+	}
+	unsigned gw, gh;
+	size_t pitch;
+	const uint16_t *px = emu_video(&gw, &gh, &pitch);
+	if (!px || gw > RENDER_MAX_W || gh > RENDER_MAX_H)
+		return false;
+	for (unsigned i = 0; i < gw * gh; i++)
+		v->buf[i] = render_565_to_rgba(px[i]);
+	*w = (int)gw;
+	*h = (int)gh;
+	return true;
 }
 
 static bool window_shot(video_t *v, const char *path)
@@ -175,15 +243,8 @@ static bool window_shot(video_t *v, const char *path)
 		return false;
 	uint8_t *rgb = calloc((size_t)w * h, 3);
 	/* re-render the last frame (the back buffer is undefined after present) */
-	SDL_SetRenderDrawColor(v->ren, 0, 0, 0, 255);
-	SDL_RenderClear(v->ren);
-	if (v->tex)
-		SDL_RenderCopy(v->ren, v->tex, NULL, NULL);
-	/* read the whole window, not just the letterboxed logical viewport */
-	SDL_RenderSetLogicalSize(v->ren, 0, 0);
-	SDL_RenderSetViewport(v->ren, NULL);
+	video_draw(v);
 	bool ok = SDL_RenderReadPixels(v->ren, NULL, SDL_PIXELFORMAT_RGB24, rgb, w * 3) == 0;
-	SDL_RenderSetLogicalSize(v->ren, v->tw, v->th);
 	FILE *f = ok ? fopen(path, "wb") : NULL;
 	if (f) {
 		fprintf(f, "P6\n%d %d\n255\n", w, h);
@@ -194,22 +255,25 @@ static bool window_shot(video_t *v, const char *path)
 	return f != NULL;
 }
 
-/* mouse position (window coordinates) -> game pixel, through the letterboxed integer
- * scaling of video_present.  Window coordinates are converted to renderer output pixels
- * first (they differ on HiDPI displays). */
+/* mouse position (window coordinates) -> game pixel, through the placement of video_draw.
+ * Window coordinates are converted to renderer output pixels first (they differ on HiDPI
+ * displays). */
 static void mouse_from_window(video_t *v, int x, int y)
 {
-	int ww, wh, ow, oh, gx, gy;
+	int ww, wh, ow, oh, r[4];
 	if (!v->win || !v->ren)
 		return;
 	SDL_GetWindowSize(v->win, &ww, &wh);
 	if (SDL_GetRendererOutputSize(v->ren, &ow, &oh) || ww <= 0 || wh <= 0)
 		return;
-	int tw = v->tw ? v->tw : 256, th = v->th ? v->th : 224;
-	if (mouse_map_window(x * ow / ww, y * oh / wh, ow, oh, tw, th, &gx, &gy))
-		mouse_move(gx, gy);
-	else
+	int gw = v->gw ? v->gw : 256, gh = v->gh ? v->gh : 224;
+	present_rect(v->filter, gw, gh, ow, oh, r);
+	int px = x * ow / ww - r[0], py = y * oh / wh - r[1];
+	if (px < 0 || py < 0 || px >= r[2] || py >= r[3] || r[2] <= 0 || r[3] <= 0) {
 		mouse_leave();
+		return;
+	}
+	mouse_move(px * gw / r[2], py * gh / r[3]);
 }
 
 /* ------------------------------------------------------------------ main */
@@ -221,6 +285,7 @@ int main(int argc, char **argv)
 	a.vsync = true;
 	a.outdir = "runs/port";
 	a.cap_every = 1;
+	a.filter = PRESENT_NEAREST;
 	for (int i = 1; i < argc; i++) {
 		const char *s = argv[i];
 #define NEXT() (i + 1 < argc ? argv[++i] : (usage(argv[0]), exit(2), ""))
@@ -231,6 +296,13 @@ int main(int argc, char **argv)
 		else if (!strcmp(s, "--mute")) a.mute = true;
 		else if (!strcmp(s, "--overlay")) a.overlay = true;
 		else if (!strcmp(s, "--hle")) a.hle = NEXT();
+		else if (!strcmp(s, "--renderer")) a.renderer = NEXT();
+		else if (!strcmp(s, "--filter")) {
+			if (!present_filter_parse(NEXT(), &a.filter)) {
+				fprintf(stderr, "unknown --filter (nearest | smooth | crt)\n");
+				return 2;
+			}
+		}
 		else if (!strcmp(s, "--list-hle")) a.list_hle = true;
 		else if (!strcmp(s, "--script")) a.script = NEXT();
 		else if (!strcmp(s, "--realtime-script")) a.realtime_script = true;
@@ -275,6 +347,11 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	sndlog_init();   /* SCOOBY_SNDLOG=file: mailbox write log (src/sndlog.c) */
+	/* before the HLE spec: the native renderer activates the "native" group (#25) */
+	if (a.renderer && !render_emu_select(a.renderer)) {
+		fprintf(stderr, "unknown --renderer %s (gpgx | native)\n", a.renderer);
+		return 2;
+	}
 	if (a.hle && !hle_configure(a.hle))
 		return 2;
 	ipprof_init(a.hle ? a.hle : "default");   /* SCOOBY_IPPROF=file: interpreted-instruction profile (src/ipprof.c) */
@@ -297,7 +374,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	static video_t v;
-	if (!video_init(&v, a.scale, a.fullscreen, a.vsync))
+	if (!video_init(&v, a.scale, a.fullscreen, a.vsync, a.filter))
 		fprintf(stderr, "video unavailable (%s), running without a window\n", SDL_GetError());
 	mouse_set_enabled(!a.no_mouse);
 	if (!a.no_mouse && v.win)
@@ -357,6 +434,14 @@ int main(int argc, char **argv)
 						break;
 					} else if (k == SDLK_F1)
 						overlay = !overlay;
+					else if (k == SDLK_F3) {
+						v.filter = (present_filter)((v.filter + 1) % 3);
+						if (v.tex)
+							SDL_DestroyTexture(v.tex);
+						v.tex = NULL;
+						snprintf(msg, sizeof msg, "FILTER %s", present_filter_name(v.filter));
+						msg_timer = 90;
+					}
 					else if (k == SDLK_F2) {
 						static bool hle_on = true;
 						hle_on = !hle_on;
@@ -490,28 +575,26 @@ int main(int argc, char **argv)
 		}
 
 		/* video (skip most frames when running unthrottled) */
-		unsigned w, h;
-		size_t pitch;
-		const uint16_t *px = emu_video(&w, &h, &pitch);
+		int w, h;
 		bool show = !fast || (total % 30) == 0 || paused;
-		if (px && v.ren && show && w <= 512 && h <= 512) {
-			memcpy(v.buf, px, (size_t)w * h * 2);
+		if (v.ren && show && game_frame(&v, &w, &h)) {
 			if (overlay) {
 				char t[256];
 				uint32_t sx = emu_ram32(0xFF04DC) >> 16, sy = emu_ram32(0xFF04F4) >> 16;
-				snprintf(t, sizeof t, "F %ld  %.1f FPS%s%s\nHLE %lu/F  SLOT %d\nSHAGGY %u,%u\nPAD %02X  AQ %u MS\nMOUSE %s",
+				snprintf(t, sizeof t, "F %ld  %.1f FPS%s%s\nHLE %lu/F  SLOT %d\nSHAGGY %u,%u\nPAD %02X  AQ %u MS\nMOUSE %s\nRENDER %s %s",
 				         emu_frame_count(), fps_show, paused ? "  PAUSED" : "", ff ? "  FF" : "",
 				         hle_calls_this_frame(), slot, sx, sy, emu_ram8(0xFF09E0),
 				         adev ? (unsigned)(SDL_GetQueuedAudioSize(adev) * 1000 / (rate * 4)) : 0,
-				         mouse_enabled() ? mouse_status() : "OFF");
-				overlay_text(v.buf, (int)w, (int)h, 2, 2, 0xFFE0, t);
+				         mouse_enabled() ? mouse_status() : "OFF",
+				         render_emu_kind() == RENDERER_NATIVE ? "NATIVE" : "GPGX", present_filter_name(v.filter));
+				overlay_text_rgba(v.buf, w, h, 2, 2, render_rgba(15, 15, 0), t);
 			}
 			if (msg_timer > 0) {
-				overlay_text(v.buf, (int)w, (int)h, 2, (int)h - 8, 0xFFFF, msg);
+				overlay_text_rgba(v.buf, w, h, 2, h - 8, render_rgba(15, 15, 15), msg);
 				msg_timer--;
 			}
-			mouse_draw(v.buf, (int)w, (int)h);
-			video_present(&v, v.buf, (int)w, (int)h);
+			mouse_draw_rgba(v.buf, w, h);
+			video_present(&v, v.buf, w, h);
 		}
 
 		/* throttle */
@@ -552,18 +635,15 @@ int main(int argc, char **argv)
 			fprintf(stderr, "cannot write %s\n", a.screenshot);
 	}
 	if (a.window_shot) {
-		unsigned w, h;
-		size_t pitch;
-		const uint16_t *px = emu_video(&w, &h, &pitch);
-		if (px && v.ren) {
-			memcpy(v.buf, px, (size_t)w * h * 2);
+		int w, h;
+		if (v.ren && game_frame(&v, &w, &h)) {
 			if (overlay) {
 				char t[64];
 				snprintf(t, sizeof t, "F %ld\nOVERLAY TEST 0123456789", emu_frame_count());
-				overlay_text(v.buf, (int)w, (int)h, 2, 2, 0xFFE0, t);
+				overlay_text_rgba(v.buf, w, h, 2, 2, render_rgba(15, 15, 0), t);
 			}
-			mouse_draw(v.buf, (int)w, (int)h);
-			video_present(&v, v.buf, (int)w, (int)h);
+			mouse_draw_rgba(v.buf, w, h);
+			video_present(&v, v.buf, w, h);
 		}
 		if (window_shot(&v, a.window_shot))
 			printf("wrote %s\n", a.window_shot);

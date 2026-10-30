@@ -11,6 +11,7 @@
 
 #include "libretro.h"
 #include "gx.h"
+#include "render/render_emu.h"
 
 /* core/debug/cpuhook.c (type is hook_type_t, an enum) */
 extern void set_cpu_hook(void (*hook)(int type, int width, unsigned int address, unsigned int value));
@@ -235,6 +236,7 @@ bool emu_init(const char *rom_path, const char *workdir, char *err, size_t errle
 		g_boot = NULL;
 	}
 	g_up = true;
+	render_emu_init();     /* SCOOBY_RENDERER / SCOOBY_RENDERCMP (#25) */
 	return true;
 }
 
@@ -287,6 +289,7 @@ void emu_run_frame(void)
 		for (unsigned y = 0; y < g_fb_h; y++)
 			memcpy(g_fb_copy + y * g_fb_w, (const uint8_t *)g_fb + y * g_fb_pitch, g_fb_w * 2);
 	}
+	render_emu_frame_end(g_frames);
 }
 
 long emu_frame_count(void) { return g_frames; }
@@ -358,6 +361,22 @@ bool emu_state_load_file(const char *path)
 /* ------------------------------------------------------------------ dumps */
 bool emu_write_ppm(const char *path)
 {
+	int nw, nh;
+	const uint32_t *nat = render_emu_kind() == RENDERER_NATIVE ? render_emu_frame(&nw, &nh) : NULL;
+	if (nat) {          /* the native renderer's frame is what is shown (#25) */
+		FILE *f = fopen(path, "wb");
+		if (!f)
+			return false;
+		fprintf(f, "P6\n%d %d\n255\n", nw, nh);
+		for (int y = 0; y < nh; y++)
+			for (int x = 0; x < nw; x++) {
+				uint32_t c = nat[y * RENDER_MAX_W + x];
+				uint8_t rgb[3] = { (uint8_t)c, (uint8_t)(c >> 8), (uint8_t)(c >> 16) };
+				fwrite(rgb, 1, 3, f);
+			}
+		fclose(f);
+		return true;
+	}
 	unsigned w, h;
 	size_t pitch;
 	const uint16_t *px = emu_video(&w, &h, &pitch);

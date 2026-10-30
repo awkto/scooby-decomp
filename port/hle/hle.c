@@ -79,13 +79,13 @@ void hle_register_def(const hle_def *def)
 		abort();
 	e = &g_ent[g_n++];
 	e->def = *def;
-	e->enabled = true;
-	bitmap_set(def->addr, true);
+	e->enabled = !def->group;
+	bitmap_set(def->addr, e->enabled);
 }
 
 void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles)
 {
-	hle_def d = { addr, name, fn, cycles, "(runtime)", NULL };
+	hle_def d = { addr, name, fn, cycles, "(runtime)", NULL, NULL };
 	if (!name) {
 		char *buf = malloc(16);
 		snprintf(buf, 16, "sub_%06X", addr);
@@ -133,12 +133,49 @@ bool hle_set_enabled(const char *s, bool on)
 	return true;
 }
 
+#define MAX_GROUPS 8
+static const char *g_groups[MAX_GROUPS];   /* active opt-in groups */
+
+bool hle_group_active(const char *group)
+{
+	for (int i = 0; i < MAX_GROUPS; i++)
+		if (g_groups[i] && group && !strcmp(g_groups[i], group))
+			return true;
+	return false;
+}
+
 void hle_set_all(bool on)
 {
 	for (int i = 0; i < g_n; i++) {
-		g_ent[i].enabled = on;
-		bitmap_set(g_ent[i].def.addr, on);
+		bool e = on && (!g_ent[i].def.group || hle_group_active(g_ent[i].def.group));
+		g_ent[i].enabled = e;
+		bitmap_set(g_ent[i].def.addr, e);
 	}
+}
+
+void hle_set_group(const char *group, bool on)
+{
+	if (on && !hle_group_active(group)) {
+		for (int i = 0; i < MAX_GROUPS; i++)
+			if (!g_groups[i]) {
+				g_groups[i] = group;
+				break;
+			}
+	} else if (!on) {
+		for (int i = 0; i < MAX_GROUPS; i++)
+			if (g_groups[i] && !strcmp(g_groups[i], group))
+				g_groups[i] = NULL;
+	}
+	/* members follow the ordinary replacements: on if any of those is on */
+	bool any = false;
+	for (int i = 0; i < g_n; i++)
+		if (!g_ent[i].def.group && g_ent[i].enabled)
+			any = true;
+	for (int i = 0; i < g_n; i++)
+		if (g_ent[i].def.group && !strcmp(g_ent[i].def.group, group)) {
+			g_ent[i].enabled = on && any;
+			bitmap_set(g_ent[i].def.addr, g_ent[i].enabled);
+		}
 }
 
 bool hle_configure(const char *spec)
@@ -168,8 +205,9 @@ bool hle_configure(const char *spec)
 void hle_list(void)
 {
 	for (int i = 0; i < g_n; i++)
-		printf("$%06X  %-24s %-3s cyc=%-5d %s\n", g_ent[i].def.addr, g_ent[i].def.name,
-		       g_ent[i].enabled ? "on" : "off", g_ent[i].def.cycles, g_ent[i].def.file);
+		printf("$%06X  %-24s %-3s cyc=%-5d %s%s%s\n", g_ent[i].def.addr, g_ent[i].def.name,
+		       g_ent[i].enabled ? "on" : "off", g_ent[i].def.cycles, g_ent[i].def.file,
+		       g_ent[i].def.group ? "  group=" : "", g_ent[i].def.group ? g_ent[i].def.group : "");
 }
 
 /* ------------------------------------------------------------------ CPU state <-> ctx */

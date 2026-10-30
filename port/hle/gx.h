@@ -43,4 +43,13 @@ void gx_vdp_set_vcounter(int v);
 void gx_vdp_follow_cpu_lines(void);      /* like follow_cpu, also advancing the V counter */
 void gx_vdp_set_line_base(unsigned v);    /* sandbox: advance the VDP line base to the CPU time */
 
+
+/* native renderer (#25): GPGX calls line(l) when it renders active line l, parse(l) when it
+ * parses the sprite table for line l+1 (l = -1: for line 0), remap(l) when it converts line l
+ * to output pixels (again after a CRAM write in HBlank). NULLs remove the hooks. */
+void gx_set_render_hooks(void (*line)(int), void (*parse)(int), void (*remap)(int));
+uint8_t *gx_sat(void);           /* internal sprite attribute cache, 0x400 bytes, host-endian words */
+int gx_viewport_w(void);         /* active display width latched for this frame (256 / 320) */
+int gx_viewport_h(void);
+
 #endif

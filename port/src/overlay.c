@@ -59,3 +59,32 @@ int overlay_text(uint16_t *px, int w, int h, int x0, int y0, uint16_t color, con
 	}
 	return maxx - x0;
 }
+
+/* the same into an RGBA buffer (bytes R, G, B, A; the host's presentation format, #25) */
+int overlay_text_rgba(uint32_t *px, int w, int h, int x0, int y0, uint32_t color, const char *s)
+{
+	int x = x0, y = y0, maxx = x0;
+	for (; *s; s++) {
+		if (*s == '\n') {
+			x = x0;
+			y += 7;
+			continue;
+		}
+		uint16_t g = glyph(*s);
+		for (int r = -1; r < 6; r++)
+			for (int col = 0; col < 4; col++) {
+				int X = x + col, Y = y + r;
+				if (X < 0 || Y < 0 || X >= w || Y >= h)
+					continue;
+				int on = r >= 0 && r < 5 && col >= 0 && col < 3 && ((g >> ((4 - r) * 3 + (2 - col))) & 1);
+				if (on)
+					px[Y * w + X] = color;
+				else
+					px[Y * w + X] = ((px[Y * w + X] >> 2) & 0x3F3F3F) | 0xFF000000u;  /* darken backdrop */
+			}
+		x += 4;
+		if (x > maxx)
+			maxx = x;
+	}
+	return maxx - x0;
+}
