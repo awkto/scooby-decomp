@@ -6,7 +6,7 @@
 #   port/tools/storytest.sh [ROUTE...]     (run on a VM after building build/port; default: all routes)
 # PASS per route = checkpoints identical for --hle none and --hle all.  The end room is also compared with the
 # harness-verified header of tools/scripts/story/ROUTE.txt (reported as a note).
-# On a none/all mismatch it bisects with --hle all,-FUNC and names the replacement whose removal restores agreement.
+# On a none/all mismatch, STORYTEST_BISECT=1 bisects with --hle all,-FUNC and names the replacement whose removal restores agreement.
 set -u
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
@@ -40,16 +40,12 @@ P
 }
 
 for r in $routes; do
-	run_one "$r" none none; run_one "$r" all all
+	run_one "$r" none none; run_one "$r" "${STORYTEST_HLE:-all}" all
 	if [ ! -s "$out/$r.none.cp.json" ] || [ ! -s "$out/$r.all.cp.json" ]; then
 		echo "FAIL $r: route did not complete (see $out/$r.*.out)"; fail=1; continue; fi
 	if ! cmp_cp "$out/$r.none.cp.json" "$out/$r.all.cp.json"; then
-		echo "FAIL $r: --hle none and --hle all diverge; bisecting"; fail=1
-		for f in $(build/port/scoobyport --list-hle 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($i ~ /^[a-z_0-9]+$/ && $i !~ /^[0-9]+$/) {print $i; break}}'); do
-			run_one "$r" "all,-$f" b
-			if [ -s "$out/$r.b.cp.json" ] && cmp_cp "$out/$r.none.cp.json" "$out/$r.b.cp.json" >/dev/null 2>&1; then
-				echo "  culprit: $f (disabling it restores agreement)"; break; fi
-		done
+		echo "FAIL $r: --hle none and --hle all diverge"; fail=1
+		[ -n "${STORYTEST_BISECT:-}" ] && python3 port/tools/hlebisect.py "$r" 2>&1 | sed "s/^/  /"
 		continue
 	fi
 	n=$(python3 -c "import json;print(len(json.load(open('$out/$r.none.cp.json'))))")

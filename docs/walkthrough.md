@@ -142,3 +142,29 @@ Also fixed while here: `mergecov.py` now ignores the spurious exec start at `$00
 loaded into a running session), and `covreport.py` now finds function entries through symbolic labels (it only knew
 `loc_XXXXXX`, so the report was silently counting 1 function after the symbol renames). `loc_001C0C`, previously labelled "verb
 PULL handler" in `docs/coverage.md`, is the TALK post-script handler (`action_execute`: `cmpi.w #8,d7`) and is now covered.
+
+## Closed-loop validation in the native port (issue #32)
+
+`port/tools/storytest.sh` replays the story routes against `build/port/scoobyport` with `--hle none` and `--hle all` and
+compares a checkpoint after every high-level step (room, inventory, story bytes `$FF2A00..+29`).
+
+* **Control channel**: none needed beyond the existing `--script`: the port's script reader accepts a FIFO, so
+  `tools/py/session.py` drives it exactly like the harness (`SCOOBY_BACKEND=port:HLESPEC`). Two port changes: `echo` also
+  appends `FRAME TEXT` to `OUTDIR/peek.log` (the sync marker), and `trace`/`untrace` are accepted and ignored. `story.py`
+  decides each next input from RAM it reads back (walk until position reached, settle until `$FF09DC` bit 7 is clear, retry the
+  verb select), so emulated-time differences do not matter. `said()` returns `[]` on the port (no bus trace); checks are RAM based.
+* `STORY_PRESS_MIN=5` (set by the script) stretches the 3-4 frame presses of the password-warp scripts: with the C replacements a
+  3-frame D press on the title sub-menu is lost, so CONTINUE was not selected (an open-loop artefact, not a story difference).
+* Story byte 10 (`$FF2A0A`) is masked in checkpoints: constant after boot, but `$01` in the harness / `--hle none` and `$D9`
+  with the replacements (set during the intro from something timing dependent; not story state).
+* `port/tools/hlebisect.py ROUTE` bisects the replacement list (`--hle all,-a,-b`) and prints the replacements whose removal
+  restores agreement. `STORYTEST_BISECT=1` runs it from storytest; `STORYTEST_HLE=all,-vblank_main` overrides the "all" spec.
+
+**Result (HLE state at `d1391bb`)**: `--hle none` completes every route on the port with the same checkpoints as the harness
+route headers. `--hle all` diverges at the first item pickup, and bisect names the single replacement `vblank_main`
+(`port/src/game/mainloop.c:90`, its `hle_call68k(0x005C8E)` = `verb_vblank_dma`). After `Take`, `inventory_refresh` (`$5CF6`) sets
+`$FF09DC` bit 5 and spins at `$5D0E` until the VBlank clears it, but `$5C8E` only acts when the beam (`$C00008` high byte) is
+in `$E1..$F6`; in the C VBlank the V counter apparently never gets there (not checked at register level), so the bit is never
+cleared and the game stays at `$FF09DC` = `$E4` (action pending, verb Take selected; the PC alternates `$5D0E/$5D16` for
+thousands of frames) and further clicks are ignored. More frames never help, so it is not a timing artefact. The fix belongs to
+the vblank owner (e.g. let the HLE'd `$5C8E` ignore the beam test).

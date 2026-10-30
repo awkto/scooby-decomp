@@ -12,7 +12,8 @@ import json, os, subprocess, sys, time
 
 route = sys.argv[1]
 root = os.getcwd()
-env = dict(os.environ, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy", STORY_OUT="runs/hlebisect/gen")
+env = dict(os.environ, STORY_PRESS_MIN=os.environ.get("STORY_PRESS_MIN", "5"), SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy", STORY_OUT="runs/hlebisect/gen")
+import shutil; shutil.rmtree("runs/hlebisect", ignore_errors=True)
 n = [0]
 
 
