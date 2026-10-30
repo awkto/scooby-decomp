@@ -21,8 +21,16 @@ def serve(d):
         if os.path.exists(p):
             os.remove(p)
     os.mkfifo(ctl)
-    h = subprocess.Popen(["build/harness", "ext/gpgx/genesis_plus_gx_libretro.so", "rom/baserom.md", ctl, d],
-                         stderr=open(os.path.join(d, "harness.err"), "w"))
+    # backend: default the GPGX harness; SCOOBY_BACKEND=port:HLESPEC drives build/port/scoobyport instead
+    be = os.environ.get("SCOOBY_BACKEND", "harness")
+    if be.startswith("port"):
+        hle = be.split(":", 1)[1] if ":" in be else "all"
+        env = dict(os.environ, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
+        cmd = ["build/port/scoobyport", "--hle", hle, "--script", ctl, "--outdir", d, "--frames", "0"]
+        h = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=open(os.path.join(d, "harness.err"), "w"))
+    else:
+        h = subprocess.Popen(["build/harness", "ext/gpgx/genesis_plus_gx_libretro.so", "rom/baserom.md", ctl, d],
+                             stderr=open(os.path.join(d, "harness.err"), "w"))
     fifo = open(ctl, "w")           # opens once the harness has opened it for reading
     s = socket.socket(socket.AF_UNIX)
     s.bind(sock)

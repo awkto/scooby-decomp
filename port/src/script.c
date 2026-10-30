@@ -148,7 +148,19 @@ bool script_step(script *s, unsigned *pad)
 		} else if (!strcmp(cmd, "wheel") && sscanf(line, "%*s %ld", &n) == 1) {
 			mouse_wheel((int)n);
 		} else if (!strcmp(cmd, "echo")) {
-			fputs(line + 5 < line + strlen(line) ? line + 5 : "\n", stderr);
+			/* harness semantics: "FRAME TEXT" line in OUTDIR/peek.log (live drivers sync on it), also on stderr */
+			const char *t = line + 5 < line + strlen(line) ? line + 5 : "\n";
+			if (!s->peek) {
+				snprintf(path, sizeof path, "%s/peek.log", s->outdir);
+				s->peek = fopen(path, "a");
+			}
+			if (s->peek) {
+				fprintf(s->peek, "%ld %s", emu_frame_count(), t);
+				fflush(s->peek);
+			}
+			fputs(t, stderr);
+		} else if (!strcmp(cmd, "trace") || !strcmp(cmd, "untrace")) {
+			/* harness-only bus trace: accepted and ignored so driver scripts run unchanged */
 		} else {
 			err(s, "bad command", line);
 		}

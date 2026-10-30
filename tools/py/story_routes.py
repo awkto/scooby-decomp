@@ -114,6 +114,9 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     d = args.pop(0)
     learn = "--learn" in args
+    cpf = args[args.index("--cp") + 1] if "--cp" in args else None
+    if cpf:
+        args.remove("--cp"); args.remove(cpf)
     args = [a for a in args if a != "--learn"]
     g = Game(d, strict=not learn)
     open(g.rpath, "w").close()
@@ -122,3 +125,6 @@ if __name__ == "__main__":
         ROUTES[n](g)
         if learn:
             g.save_points()
+    if cpf:
+        import json
+        json.dump(g.cp, open(cpf, "w"), indent=0)

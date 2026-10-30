@@ -601,3 +601,25 @@ Game.go_to = go_to
 Game.said = said
 Game.room_objects = room_objects
 Game.name = lambda self, tid: obj_name(self.w(0xFF06AA), tid)
+
+
+# ---- closed-loop checkpoints (port/tools/storytest.sh): after every high-level step record room/inventory/story ----
+def checkpoint(self, label):
+    r = self.ram()
+    self.cp = getattr(self, "cp", [])
+    self.cp.append(dict(label=label, room=self.w(0xFF06AC, r), inv=self.inventory(r), story=self.story(r).hex()))
+
+
+def _wrap(name):
+    f = getattr(Game, name)
+
+    def w(self, *a, **k):
+        res = f(self, *a, **k)
+        self.checkpoint(f"{name} {a}")
+        return res
+    setattr(Game, name, w)
+
+
+Game.checkpoint = checkpoint
+for _n in ("act", "use", "exit_via", "boot"):
+    _wrap(_n)
