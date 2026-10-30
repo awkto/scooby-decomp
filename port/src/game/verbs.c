@@ -9,8 +9,12 @@
  *   $005B5E object_name_ptr       object id -> pointer to its name string
  *   $005BDC verb_label_redraw     redraw the 4x2 tile block of one verb in a given colour variant
  *   $005D1C inventory_build_page  build the inventory name table + icon tiles for the page in RAM
+ *   $005CB6 inventory_upload      DMA the icon tiles and the name table to VRAM
+ *   $005CF6 inventory_refresh     (range) build the page, request the upload, wait for VBlank
+ *   $005B92 inventory_arrows_update, $005C5A / $005C74 arrow frame setters (ranges around the waits)
  */
 #include "game.h"
+#include "cc68k.h"
 
 /* ---- RAM ($FF0000 work RAM) ---- */
 #define RAM_MYSTERY_HDR     0xFF068E   /* long: active mystery header (ROM pointer) */
@@ -301,4 +305,119 @@ HLE_FUNC(0x005D1C, inventory_build_page, 3000)
 	ctx->d[0] = d0; ctx->d[1] = d1; ctx->d[2] = d2; ctx->d[3] = d3; ctx->d[4] = d4; ctx->d[5] = d5;
 	ctx->a[0] = list; ctx->a[1] = a1; ctx->a[2] = a2; ctx->a[3] = a3; ctx->a[4] = a4;
 	/* a5/a6 are saved and restored by the original (movem.l a5-a6) */
+}
+
+/* ================================================================== upload and arrows (blocking) */
+
+#define A_VDP_DMA       0x0099F6   /* vdp_dma_vram: d0 = VRAM dst, d1 = words, a0 = source */
+#define A_VDP_FILL      0x009BE4   /* vram_fill_words: d0 = VRAM dst, d1 = words, d2 = word */
+#define RAM_VBLANK_FLAGS 0xFF09DC  /* bit 5 = inventory upload requested (VBF_HUD_DMA) */
+#define RAM_ARROW_UP    0xFF0804   /* word: frame of the page-up arrow sprite (0 / 1 / 2 = greyed out) */
+#define RAM_ARROW_DOWN  0xFF0806   /* word: same for the page-down arrow */
+#define RAM_ARROW_UP_T  0xFF0AB1   /* byte: VBlank counts it down from 8, negative = value consumed */
+#define RAM_ARROW_DOWN_T 0xFF0AB2
+#define RAM_OBJ_LAST    0xFF06F4   /* word: number of object records - 1 */
+
+/* $005CB6 inventory_upload: the page built by inventory_build_page goes to VRAM: the 8 icons'
+ * tiles ($FF2C00, $600 words) to $B000, the six rows of the name table ($FF0328, $14 words per
+ * call) to $AACC, $AB4C, ... (rows $80 apart), and $AD80 ($40 words) is cleared.
+ * The original keeps d1/a0 from the first DMA call into the loop (vdp_dma_vram preserves d1 and
+ * advances a0), so the calls are made literally.  Called from hud_dma ($005C8E, VBlank, which
+ * falls through into it) and from the room load. */
+HLE_FUNC(0x005CB6, inventory_upload, 100)
+{
+	set_w(&ctx->d[0], 0xB000);
+	set_w(&ctx->d[1], 0x600);
+	ctx->a[0] = RAM_INV_ICON_TILES;
+	hle_call68k(ctx, A_VDP_DMA);
+	set_w(&ctx->d[2], 5);
+	ctx->a[0] = RAM_INV_NAMETABLE;
+	set_w(&ctx->d[1], 0x14);
+	set_w(&ctx->d[0], 0xAACC);
+	for (;;) {                                   /* dbra d2: six name-table rows */
+		hle_call68k(ctx, A_VDP_DMA);
+		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 0x80, 16));
+		uint16_t n = (uint16_t)(ctx->d[2] - 1);
+		set_w(&ctx->d[2], n);
+		if (n == 0xFFFF)
+			break;
+	}
+	ctx->d[2] = 0;
+	set_w(&ctx->d[0], 0xAD80);
+	set_w(&ctx->d[1], 0x40);
+	hle_call68k(ctx, A_VDP_FILL);
+}
+
+/* $005CF6 inventory_refresh: rebuild the page for ram_inv_page now and wait until VBlank has
+ * uploaded it.  [68k: spin until the actor tile buffer is free, $FF0AB6 bit 0 clear.]  This range
+ * starts after that spin ($005D02): build the page, request the upload (bit 5 of $FF09DC; the
+ * VBlank hook hud_dma clears it when the raster is in the lower border), and leave in front of
+ * the second spin ($005D0E, 68k) that waits for the flag to clear.  The rts follows the spin. */
+HLE_RANGE(0x005D02, inventory_refresh_build, 3000, 0x005D0E)
+{
+	inventory_build_page(ctx);
+	cc_btst(ctx, RAM8(RAM_VBLANK_FLAGS), 5);
+	RAM8(RAM_VBLANK_FLAGS) |= 0x20;                      /* bset #5,($FF09DC) */
+	hle_jump(ctx, 0x005D0E);
+}
+
+/* $005C5A / $005C74: set the frame (d0) of the page-up / page-down arrow.  Each first spins
+ * ([68k] tst.b ($FF0AB1/2) / bpl) until VBlank has counted the previous value's timer below
+ * zero; these ranges are what follows: restart the 8-frame timer, store the frame, rts. */
+HLE_RANGE(0x005C64, inventory_arrow_up_set, 30, 0x005C72)
+{
+	RAM8(RAM_ARROW_UP_T) = 8;
+	RAM16(RAM_ARROW_UP) = (uint16_t)ctx->d[0];
+	cc_logic16(ctx, ctx->d[0]);
+	hle_jump(ctx, 0x005C72);
+}
+
+HLE_RANGE(0x005C7E, inventory_arrow_down_set, 30, 0x005C8C)
+{
+	RAM8(RAM_ARROW_DOWN_T) = 8;
+	RAM16(RAM_ARROW_DOWN) = (uint16_t)ctx->d[0];
+	cc_logic16(ctx, ctx->d[0]);
+	hle_jump(ctx, 0x005C8C);
+}
+
+/* $005B92 inventory_arrows_update: grey out the arrows that have nowhere to go.  The page-up
+ * arrow is frame 2 (greyed) on page 0, else 0; the page-down arrow is greyed when the last row of
+ * the carried objects is already the page (rows = (carried - 1) / 4, carried = objects whose
+ * room is 1) or nothing is carried.  Each frame goes through the setter above, which can wait for
+ * VBlank, so this is two ranges around those calls. */
+HLE_RANGE(0x005B92, inventory_arrows_update, 40, 0x005B9E)
+{
+	ctx->d[0] = 0;
+	cc_logic32(ctx, 0);
+	cc_logic16(ctx, RAM16(RAM_INV_PAGE));               /* tst.w ram_inv_page */
+	if (!RAM16(RAM_INV_PAGE)) {
+		ctx->d[0] = 2;                               /* page 0: up arrow greyed */
+		cc_logic32(ctx, 2);
+	}
+	hle_jump(ctx, 0x005B9E);                             /* bsr inventory_arrow_up_set */
+}
+
+HLE_RANGE(0x005BA2, inventory_arrows_down, 300, 0x005BD6)
+{
+	uint16_t last = RAM16(RAM_OBJ_LAST);
+	uint32_t d1 = 0;                                     /* carried objects */
+	uint32_t rec = RAM_OBJECTS;
+	for (uint32_t i = 0; i <= last; i++, rec += 0x1A)
+		if (RAM16(rec + 6) == 1)
+			d1++;
+	ctx->cycles = 80 + 50 * ((int)last + 1);             /* 26-byte records: cmpi, bne, addq, lea, dbra */
+	ctx->a[0] = rec;
+	ctx->d[1] = d1;
+	cc_logic16(ctx, d1);                                 /* tst.w d1 */
+	bool greyed = true;                                  /* nothing carried, or already on the last row */
+	if (d1 != 0) {
+		set_w(&ctx->d[1], cc_sub(ctx, ctx->d[1], 1, 16, true));
+		set_w(&ctx->d[1], lsrw(ctx, ctx->d[1], 2));
+		greyed = (uint16_t)ctx->d[1] == RAM16(RAM_INV_PAGE);
+		cc_sub(ctx, ctx->d[1], RAM16(RAM_INV_PAGE), 16, false);   /* cmp.w ram_inv_page,d1 */
+	}
+	ctx->d[0] = greyed ? 2 : 0;
+	if (greyed)
+		cc_logic32(ctx, 2);                          /* moveq #2,d0; otherwise the flags are the cmp's */
+	hle_jump(ctx, 0x005BD6);                             /* bsr inventory_arrow_down_set */
 }

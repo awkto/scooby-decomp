@@ -1,19 +1,26 @@
 /* Controller and Z80 bus handling. */
 #include "game.h"
 
+/* ctx-free core of z80_bus_request: returns the last $A11100 byte read (bit 0 clear = granted) */
+uint8_t z80_bus_grab(void)
+{
+	bus_w16(0xA11100, 0x0100);
+	uint8_t v;
+	long guard = 0;
+	do {
+		v = bus_r8(0xA11100);
+	} while ((v & 1) && ++guard < 1000000);   /* the 68k would spin forever */
+	return v;
+}
+
 /* $1F6D7A (sound stub): request the Z80 bus and wait until it is granted.
  *   move.w #$100,($A11100).l
  * - btst.b #0,($A11100).l / bne.s -
  *   rts */
 HLE_FUNC(0x1F6D7A, z80_bus_request, 40)
 {
-	bus_w16(0xA11100, 0x0100);
 	cc_logic16(ctx, 0x0100);
-	uint8_t v;
-	long guard = 0;
-	do {
-		v = bus_r8(0xA11100);
-	} while ((v & 1) && ++guard < 1000000);   /* the 68k would spin forever */
+	uint8_t v = z80_bus_grab();
 	cc_set(ctx, CC_Z, (v & 1) ? 0 : CC_Z);
 }
 

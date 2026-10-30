@@ -13,6 +13,12 @@ pokes per op type put the VM into the state that makes the interesting path run:
   02 talk_choice  script_flags = 4 (collect), talk count 0..5
   13 on_event     script_flags = $10 / 0
 other ops: A5 only (the state's mode decides scan/execute).
+
+  script_pokes.py --dispatch OP [MAX]   also A0 = the handler of OP (for difftest --entry:
+                                        states of ANOTHER op handler, same `jsr (a0)` context)
+  script_pokes.py --sub SUB [MAX]       sys ($0C) ops with sub-op SUB: A5, A0 = the sub-op
+                                        handler, D0 = SUB*4 (as script_op_sys leaves them),
+                                        for difftest --entry on states of another sub-op
 """
 import os
 import struct
@@ -36,11 +42,24 @@ def ops_of(rom, op):
 
 
 def main(argv):
+    mode = None
+    if argv and argv[0] in ('--dispatch', '--sub'):
+        mode = argv.pop(0)
     op = int(argv[0], 16)
     mx = int(argv[1]) if len(argv) > 1 else 40
     rom = open(S.ROM_PATH, 'rb').read()
     u16 = lambda a: struct.unpack_from('>H', rom, a)[0]
-    addrs = ops_of(rom, op)
+    u32 = lambda a: struct.unpack_from('>I', rom, a)[0]
+    extra = ''
+    if mode == '--sub':
+        sub = op
+        op = 0x0C
+        addrs = [a for a in ops_of(rom, 0x0C) if u16(a + 2) == sub]
+        extra = ',A0=0x%X,D0=0x%X' % (u32(0x2EB4 + 4 * sub), sub * 4)
+    else:
+        addrs = ops_of(rom, op)
+        if mode == '--dispatch':
+            extra = ',A0=0x%X' % u32(0x2354 + 4 * op)
     # one op per distinct "shape" first, then fill up evenly
     key = {
         0x01: lambda a: (u16(a + 2), u16(a + 4) != 0),
@@ -61,7 +80,7 @@ def main(argv):
     pick += rest[::step]
     pick = pick[:mx]
     for i, a in enumerate(pick):
-        spec = 'A5=0x%X' % a
+        spec = 'A5=0x%X' % a + extra
         if op == 0x01:
             spec += ',B:FF0AC9=2,D7=%d,W:FF06B6=%d,B:FF09DE=%d' % (
                 u16(a + 2), u16(a + 4) if i % 3 else 0, (i >> 1) & 1)

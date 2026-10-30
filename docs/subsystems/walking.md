@@ -24,13 +24,13 @@ Tools:
 | $0073D6 | `walk_blocked_probe` | Z=0 if `ram_walk_probe` ($FF0642/46) is on a blocked pixel. Bounds come in D2/D3. | **C**, 200/200 |
 | $007476 | `walk_blocked_line_probe` | same test for `ram_line_probe` ($FF064A/4E). Only negative coordinates count as out of range; zone mask $7FF. | **C**, 200/200 |
 | $00750A | `pad_dir8` | D-pad to 0 DR, 1 UL, 2 UR, 3 DL, 4 L, 5 R, 6 U, 7 D | **C**, 7/7 on the capture route + walk_dt |
-| $005002 | `shaggy_walk_to` | script walk-to: d0,d1 = target px, d2 = speed, d7 = animation base. Plans a straight line or a route through the room's two waypoints, then **blocks** (calls `$00B0B8` once per frame) until Shaggy arrives. | 68k, documented (section 7) |
-| $005378 | `walk_line_clear` | steps a probe from `ram_line_from` to (d0,d1) in unit steps along the major axis; d3=1 (Z=0) as soon as a blocked pixel is hit | 68k, documented |
-| $005364 / $00532A / $00547A / $00548E | Shaggy line test, waypoint reachability, direction setup | | 68k, documented |
-| $0056B0 ... $005AE0 | `scooby_walk_to` and helpers (same design, Scooby's variables) | | 68k, documented |
+| $005002 | `shaggy_walk_to` | script walk-to: d0,d1 = target px, d2 = speed, d7 = animation base. Plans a straight line or a route through the room's two waypoints, then **blocks** (calls `$00B0B8` once per frame) until Shaggy arrives. | **C** (#19 second pass, `walkto.c`: ranges around the waits, the pushed VBLANK_FLAGS byte as an `HLE_EXIT_SP` exit; docs/subsystems/script.md) |
+| $005378 | `walk_line_clear` | steps a probe from `ram_line_from` to (d0,d1) in unit steps along the major axis; d3=1 (Z=0) as soon as a blocked pixel is hit | **C** (#19, walkto.c) |
+| $005364 / $00532A / $00547A / $00548E | Shaggy line test, waypoint reachability, direction setup | | **C** (#19, walkto.c) |
+| $0056B0 ... $005B54 | `scooby_walk_to` and helpers (same design, Scooby's variables) | | **C** (#19, walkto.c) |
 | main loop $0012CC (inside `Reset`) | walk-on trigger test: room exits (section 6) | | 68k (main-loop subsystem) |
 
-Why the walk-to family stays in 68k: `shaggy_walk_to` and `scooby_walk_to` are called from script
+Why the walk-to family stayed in 68k in #16 (ported later by #19 as ranges around the waits, see docs/subsystems/script.md): `shaggy_walk_to` and `scooby_walk_to` are called from script
 opcodes ($0E/$0F) and from the idle wander in the main loop, and they wait for the arrival frame by
 frame inside the call. The HLE layer cannot run that as one C function (porting.md: "functions that
 wait for VBlank stay in 68k or become state machines"). Their per-frame half (the auto-walk step) is
@@ -466,8 +466,8 @@ All names are in `data/ram.txt` and `port/src/game/walk.h`.
     `pad_read` (not part of this subsystem) diverges just as much. The cause is timing: C
     functions charge different cycle counts, which shifts the main loop and Scooby's random
     wander. It is not a logic difference; difftest covers the logic.
-* **Not ported:** the walk-to family ($005002-$005AE0), which blocks across frames. It needs either
-  a state-machine rewrite together with the script interpreter (#19), or to stay in 68k.
+* **Ported later:** the walk-to family ($005002-$005B54) is C since #19's second pass
+  (walkto.c, HLE_RANGEs around the per-frame waits).
 * **Not decoded:**
   * the meaning of `$09E8` bits 1-3, `$09E9` bits 0-4/6, `$09EA`, `$09EB` bits 2/6 and `$0ABF`
     (special modes: vehicles, carried actor, inverted controls);

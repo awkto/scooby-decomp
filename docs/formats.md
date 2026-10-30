@@ -454,6 +454,79 @@ The "SCOOBY-DOO" logo and the menu text on the title screen are sprites (SAT fro
 data reached via the table at `$010136` → `$FF3800`/`$FF5000` is probably their graphics,
 not checked). They are not reconstructed.
 
+## Scaled bitmap blits (`$00E40C`, `$00F272`)
+
+The title screen's zooming pictures (the bat animation, the logo/menu sprites that the menus keep
+refreshing) are not drawn by the sprite subsystem. Two routines shrink a **chunky** picture in RAM
+and write it as ready-to-DMA **4bpp tiles**; C: `port/src/game/blit.c`
+(`scaled_blit_120x40`, `scaled_blit_64x32`). They are called every frame of the title, menu,
+password and sound-test screens, so they were 88 % of the interpreted 68k (`docs/remaining68k.md`).
+
+| | `$00E40C` | `$00F272` |
+|---|---|---|
+| source | `$FF3800`, 120 x 40 px, 120 bytes per row (4800 bytes) | `$FF5000`, 64 x 32 px, 64 bytes per row (2048 bytes) |
+| output | 600 longs at `ZONE_MAP` `$FFE000` (DMA'd to VRAM `$F000`, `$4B0` words) | 256 longs at `PLANEA_NAMES` `$FFC400` (DMA'd to VRAM `$C800`, `$200` words) |
+| long order | word table `$00B5C0` (600 entries) | word table `$00BA70` (256 entries) |
+| Y mask bytes | 5 (`a2`), 8 rows each | 4 (two words), 8 rows each |
+| X mask | first 15 bytes of the row | first 8 bytes of the row |
+| wobble | word subtracted (`neg.w`) | word added |
+
+**Source pixel.** One byte, the colour 0..15 in the low nibble (the code ORs the whole byte, so the
+high nibble must be 0). The source buffers are the ones the sprite slots use (`$FF3800` = slot 1,
+`$FF5000` = slot 4, `SLOT_BUFFER_TBL`); the title screen fills them from the RLE table at `$010136`
+(`title_setup`), the bat animation unpacks each frame to the LZSS ring `$FF3000` (the picture proper
+starts `$800` into it).
+
+**Depth.** `$FF0626` (`SCALE_DEPTH_Y`) and `$FF0624` (`SCALE_DEPTH_X`), 0 = full size, are indexes into
+`depth_masks` (`$00C3F0`, 256 rows of 16 bytes). The index is `depth << 4` as a 16-bit value, used
+sign-extended, so depths above `$7FF` wrap. A row is a bit mask, MSB of byte 0 first, **1 = keep**:
+row 0 is all ones, higher depths keep fewer bits (row 255 keeps only the first). The title code steps
+the depth by `$20` per picture (the bats: `$FF0010`/`$FF0012`). The mask picked by Y says which
+source rows survive, the one picked by X which pixels of every surviving row. So scaling is dropping
+lines and columns by a dither-like pattern, not interpolation.
+
+**Algorithm** (the original is fully unrolled: 120/64 pixel blocks, 15/8 blank-row stores):
+
+1. For each source row `r` (40/32 of them): read one word of the wobble table (`title_strip_loop`,
+   `$008828`..`$008876`, 39 words of 0..3; pointer starts at `$008828 + $FF000C` and wraps at the end),
+   whether or not the row is kept.
+2. If Y-mask bit `r` is 0, skip the row.
+3. Else: pixels are read from `src + r*width` (+ or - the wobble word if bit 4 of `$FF09EB` is set,
+   a one-to-three pixel jitter that wobbles the picture sideways). Each source pixel `x` whose X-mask bit
+   is 1 is shifted into a 32-bit accumulator (`acc = acc << 4 | pixel`). Each time 8 pixels have been
+   collected the long is stored at `dst + order[slot++]`.
+4. At the end of the row the kept pixels are padded with colour 0 to the full width: if the count is not a
+   multiple of 8 the accumulator is shifted up by the missing pixels and stored, then `(width - kept) / 8`
+   longs of 0. Every kept row therefore stores exactly `width / 8` longs (15 / 8).
+5. After the last row the dropped rows are replaced by blank rows (0 longs) at the **bottom**, so the
+   picture shrinks towards the top-left: kept rows are stored first, `slot` continues.
+
+**Output layout.** A long is one 8-pixel row of a tile (4 bits per pixel, leftmost pixel in the high
+nibble, the Genesis tile format). The ROM order table gives the byte offset of every long, in the
+order the loop writes them (`slot = row * longs_per_row + column`, `row` = output row 0..39 / 0..31,
+`column` = which 8-pixel group, 0..14 / 0..7):
+
+    tile = 4 * column + row / 8          (rows 0..31: column-major, 4 tiles tall per column,
+                                          i.e. the tile order of 8x32-pixel Genesis sprites)
+    tile = 60 + column                   (120x40 only, rows 32..39: one extra row of 15 tiles)
+    offset = tile * 32 + (row % 8) * 4   (the long within the 32-byte tile)
+
+(verified for all 600 / 256 entries of `$B5C0` / `$BA70`: 75 / 32 distinct tiles). So `$E40C` makes
+15 sprite columns of 8x32 px (60 tiles) plus a strip of 15 tiles = the 120x40 title logo, and `$F272`
+makes 8 columns of 8x32 px (32 tiles) = a 64x32 sprite picture; the SAT (`menu_title_sprites`,
+`ROM_TITLE_SAT $0085F8`) then lays the tiles out. A native renderer can skip the tiles and the table
+and shrink the chunky bitmap directly: the output pixel `(x', y')` of the shrunk picture is the source
+pixel at the `x'`-th kept column of the `y'`-th kept row (plus the wobble), blank beyond.
+
+**Consequences for a hi-res renderer.** The picture is always a 4-bit chunky bitmap of 120x40 / 64x32
+pixels plus two keep masks; the shrink is a pure function of (depth_x, depth_y, wobble ptr, wobble flag).
+A native renderer needs only the source bitmaps and these masks, not the tiles.
+
+**Registers on return** (for 68k callers): `a0` dst, `a1` src + rows*width, `a2` Y mask + bytes, `a3`
+X mask, `a4` order + 2 * longs, `a5` end of the last kept source row (unchanged if none), `a6` wobble
+pointer, `d0 = $FFFFFFFF` (or `$FFFF0000 | last order entry` if blank rows were stored), `d1.w = 0`,
+`d2 = $0000FFFF`; `d3`-`d7` are scratch.
+
 ## Verification (2026-10-30)
 
 Compared in 3-bit colour space with `tools/py/cmpshot.py` against harness screenshots taken

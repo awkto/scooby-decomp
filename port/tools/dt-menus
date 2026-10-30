@@ -15,7 +15,7 @@ D=build/port/difftest
 SCRIPTS="--script port/scripts/menus/tour1.txt --script port/scripts/menus/tour2.txt --script port/scripts/menus/tour3.txt"
 N=${DT_MENUS_N:-200}
 ALL="title_mask_irq title_setup title_bats_start title_bats_first title_bats_frame title_bats_wait
- menu_open menu_show menu_choose_show menu_select menu_select_frame menu_select_draw menu_select_pad
+ menu_open menu_show menu_dispatch menu_choose menu_choose_show menu_select menu_select_frame menu_select_draw menu_select_pad
  menu_select_tick menu_select_done quit_confirm quit_confirm_done soft_reset_begin menu_start_game
  menu_play_blake menu_play_carnival mystery_menu mystery_menu_done menu_refresh_planes menu_title_sprites
  password_shift_bits password_shift_symbol password_scramble password_unscramble password_show
@@ -26,7 +26,7 @@ ALL="title_mask_irq title_setup title_bats_start title_bats_first title_bats_fra
  sound_test sound_test_show sound_test_frame sound_test_poll sound_test_name sound_test_exit
  rooms_browser rooms_page rooms_rows rooms_input objects_browser objects_page objects_rows objects_input
  menu_load_screen menu_load_screen_dma debug_rooms debug_rooms_pick debug_rooms_done debug_objects
- debug_objects_move debug_objects_done"
+ debug_objects_pick debug_objects_move debug_objects_done scaled_blit_120x40 scaled_blit_64x32"
 ONLY=; [ $# -gt 0 ] && { ALL="$*"; ONLY=1; }
 mkdir -p runs/dt-menus
 # captures and checks run 4 at a time (each replays the tours from power-on)

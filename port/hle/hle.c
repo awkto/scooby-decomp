@@ -227,28 +227,44 @@ static int sess_end(void)
 	return n > 0 ? n : 0;
 }
 
+static const hle_def *g_cur_def;   /* innermost C function running (NULL at 68k top level) */
+
+int hle_nest_depth(void) { return g_nest; }
+const hle_def *hle_current_def(void) { return g_cur_def; }
+/* would the CPU hand this pc to a C function instead of executing the instruction? (profilers) */
+bool hle_pc_replaced(uint32_t pc)
+{
+	if (pc == STALL_PC)
+		return true;
+	if (pc >= 0x400000 || !(g_bitmap[pc >> 4] & (1u << ((pc >> 1) & 7))) || pc == m68k_hle_skip_pc)
+		return false;
+	entry *e = find_addr(pc);
+	return e && e->enabled;
+}
+
 static int run_def(const hle_def *def, entry *e)
 {
 	hle_ctx c;
+	const hle_def *outer_def = g_cur_def;
 	bool top = g_nest == 0 && !g_top;
 	if (top)
 		g_top = true;
 	ctx_load(&c);
+	uint32_t sp0 = c.a[7];
 	bool unmasked = ((c.sr >> 8) & 7) < 6;
 	c.def = def;
 	c.cycles = def->cycles;
 	if (e)
 		e->calls++;
 	g_frame_calls++;
+	g_cur_def = def;
 	def->fn(&c);
+	g_cur_def = outer_def;
 	if (def->exits) {
 		/* HLE_RANGE: must leave through a declared exit */
-		bool ok = false;
-		for (const uint32_t *x = def->exits; c.jumped && *x; x++)
-			ok |= *x == c.pc;
-		if (!ok) {
-			fprintf(stderr, "hle: range %s ($%06X) left via $%06X%s, not a declared exit\n", def->name,
-			        def->addr, c.pc, c.jumped ? "" : " (no hle_jump)");
+		if (!c.jumped || !hle_exit_match(def->exits, c.pc, c.a[7], sp0)) {
+			fprintf(stderr, "hle: range %s ($%06X) left via $%06X with SP %+d%s, not a declared exit\n",
+			        def->name, def->addr, c.pc, (int)(c.a[7] - sp0), c.jumped ? "" : " (no hle_jump)");
 			abort();
 		}
 	} else if (!c.jumped) {
@@ -276,7 +292,7 @@ static int run_def(const hle_def *def, entry *e)
 	return (int)total;
 }
 
-void hle_state_reset(void) { g_stall_debt = 0; g_sess = false; g_top = false; g_nest = 0; }
+void hle_state_reset(void) { g_cur_def = NULL; g_stall_debt = 0; g_sess = false; g_top = false; g_nest = 0; }
 
 /* STALL_PC: burn the next slice of g_stall_debt; then rts to the continuation */
 static int stall(void)
@@ -434,14 +450,8 @@ void hle_run68k_until(hle_ctx *c, const uint32_t *exits)
 	ctx_store(c);
 	m68k_hle_skip_pc = start;
 	for (unsigned long n = 0;; n++) {
-		if (n) {
-			uint32_t pc = gx_m68k_pc();
-			bool hit = false;
-			for (const uint32_t *x = exits; *x && !hit; x++)
-				hit = *x == pc;
-			if (hit && gx_m68k_dar()[15] == sp)
-				break;
-		}
+		if (n && hle_exit_match(exits, gx_m68k_pc(), gx_m68k_dar()[15], sp))
+			break;
 		int r = m68k_step_one();
 		nest_step_done();
 		if (r < 0) {

@@ -294,8 +294,9 @@ HLE_RANGE(0x0088B6, debug_rooms_done, 70, 0x0088A2, MENU_OPEN_ADDR)
 }
 
 /* ================================================================== DEBUG OBJECTS ($008C40) */
-/* font colours, screen $018E08, then [68k: object browser, push index/record, rooms browser
- * starting on the object's current location, pops] and the tail below */
+/* font colours, screen $018E08, [68k: bsr menu_load_screen, bsr objects_browser], then
+ * debug_objects_pick (push the index and the record, start the rooms browser on the object's
+ * current location) and debug_objects_move (pop, move the object) below */
 HLE_RANGE(0x008C40, debug_objects, 100, 0x008C58)
 {
 	set_w(&ctx->d[0], 0xF);
@@ -306,11 +307,34 @@ HLE_RANGE(0x008C40, debug_objects, 100, 0x008C58)
 	hle_jump(ctx, 0x008C58);                    /* bsr menu_load_screen */
 }
 
-/* $008C80: the object d2 (index; record at a0 + d0, d0 = index * 26) moves to location d1 (a
- * room number, 1 = carried by the player).  Keeps the carried-items list ($FF0A1E: object
- * indices, $FFFF-terminated) in step: leaving room 1 removes the index, entering it appends. */
-HLE_RANGE(0x008C80, debug_objects_move, 82, 0x008CC0)
+/* $008C60: the object browser returned the chosen object index in d0.  Keep it on the stack
+ * (word), with d0 = index * 26 (its record's offset) and a0 = the object table (long pair), and
+ * leave in front of `bsr rooms_browser` ($008C74) with d0 = the object's current location, so
+ * that the browser starts on it.  10 bytes are pushed: 2 + 8 (movem.l d0/a0,-(sp): d0 lands below
+ * a0). */
+HLE_RANGE(0x008C60, debug_objects_pick, 40, HLE_EXIT_SP(0x008C74, -10))
 {
+	push16(ctx, (uint16_t)ctx->d[0]);                        /* move.w d0,-(sp) */
+	ctx->d[0] = (uint32_t)(uint16_t)ctx->d[0] * 0x1A;        /* mulu.w #26,d0 */
+	ctx->a[0] = 0xFF1200;                                    /* lea objects,a0 */
+	push32(ctx, ctx->a[0]);                                  /* movem.l d0/a0,-(sp) */
+	push32(ctx, ctx->d[0]);
+	set_w(&ctx->d[0], RAM16(ctx->a[0] + (uint16_t)ctx->d[0] + 6));   /* the object's location */
+	cc_logic16(ctx, ctx->d[0]);
+	hle_jump(ctx, 0x008C74);
+}
+
+/* $008C78: back from the rooms browser: d0 = the chosen location.  Pop what debug_objects_pick
+ * pushed (d1 = new location, d0/a0 = record offset / table, d2 = object index).  The object d2
+ * (record at a0 + d0) moves to location d1 (a room number, 1 = carried by the player).  Keeps the
+ * carried-items list ($FF0A1E: object indices, $FFFF-terminated) in step: leaving room 1 removes
+ * the index, entering it appends. */
+HLE_RANGE(0x008C78, debug_objects_move, 90, HLE_EXIT_SP(0x008CC0, +10))
+{
+	set_w(&ctx->d[1], ctx->d[0]);                            /* move.w d0,d1 */
+	ctx->d[0] = pop32(ctx);                                  /* movem.l (sp)+,d0/a0 */
+	ctx->a[0] = pop32(ctx);
+	set_w(&ctx->d[2], pop16(ctx));                           /* move.w (sp)+,d2 */
 	uint32_t rec = ctx->a[0] + (uint16_t)ctx->d[0] + 6;     /* word: location */
 	uint16_t new_loc = (uint16_t)ctx->d[1], idx = (uint16_t)ctx->d[2];
 	uint16_t old_loc = RAM16(rec);

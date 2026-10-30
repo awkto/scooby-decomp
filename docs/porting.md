@@ -234,6 +234,16 @@ difftest options:
   route never produces (other rooms, ids, flag bits); see `port/tools/dt-room`.
 - `--passthrough`: the C side calls the original through `hle_call68k_orig`. This
   self-tests the harness and must always pass.
+- `--entry` (#19, "synthetic dispatch"): accept states captured at *another* address and
+  start the target there. Only for code entered through the same call site with the same
+  stack context, e.g. any script op handler (dispatcher `jsr (a0)`), any sub-op handler,
+  or two "after `bsr actor_animate`" pieces of sub-op handlers; combine with `--poke` to set
+  what that dispatch would have set (A5 = an op of the target's kind, A0 = the handler:
+  `tools/py/script_pokes.py --dispatch OP` / `--sub SUB`, driver
+  `tools/py/script_dt_entry.sh`). Report such results as synthetic.
+- `difftest capture-multi N TAG ADDR... --script R` captures every call (up to N) of
+  several addresses in one pass over a route, into `runs/states/<ADDR>_<TAG>/`
+  (`tools/py/script_dt_multi.sh` runs it over many routes and difftests the lot).
 - `--keep-going`, `-v`, `--max N`, `--states DIR`.
 
 `difftest check all` tests every registered function.
@@ -304,8 +314,9 @@ look for a wait it missed.
      a blocking call are a range that ends at the call, plus a range after the call that
      either jumps back into the loop body (in C) or leaves the loop.
 3. A range may have several exits (one per path) and may exit to its own start (a loop
-   head). The stack pointer at the exit must equal the one at the entry. The layer aborts
-   when a range leaves through an address it did not declare.
+   head). The stack pointer at the exit must equal the one at the entry, unless the exit
+   declares a stack delta (`HLE_EXIT_SP`, see "Ranges that push or pop" below). The layer
+   aborts when a range leaves through an address it did not declare, or with another SP.
 4. `difftest`/`dt` treat ranges automatically. The original runs from the start until it
    first reaches one of the declared exits at the entry SP, after at least one
    instruction. `difftest capture ADDR` works for any instruction address, so captures
@@ -316,6 +327,76 @@ look for a wait it missed.
    the middle of a function leaves working values in registers, so reproduce them all.
    `port/src/game/cc68k.h` has helpers for the exact condition codes: `cc_sub`,
    `cc_add`, `cmpw`, `cc_btst`, `lslw`, `lsrw`.
+
+### Ranges that push or pop: HLE_EXIT_SP (#19)
+
+Many handlers save a register before a blocking call and restore it afterwards:
+
+    script_op_0E_walk_spawn:            ; $0049BA
+        beq.w   skip
+        move.w  d7,-(sp)                ; save D7
+        ...
+        bsr.w   shaggy_walk_to          ; $004A48, blocks until Shaggy arrived
+        bra.w   $4B0E
+    $4B0E:  move.w (sp)+,d7             ; restore D7
+        ...
+        rts
+
+With "SP at the exit = SP at the entry" the push and the pop had to stay 68k, which split
+handlers into odd pieces or left them in 68k altogether. An exit can now declare how far
+the stack moved:
+
+```c
+HLE_RANGE(0x0049BA, script_op_walk_spawn, 150, 0x004B1C,       /* rts, SP unchanged */
+          HLE_EXIT_SP(0x004A48, -2))                           /* bsr, D7 pushed */
+{ ... push16(ctx, ctx->d[7]); ... hle_jump(ctx, 0x004A48); }
+
+HLE_RANGE(0x004A4C, script_op_walk_spawn_done0, 40, HLE_EXIT_SP(0x004B1C, +2))
+{ set_w(&ctx->d[7], pop16(ctx)); ...; hle_jump(ctx, 0x004B1C); }  /* the rts */
+```
+
+- `HLE_EXIT_SP(addr, delta)`: the range leaves at `addr` with SP = entry SP + `delta`
+  (even, -256..+254). Negative = the range pushed (the 68k then makes the call with the
+  pushed data in place), positive = the range popped what an earlier range pushed (often
+  the exit is the function's `rts`, which then returns normally). A plain address means
+  delta 0. The delta is stored in the top byte of the exit entry (`hle_exit_addr()`,
+  `hle_exit_sp_delta()`, `hle_exit_match()` in hle.h).
+- Several exits may share an address with different deltas.
+- Push and pop with `push16/push32/pop16/pop32` on `ctx`, exactly as the 68k does
+  (`move.b x,-(sp)` moves SP by 2 and writes the high byte: `ctx->a[7] -= 2;
+  bus_w8(ctx->a[7], x)`).
+- **difftest** runs the original until it reaches an exit *at that exit's SP*, and the C
+  side must leave the same way. For ranges, RAM below the **exit** SP is scratch: with a
+  negative delta the pushed bytes `[exit SP, entry SP)` are live data and compared; with a
+  positive delta the popped bytes `[entry SP, exit SP)` are dead (later calls inside the
+  range, e.g. a `bsr` after the pop, overwrite them) and ignored. So what the range pushed must be bit-identical, including bytes the code never
+  reads again: a `move.b` push leaves the low byte of the stack word as it was, and
+  that is often the low byte of the last `bsr` return address. If the range calls C
+  helpers that stand for `bsr`s at its own stack level before such a push, push the
+  original return address around the call (walkto.c `wcall()`), and mirror `movem`
+  pushes with real `push32`s.
+- `difftest -v` prints the exit and its SP delta for every state (`exit $004A48 SP-2`).
+- A delta that depends on data (`lea (sp,d0.w),sp` dropping 10 bytes per TALK level)
+  needs one exit per possible value (script.c `talk_choice_after` declares levels 0-11);
+  the layer aborts with the SP it saw if the game ever goes beyond.
+- The layer, `hle_run68k_until` (passthrough) and the sandbox all use `hle_exit_match()`,
+  so `difftest --passthrough` still self-tests ranges with deltas.
+
+Typical shapes (script_walk.c, walkto.c):
+- "push, blocking call, pop, rts": range 1 = entry .. `bsr` with `HLE_EXIT_SP(bsr, -n)`;
+  range 2 = after the call .. `rts` with `HLE_EXIT_SP(rts, +n)`.
+- A wait loop between push and pop (`loop: bsr actor_animate / btst / beq loop`): the range
+  after the call exits to the `bsr` with delta 0 (relative to its own entry, which is
+  already below the push) or leaves with the pop.
+- A table pushed before a wait and used for a `jmp` after it (menus.c `menu_open` pushes the action table and the item
+  count, `-6`; `menu_show` pops the count, `+2`; `menu_dispatch` pops the table and `jmp`s through it: one
+  `HLE_EXIT_SP(target, +4)` per table entry, and a missing entry shows up as "original did not return" in difftest).
+- `jsr (a0)` through a table, where some handlers pop their own return address to leave the loop for good
+  (menu_password.c): push the return address in C (`push32`) and exit at the handler with `HLE_EXIT_SP(handler, -4)`,
+  one exit per handler; the handler that pops it (`+4`) then exits to the code it continues with.
+- Pushes that are popped again inside the same range (`movem.l d0-d2/d7,-(sp)` ...
+  `movem.l (sp)+,...`) need no delta; keep them as real pushes only when a later exit
+  with a negative delta exposes the bytes.
 
 ### What nested 68k calls hide from the rest of the machine (#30)
 
@@ -453,6 +534,10 @@ It may call anything non-blocking through `hle_call68k`.
   counts, first/last hits of watched addresses, and the hottest instructions. Use it to
   see where code runs and how often.
 - `tools/py/blocking.py`: see above.
+- `SCOOBY_IPPROF=file` (any of scoobyport / frameprof / the gate scripts): interpreted-instruction profile,
+  every executed 68k instruction per address, top level vs nested in a C function (and which C function),
+  written at exit (`port/src/ipprof.c`). `port/tools/ipprof.sh` runs all gameplay routes with it and
+  `tools/py/remaining68k.py` turns the result into `docs/remaining68k.md` (the #24 checklist).
 - `port/tools/irqtest.sh`: no gameplay frame may miss vblank_main with IRQs unmasked
   (uses `frameprof --hle SPEC`, which also counts this).
 
@@ -515,6 +600,11 @@ sound, set_hotspot, on_event, freeze, pal_cycle, 9 sub-ops) as functions, the bl
 unfreeze_wait, bar_hide/bar_show) as ranges around their waits, and the drivers
 action_execute, run_object_events, the room scripts and the TALK menu loop as ranges.
 `tools/py/script_dt_all.sh` / `script_dt_pokes.sh` run them all.
+Second pass (files `script_walk.c`, `script_ops.c`, `walkto.c`; `tools/py/script_dt_pass2.sh`): the
+walk ops $0E/$1B/$0F and the walk-to routines $5002-$5B54, face, wait_stop, path, stop_path,
+show_obj, set_icon, test_moving, the TALK menu after the pick, script_run_nested, the rest of
+`say`, and 43 more sub-ops, using `HLE_EXIT_SP` for every push/pop that spans a blocking call.
+Handlers no route reaches are tested with synthetic dispatch states (`difftest --entry`).
 
 #14 (decompressors), file `decomp.c`, details in `docs/subsystems/decomp.md`; test driver
 `port/tools/dt-decomp` (captured states plus one variant per LZSS/RLE stream in the ROM):
@@ -557,3 +647,16 @@ whole menu system waits for VBlank, so it is mostly HLE_RANGEs); test driver `po
 captures there, plus 150 poked variants each for the password routines (`tools/py/menus_pokes.py`); the codec test
 is `port/tools/password_test.sh`. Register exemptions are in `difftest.c` ("#21 menus"). `difftest` now also prints
 "C charged avg" (the cycles the C side charges without its nested 68k calls) next to the original's cost.
+
+### Sound glue (#22, `sound.c`, docs/subsystems/sound.md)
+
+| Address | C | Result |
+|---|---|---|
+| $1F6EF8 / $1F6F16 | sound_cmd_play / sound_cmd_stop | 109/109 and 7/7 (all calls on the capture + `scripts/sound_spam.txt` routes) |
+| $1F6F52 | sound_cmd_stop_all | 123/123 |
+| $1F6F2A / $1F6F3E | sound_cmd_pause / sound_cmd_unpause | **no states**: no scriptable route reaches the in-game pause (cutscene loop at $003372); same code shape as stop_all |
+| $009762 / $009776 | sound_play_wrapper / sound_stop_wrapper | 436/436 and 28/28 (109 / 7 route states x 4 `--poke D0=` ids) |
+| $1F6D98 / $1F6DDE / $1F6EA8 | z80_load_driver / z80_reset_driver / sound_init_wrapper | 3/3 each (boot is the only caller; all calls on the route) |
+
+`port/tools/soundtest.sh` compares the Z80 mailbox byte stream (`SCOOBY_SNDLOG`) of `--hle all`, `--hle none` and
+`--hle all` minus the sound functions on the Sound Test route, an in-game route and a rapid-press route.

@@ -1,0 +1,91 @@
+# Inventory with the mouse (port/tools/mousetest.sh), from the Cafe state with 9 carried items
+# (w0_cafe_items.txt + inv_items.txt: Oil, Can Opener, Battery, Chili, Beads, Heater, Scissors,
+# Pot, Pot o' Water; three rows of four).
+# Page arrows: down x3 (the third has nowhere to go), up x1, wheel; then item hover / click; then
+# the two-object verb "Use Can Opener on Chili" with both objects in the inventory ($FF06B6).
+mouse 128 100
+run 10
+click L 220 190
+run 30
+peek inv1 FF09DC 1
+peek page0 FF06EC
+# the hover reports the item under the crosshair: upper row column 2 = Can Opener (tid 127)
+mouse 100 184
+run 20
+peek hover1 FF06AE
+mouse 180 200
+run 20
+peek hover2 FF06AE
+# page down, down, down (stays on the last row), up
+click L 220 200
+run 40
+peek page1 FF06EC
+mouse 100 184
+run 20
+peek hover3 FF06AE
+click L 220 200
+run 40
+peek page2 FF06EC
+mouse 100 184
+run 20
+peek hover4 FF06AE
+click L 220 200
+run 40
+peek page3 FF06EC
+click L 220 182
+run 40
+peek page4 FF06EC
+# the wheel: down = next row, up = previous row
+wheel -1
+run 40
+peek wpage1 FF06EC
+wheel 1
+run 40
+peek wpage2 FF06EC
+wheel 1
+run 40
+peek wpage3 FF06EC
+wheel 1
+run 40
+peek wpage4 FF06EC
+shot inv_page0
+# click an item with no verb selected: its default verb runs on it
+click L 100 184
+run 30
+peek act1 FF09DC 1
+peek actverb FF06BE
+peek acttarget FF06AE
+run 60
+shot inv_look
+click L
+run 120
+peek after FF09DC 1
+# Use Can Opener on Chili: left arrow back to the verbs, USE, arrow icon, first object, second
+click L 20 190
+run 30
+peek verbs FF09DC 1
+click L 190 200
+run 20
+peek verb FF06C0
+click L 220 190
+run 30
+click L 100 184
+run 30
+peek wait FF09DE 1
+peek first FF06AE
+peek verb2 FF06C0
+shot inv_use1
+click L 180 184
+run 60
+peek second FF06B6
+peek act2 FF09DC 1
+peek actverb2 FF06BE
+run 140
+shot inv_use2
+run 200
+shot inv_use3
+peek done FF09DC 1
+peek inv0 FF0A1E
+peek inv1 FF0A20
+peek inv2 FF0A22
+peek inv3 FF0A24

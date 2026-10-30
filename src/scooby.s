@@ -1033,7 +1033,7 @@ loc_001144:
 	beq.w loc_001174
 	subi.w #0x1,(ram_inv_page).l
 	moveq #0x1,d0
-	bsr.w sub_005C5A
+	bsr.w inventory_arrow_up_wait
 	bsr.w inventory_refresh
 loc_001174:
 	bsr.w inventory_arrows_update
@@ -1055,7 +1055,7 @@ loc_00118C:
 	beq.w loc_0011B0
 	addi.w #0x1,(ram_inv_page).l
 	moveq #0x1,d0
-	bsr.w sub_005C74
+	bsr.w inventory_arrow_down_wait
 	bsr.w inventory_refresh
 loc_0011B0:
 	bsr.w inventory_arrows_update
@@ -1548,7 +1548,7 @@ loc_001976:
 	move.w d1,(a0)+
 	dbra d0,loc_001976
 	rts
-sub_00197E:
+sprite_frame_hotspot:
 	lsl.w #0x1,d0
 	add.w (0x2,a1),d0
 	move.w (0x0,a1,d0.w),d0
@@ -1742,7 +1742,7 @@ loc_001C78:
 	dbra d2,loc_001C78
 	addi.w #0x40,d0
 	dbra d3,loc_001C74
-	bsr.w sub_0022F2
+	bsr.w talk_bar_blank
 	move.b #0x10,(ram_bar_slide).l
 loc_001C98:
 	jsr (actor_animate).l
@@ -1760,7 +1760,7 @@ loc_001CC4:
 	movem.l (sp)+,d0-d7/a0-a6
 	tst.w (ram_talk_count).l
 	beq.w loc_00204A
-	bsr.w sub_0022F2
+	bsr.w talk_bar_blank
 	movem.l d0-d7/a0-a6,-(sp)
 	moveq #0x6,d0
 	moveq #0x0,d1
@@ -1882,7 +1882,7 @@ loc_001E72:
 	lsl.w #0x2,d3
 	lea.l (ram_talk_text).l,a0
 	movea.l (0x0,a0,d3.w),a0
-	bsr.w sub_0022F2
+	bsr.w talk_bar_blank
 	movem.l d2-d7/a0-a6,-(sp)
 	moveq #0x6,d0
 	moveq #0x1,d1
@@ -1895,7 +1895,7 @@ loc_001E72:
 	moveq #0x0,d1
 	jsr (draw_status_line).l
 	movem.l (sp)+,d2-d7/a0-a6
-	bsr.w sub_0020DA
+	bsr.w talk_gesture
 	bset.b #0x4,(ram_verb_state).l
 	jsr (text_wait).l
 	bclr.b #0x4,(ram_verb_state).l
@@ -1990,7 +1990,7 @@ loc_00204A:
 	bra.w loc_001CC4
 loc_00206A:
 	move.w #0xffff,(0xff06ee).l
-	bsr.w sub_0022F2
+	bsr.w talk_bar_blank
 	move.b #0x10,(ram_bar_slide).l
 loc_00207E:
 	jsr (actor_animate).l
@@ -2017,7 +2017,7 @@ loc_00209C:
 sub_0020D2:
 	move.w d0,(0xff06f6).l
 	rts
-sub_0020DA:
+talk_gesture:
 	btst.b #0x7,(ram_09e9).l
 	bne.s loc_002136
 	btst.b #0x4,(ram_09e9).l
@@ -2139,7 +2139,7 @@ rng_next:
 	lsr.l #0x8,d0
 	lsr.l #0x8,d0
 	rts
-sub_0022F2:
+talk_bar_blank:
 	move.w (ram_font_base).l,d1
 	addi.w #0x20,d1
 	moveq #0x5,d3
@@ -2401,7 +2401,7 @@ script_op_1E_face:
 	add.w d2,d2
 	add.w d2,d1
 	move.w d0,(ram_shaggy_facing).l
-	lea.l (dat_0FC740).l,a0
+	lea.l (shaggy_face_anims).l,a0
 	move.w (0x0,a0,d1.w),(ram_actor_anim).l
 	tst.w (0x2,a5)
 	bset.b #0x0,(ram_actors_anim_new).l
@@ -4770,7 +4770,7 @@ loc_004AAE:
 	bra.w loc_004B0E
 loc_004AC2:
 	move.w (0x4,a5),d2
-	bsr.w sub_00566A
+	bsr.w scooby_walk_wait
 	bra.w loc_004B0E
 loc_004ACE:
 	move.w (0x2,a5),d0
@@ -4793,7 +4793,7 @@ loc_004AFE:
 	move.w (0x6,a5),d7
 	move.w (0x2,a5),d0
 	andi.w #0x7fff,d0
-	bsr.w sub_004B24
+	bsr.w actor_walk_to
 loc_004B0E:
 	move.w (sp)+,d7
 loc_004B10:
@@ -4805,7 +4805,7 @@ loc_004B10:
 loc_004B1E:
 	lea.l (0xa,a5),a5
 	rts
-sub_004B24:
+actor_walk_to:
 	subq.w #0x3,d0
 	lea.l (ram_objects).l,a0
 	move.w d7,-(sp)
@@ -4931,7 +4931,7 @@ loc_004CAE:
 	lea.l (ram_objects).l,a0
 	lea.l (0x0,a0,d1.w),a0
 	add.w (0x8,a0),d0
-	bsr.w sub_00197E
+	bsr.w sprite_frame_hotspot
 	btst.b #0x1,(0x18,a0)
 	beq.w loc_004CDE
 	lsl.w #0x1,d0
@@ -4979,7 +4979,7 @@ loc_004D64:
 	move.w (0x2,a5),d0
 	andi.w #0x7fff,d0
 	move.w (0xa,a5),d3
-	bsr.w sub_004B24
+	bsr.w actor_walk_to
 sub_004D78:
 	move.w (sp)+,d7
 sub_004D7A:
@@ -5004,7 +5004,7 @@ loc_004DA2:
 	move.w d1,-(sp)
 	lsl.w #0x3,d1
 	add.w d1,d0
-	lea.l (dat_0FC740).l,a0
+	lea.l (shaggy_face_anims).l,a0
 	move.w (0x0,a0,d0.w),(ram_actor_anim).l
 	bset.b #0x0,(ram_actors_anim_new).l
 loc_004DDA:
@@ -5053,7 +5053,7 @@ loc_004E12:
 	add.w d0,d0
 	lsl.w #0x3,d1
 	add.w d1,d0
-	lea.l (dat_0FC740).l,a0
+	lea.l (shaggy_face_anims).l,a0
 	move.w (0x0,a0,d0.w),(ram_actor_anim).l
 	bset.b #0x0,(ram_actors_anim_new).l
 loc_004EA4:
@@ -5193,12 +5193,12 @@ loc_005044:
 	add.l d6,d5
 	cmp.l d5,d3
 	bge.w loc_0050B4
-	bsr.w sub_0052F4
+	bsr.w waypoint1_line_clear
 	bne.w loc_00558A
 loc_005082:
 	move.w d0,(ram_shaggy_wp).l
 	move.w d1,(ram_shaggy_wp+4).l
-	bsr.w sub_0051E4
+	bsr.w shaggy_leg0_from_wp1
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d0
@@ -5208,12 +5208,12 @@ loc_005082:
 	move.w #0x1,(ram_shaggy_wp_count).l
 	bra.w loc_005592
 loc_0050B4:
-	bsr.w sub_0052C0
+	bsr.w waypoint0_line_clear
 	bne.w loc_00558A
 loc_0050BC:
 	move.w d0,(ram_shaggy_wp).l
 	move.w d1,(ram_shaggy_wp+4).l
-	bsr.w sub_00519C
+	bsr.w shaggy_leg0_from_wp0
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d0
@@ -5226,20 +5226,20 @@ loc_0050EC:
 	cmpi.w #0x1,d0
 	bne.s loc_005146
 	movem.l (sp)+,d0-d2/d7
-	bsr.w sub_0052C0
+	bsr.w waypoint0_line_clear
 	beq.s loc_0050BC
-	bsr.w sub_0052F4
+	bsr.w waypoint1_line_clear
 	bne.w loc_00558A
 	move.w d0,(ram_shaggy_wp).l
 	move.w d1,(ram_shaggy_wp+4).l
-	bsr.w sub_0051E4
+	bsr.w shaggy_leg0_from_wp1
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
 	move.w d0,(ram_shaggy_wp+2).l
 	move.w d1,(ram_shaggy_wp+6).l
-	bsr.w sub_00522E
+	bsr.w shaggy_leg1_from_wp0
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
@@ -5248,27 +5248,27 @@ loc_0050EC:
 	bra.w loc_005592
 loc_005146:
 	movem.l (sp)+,d0-d2/d7
-	bsr.w sub_0052F4
+	bsr.w waypoint1_line_clear
 	beq.w loc_005082
-	bsr.w sub_0052C0
+	bsr.w waypoint0_line_clear
 	bne.w loc_00558A
 	move.w d0,(ram_shaggy_wp).l
 	move.w d1,(ram_shaggy_wp+4).l
-	bsr.w sub_00519C
+	bsr.w shaggy_leg0_from_wp0
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
 	move.w d0,(ram_shaggy_wp+2).l
 	move.w d1,(ram_shaggy_wp+6).l
-	bsr.w sub_005276
+	bsr.w shaggy_leg1_from_wp1
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
 	move.w #0x2,(ram_shaggy_wp_count).l
 	bra.w loc_005592
-sub_00519C:
+shaggy_leg0_from_wp0:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
@@ -5284,7 +5284,7 @@ sub_00519C:
 	move.w d5,(ram_shaggy_wp+12).l
 	move.w d6,(ram_shaggy_wp+16).l
 	rts
-sub_0051E4:
+shaggy_leg0_from_wp1:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
@@ -5300,7 +5300,7 @@ sub_0051E4:
 	move.w d5,(ram_shaggy_wp+12).l
 	move.w d6,(ram_shaggy_wp+16).l
 	rts
-sub_00522E:
+shaggy_leg1_from_wp0:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
@@ -5316,7 +5316,7 @@ sub_00522E:
 	move.w d5,(ram_shaggy_wp+14).l
 	move.w d6,(ram_shaggy_wp+18).l
 	rts
-sub_005276:
+shaggy_leg1_from_wp1:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
@@ -5332,7 +5332,7 @@ sub_005276:
 	move.w d5,(ram_shaggy_wp+14).l
 	move.w d6,(ram_shaggy_wp+18).l
 	rts
-sub_0052C0:
+waypoint0_line_clear:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
@@ -5344,7 +5344,7 @@ sub_0052C0:
 	move.w #0x0,(ram_line_from_x+2).l
 	move.w #0x0,(ram_line_from_y+2).l
 	bra.w walk_line_clear
-sub_0052F4:
+waypoint1_line_clear:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
@@ -5636,7 +5636,7 @@ loc_005654:
 	andi.b #0xf7,(ram_vblank_flags).l
 	or.b d0,(ram_vblank_flags).l
 	rts
-sub_00566A:
+scooby_walk_wait:
 	bsr.w scooby_walk_to
 	tst.w (0x2,a5)
 	bmi.s loc_0056AE
@@ -5691,12 +5691,12 @@ loc_0056FA:
 	add.l d6,d5
 	cmp.l d5,d3
 	bge.w loc_00576A
-	bsr.w sub_0052F4
+	bsr.w waypoint1_line_clear
 	bne.w scooby_walk_direct
 loc_005738:
 	move.w d0,(ram_scooby_wp).l
 	move.w d1,(ram_scooby_wp+4).l
-	bsr.w sub_00589A
+	bsr.w scooby_leg0_from_wp1
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d0
@@ -5706,12 +5706,12 @@ loc_005738:
 	move.w #0x1,(ram_scooby_wp_count).l
 	bra.w scooby_walk_start
 loc_00576A:
-	bsr.w sub_0052C0
+	bsr.w waypoint0_line_clear
 	bne.w scooby_walk_direct
 loc_005772:
 	move.w d0,(ram_scooby_wp).l
 	move.w d1,(ram_scooby_wp+4).l
-	bsr.w sub_005852
+	bsr.w scooby_leg0_from_wp0
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d0
@@ -5724,20 +5724,20 @@ loc_0057A2:
 	cmpi.w #0x1,d0
 	bne.s loc_0057FC
 	movem.l (sp)+,d0-d2/d7
-	bsr.w sub_0052C0
+	bsr.w waypoint0_line_clear
 	beq.s loc_005772
-	bsr.w sub_0052F4
+	bsr.w waypoint1_line_clear
 	bne.w scooby_walk_direct
 	move.w d0,(ram_scooby_wp).l
 	move.w d1,(ram_scooby_wp+4).l
-	bsr.w sub_00589A
+	bsr.w scooby_leg0_from_wp1
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
 	move.w d0,(ram_scooby_wp+2).l
 	move.w d1,(ram_scooby_wp+6).l
-	bsr.w sub_0058E4
+	bsr.w scooby_leg1_from_wp0
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
@@ -5746,27 +5746,27 @@ loc_0057A2:
 	bra.w scooby_walk_start
 loc_0057FC:
 	movem.l (sp)+,d0-d2/d7
-	bsr.w sub_0052F4
+	bsr.w waypoint1_line_clear
 	beq.w loc_005738
-	bsr.w sub_0052C0
+	bsr.w waypoint0_line_clear
 	bne.w scooby_walk_direct
 	move.w d0,(ram_scooby_wp).l
 	move.w d1,(ram_scooby_wp+4).l
-	bsr.w sub_005852
+	bsr.w scooby_leg0_from_wp0
 	move.w (a0),d0
 	move.w (0x2,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
 	move.w d0,(ram_scooby_wp+2).l
 	move.w d1,(ram_scooby_wp+6).l
-	bsr.w sub_00592C
+	bsr.w scooby_leg1_from_wp1
 	move.w (0x4,a0),d0
 	move.w (0x6,a0),d1
 	lsl.w #0x3,d0
 	lsl.w #0x3,d1
 	move.w #0x2,(ram_scooby_wp_count).l
 	bra.w scooby_walk_start
-sub_005852:
+scooby_leg0_from_wp0:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
@@ -5782,7 +5782,7 @@ sub_005852:
 	move.w d5,(ram_scooby_wp+12).l
 	move.w d6,(ram_scooby_wp+16).l
 	rts
-sub_00589A:
+scooby_leg0_from_wp1:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
@@ -5798,7 +5798,7 @@ sub_00589A:
 	move.w d5,(ram_scooby_wp+12).l
 	move.w d6,(ram_scooby_wp+16).l
 	rts
-sub_0058E4:
+scooby_leg1_from_wp0:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (a0),d3
@@ -5814,7 +5814,7 @@ sub_0058E4:
 	move.w d5,(ram_scooby_wp+14).l
 	move.w d6,(ram_scooby_wp+18).l
 	rts
-sub_00592C:
+scooby_leg1_from_wp1:
 	movea.l (ram_room_idle_spots).l,a0
 	lea.l (0x20,a0),a0
 	move.w (0x4,a0),d3
@@ -5858,7 +5858,7 @@ scooby_line_clear:
 	move.l (ram_scooby_x).l,(ram_line_from_x).l
 	move.l (ram_scooby_y).l,(ram_line_from_y).l
 	bra.w walk_line_clear
-sub_0059C8:
+scooby_dir_to:
 	move.l (ram_scooby_x).l,(ram_line_from_x).l
 	move.l (ram_scooby_y).l,(ram_line_from_y).l
 scooby_set_dir:
@@ -5964,7 +5964,7 @@ scooby_walk_direct:
 scooby_walk_start:
 	move.w d0,(ram_actor_target_x+2).l
 	move.w d1,(ram_actor_target_y+2).l
-	bsr.w sub_0059C8
+	bsr.w scooby_dir_to
 	cmpi.w #0x0,d7
 	bne.s loc_005B12
 	move.w (ram_scooby_facing).l,d0
@@ -6020,7 +6020,7 @@ inventory_arrows_update:
 	bne.s loc_005B9E
 	moveq #0x2,d0
 loc_005B9E:
-	bsr.w sub_005C5A
+	bsr.w inventory_arrow_up_wait
 	lea.l (ram_objects).l,a0
 	move.w (ram_obj_last).l,d0
 	moveq #0x0,d1
@@ -6041,7 +6041,7 @@ loc_005BBA:
 loc_005BD4:
 	moveq #0x2,d0
 loc_005BD6:
-	bsr.w sub_005C74
+	bsr.w inventory_arrow_down_wait
 	rts
 verb_label_redraw:
 	tst.w (ram_verb_redraw).l
@@ -6086,15 +6086,15 @@ loc_005C36:
 	movem.w (sp)+,d2-d3
 loc_005C58:
 	rts
-sub_005C5A:
+inventory_arrow_up_wait:
 	tst.b (0xff0ab1).l
-	bpl.w sub_005C5A
+	bpl.w inventory_arrow_up_wait
 	move.b #0x8,(0xff0ab1).l
 	move.w d0,(0xff0804).l
 	rts
-sub_005C74:
+inventory_arrow_down_wait:
 	tst.b (0xff0ab2).l
-	bpl.w sub_005C74
+	bpl.w inventory_arrow_down_wait
 	move.b #0x8,(0xff0ab2).l
 	move.w d0,(0xff0806).l
 	rts
@@ -10782,7 +10782,7 @@ loc_00A1CA:
 	beq.w loc_00A1E8
 	btst.b #0x0,(ram_actors_anim_done).l
 	beq.w loc_00A1E8
-	jsr (sub_0020DA).l
+	jsr (talk_gesture).l
 loc_00A1E8:
 	bsr.w wait_vblank
 	move.w (ram_text_speed).l,d0
@@ -16886,7 +16886,7 @@ scooby_pose_table:
 	.incbin "baserom.md",0xFC700,0x20
 shaggy_turn_anims:
 	.incbin "baserom.md",0xFC720,0x20
-dat_0FC740:
+shaggy_face_anims:
 	.incbin "baserom.md",0xFC740,0x20
 follow_anim_tbl:
 	.incbin "baserom.md",0xFC760,0x100

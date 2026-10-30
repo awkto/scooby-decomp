@@ -22,7 +22,9 @@
 
 #include "capture.h"
 #include "emu.h"
+#include "ipprof.h"
 #include "hle.h"
+void sndlog_init(void);
 #include "mouse.h"
 #include "overlay.h"
 #include "script.h"
@@ -272,8 +274,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s\n", err);
 		return 1;
 	}
+	sndlog_init();   /* SCOOBY_SNDLOG=file: mailbox write log (src/sndlog.c) */
 	if (a.hle && !hle_configure(a.hle))
 		return 2;
+	ipprof_init(a.hle ? a.hle : "default");   /* SCOOBY_IPPROF=file: interpreted-instruction profile (src/ipprof.c) */
 	if (a.list_hle) {
 		hle_list();
 		return 0;

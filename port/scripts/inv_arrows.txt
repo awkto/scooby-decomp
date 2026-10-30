@@ -1,0 +1,29 @@
+# After w0_cafe_items.txt + inv_items.txt: only the arrow clicks, with the state capture of the main
+# loop pass switched on while they happen (the passes that take the arrow exits $00116C $001174
+# $0011A8 $0011B0 are rare among all passes, so a sample spread over the route misses them).
+# Used by port/tools/inv_dt.sh (OUT directory = runs/states_inv/000D3E_arrows).
+press A 4
+run 20
+press C 4
+run 40
+poke FF06DC 2 D4
+poke FF06DE 2 CC
+run 14
+capture 00000D3E 400 runs/states_inv/000D3E_arrows 1 0
+press B 8
+run 40
+press B 8
+run 40
+press B 8
+run 40
+poke FF06DC 2 D4
+poke FF06DE 2 B0
+run 14
+press B 8
+run 40
+press B 8
+run 40
+press B 8
+run 40
+press B 8
+run 40

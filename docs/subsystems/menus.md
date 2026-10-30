@@ -43,7 +43,7 @@ The addresses of the ranges are the instruction after the original's wait.
 | `$00819A` | `title_mask_irq` | `move #$2700,sr` (split off so the long set-up below is charged masked, not in 1000-cycle slices) | range |
 | `$00819E` | `title_setup` | VRAM clear, tile art (LZSS `$01155A`), 3 RLE pieces, font, plane B, title RLE table -> `$FF3800/$FF5000`, palette, interrupt hooks = `vblank_title_fade` / `hblank_nop`, password pre-fill; ends before `jsr palette_fade` | range |
 | `$0083E8` | `title_bats_start` | bat animation set-up (`a6` = frame list `$017064`, `d6` = 27) | range |
-| `$00840E`, `$008416` | `title_bats_first`, `title_bats_frame` | one bat picture: RLE unpack, scaled sprite draw through the sprite subsystem (`$E40C`, `$F272`), depth `$FF0010`/`$FF0012` shrinking by `$20`; sound `$0B` on pictures 27 and 13 | range |
+| `$00840E`, `$008416` | `title_bats_first`, `title_bats_frame` | one bat picture: RLE unpack, scaled picture blits (`$E40C`, `$F272`, now C: `blit.c`, docs/subsystems/blit.md), depth `$FF0010`/`$FF0012` shrinking by `$20`; sound `$0B` on pictures 27 and 13 | range |
 | `$0084AE` | `title_bats_wait` | after a VBlank: key pressed -> menu; countdown over -> DMA the picture, `dbra` | range |
 | `$00879E` | `title_anim` | (#12) VBlank-side title animation | C (mainloop.c) |
 | `$008876` | `title_strip_dma` | DMA of `$FF8C00` to VRAM `$DC00`; **never called** | C, no states possible |
@@ -52,10 +52,11 @@ The addresses of the ranges are the instruction after the original's wait.
 
 | Address | C name | What | Status |
 |---|---|---|---|
-| `$00851E` | `menu_open` | chooses title / pause / debug menu (screen, action table, item count); the 68k then pushes table + count, unpacks the screen and spins on `ram_frame_countdown` | range |
-| `$008590` | `menu_show` | after the spin: planes + screen DMA, pause menu shows the password rows; ends before `$0085CC` (68k pops the count, `bsr menu_select`, dispatches through the table) | range |
-| `$008D36` | (68k) `menu_choose` | push count, unpack screen, spin; the part after the spin: | |
-| `$008D4A` | `menu_choose_show` | planes + screen DMA | range |
+| `$00851E` | `menu_open` | chooses title / pause / debug menu (screen, action table, item count), pushes table + count (`HLE_EXIT_SP(.., -6)`), unpacks the screen; leaves in front of the 68k spin on `ram_frame_countdown` (`$008588`) | range |
+| `$008590` | `menu_show` | after the spin: planes + screen DMA, pause menu shows the password rows, pops the count (`+2`), leaves in front of `bsr menu_select` (`$0085CE`) | range |
+| `$0085D2` | `menu_dispatch` | back from `menu_select`: `lsl.w #2,d0`, pops the action table (`+4`), `jmp` through it: one exit per action (`$008FB8 $008FC2 $00940C $008CD6 $008F8A $0088A2 $008C40`, all `HLE_EXIT_SP(.., +4)`) | range |
+| `$008D36` | `menu_choose` | push the count (`-2`), unpack the screen; leaves in front of the 68k spin (`$008D42`) | range |
+| `$008D4A` | `menu_choose_show` | planes + screen DMA, pops the count (`+2`), falls into `menu_select` (`$008D6A`) | range |
 | `$008D6A`.. | `menu_select`, `menu_select_frame`, `menu_select_draw`, `menu_select_pad`, `menu_select_tick`, `menu_select_done` | the item cursor loop: up/down move by `$18` px, Start chooses, cursor sprite at VRAM `$FC60` blinks through `$008F14`; also the DEBUG cheat code matcher | ranges |
 | `$008F1C`, `$008F40` | `menu_refresh_planes`, `menu_title_sprites` | plane A DMAs; title sprite Y words into the SAT at VRAM `$FC00` | C, exact |
 | `$008F8A`, `$008F94`, `$008F9A` | `quit_confirm`, `quit_confirm_done`, `soft_reset_begin` | QUIT MYSTERY confirmation, then the reset (the tail `movea.l (0),sp / jmp (4)` stays 68k: the SP changes) | ranges |
@@ -69,7 +70,7 @@ The addresses of the ranges are the instruction after the original's wait.
 | `$008660` | `password_show` | encode (`$FF06AC`, `$FF2A00..+28`) into the text at `$FF08BC`; uses `password.c` | C |
 | `$00870E`, `$008710` | `password_shift_symbol`, `password_shift_bits` | the encoder's bit shifter (`roxl` chains through X) | C, exact incl. X |
 | `$00873E`, `$00876C` | `password_scramble`, `password_unscramble` | the xor chains (encode / decode) | C |
-| `$009298` | `password_check` | END: text -> symbols -> 256 bits -> `unscramble` -> checksum; bad: sound `$05`, `rts`; good: sound `$59`... | range |
+| `$009298` | `password_check` | END: text -> symbols -> 256 bits -> `unscramble` -> checksum; bad: sound `$05`, `rts`; good: drops the key handler's return address (+4), sound `$59`, leaves before the 61-frame wait | range |
 | `$009382`, `$009392` | `password_read_byte`, `password_read_bit` | the bit reader of the checker | C, exact incl. X |
 | `$00933E` | `password_accept` | clears `$FF2A00..+$100`, copies the 29 bytes, start room to `$FF0A90`, -> `menu_start_game` | range |
 | `$0093A2`, `$0093B6`, `$0093CC`, `$0093DC`, `$009162`, `$00927E` | `password_cursor_left/right`, `password_switch_row`, `password_clear`, `password_key_noop`, `password_cancel` | the icon row handlers | C |
@@ -84,23 +85,20 @@ The addresses of the ranges are the instruction after the original's wait.
 | `$0088A2`, `$0088AC`, `$0088B6` | `debug_rooms`, `_pick`, `_done` | DEBUG ROOMS | ranges |
 | `$0088D8`.. | `rooms_browser`, `rooms_page`, `rooms_rows`, `rooms_input` | the list with the red bar (rooms) | ranges |
 | `$008AB4`.. | `objects_browser`, `objects_page`, `objects_rows`, `objects_input` | same for objects | ranges |
-| `$008C40`, `$008C80`, `$008CC0` | `debug_objects`, `debug_objects_move`, `debug_objects_done` | DEBUG OBJECTS | ranges |
+| `$008C40`, `$008C60`, `$008C78`, `$008CC0` | `debug_objects`, `debug_objects_pick`, `debug_objects_move`, `debug_objects_done` | DEBUG OBJECTS: `_pick` pushes the object index and record (`-10`) around the rooms browser, `_move` pops them (`+10`) and moves the object | ranges |
 | `$0096F4` | `menu_load_screen` (+ `_dma`) | unpack screen a0, wait a frame, DMA to plane A | ranges |
 
 ### What stays 68k (and why)
 
-Stack pushes/pops that straddle a wait cannot be in a range (it must leave with the SP it entered with, and
-difftest only recognises an exit at the entry SP):
-- `$00857A..$00858E` push item table and count, unpack the screen, spin on the frame countdown;
-  `$0085CC..$0085DA` pop the count, `bsr menu_select`, then `lsl.w #2,d0 / movea.l (sp)+,a0 / movea.l (a0,d0),a0 /
-  jmp (a0)` - the table dispatch.
-- `$008D36..$008D44` / `$008D68`: the same around `menu_choose`.
+The stack tricks that used to force 68k stubs are ranges with a declared stack delta now
+(`HLE_EXIT_SP`, docs/porting.md "Ranges that push or pop"; `menu_open` -6, `menu_show` +2,
+`menu_dispatch` +4, `menu_choose` -2, `menu_choose_show` +2, `debug_objects_pick` -10, `debug_objects_move`
++10, `password_cancel` +4, `password_check` +4 on success, and the key loop's `jsr (a0)` is a push of the return
+address `$009160` (-4) and a jump to the handler, one exit per handler). What is left in 68k:
 - `$008F9E` `bclr`/`bsr palette_read_cram` and `$008FA6..` `movea.l (0).l,sp / movea.l (4).l,a0 / jmp (a0)`:
   the reset itself (the SP is reloaded).
-- `$00915E` `jsr (a0)` of the password icon handlers, `$009292` `tst.l (sp)+` of the cancel icon, `$009328`
-  `lea 4(sp),sp` of the accept path.
-- `$008C60..$008C74` (push object index and record, the rooms browser, `$008C78..$008C7E` pops) in DEBUG OBJECTS.
-- Every wait: `wait_vblank`, `wait_vblanks`, `palette_read_cram`, `palette_fade`, the spins on `ram_frame_countdown`.
+- Every wait: `wait_vblank`, `wait_vblanks`, `palette_read_cram`, `palette_fade`, the spins on `ram_frame_countdown`
+  (`$008588`, `$008D42`, `$009008`), and the bsr instructions that call them or other ranges.
 
 ## Data
 
@@ -223,6 +221,9 @@ trivial) and the 68k remainders listed above.
 | `password_clear` | `$0093DC` | 3/3 |
 | `password_key_noop` | `$009162` | 3/3 |
 | `password_cancel` | `$00927E` | 1/1 |
+| `menu_dispatch` | `$0085D2` | 14/14 |
+| `menu_choose` | `$008D36` | 5/5 |
+| `debug_objects_pick` | `$008C60` | 1/1 |
 | `password_screen_start` | `$009010` | 2/2 |
 | `password_screen_frame` | `$00903A` | 200/200 |
 | `password_screen_input` | `$009052` | 200/200 |
@@ -248,7 +249,7 @@ trivial) and the 68k remainders listed above.
 | `debug_rooms_pick` | `$0088AC` | 1/1 |
 | `debug_rooms_done` | `$0088B6` | 1/1 |
 | `debug_objects` | `$008C40` | 1/1 |
-| `debug_objects_move` | `$008C80` | 1/1 |
+| `debug_objects_move` | `$008C78` | 1/1 |
 | `debug_objects_done` | `$008CC0` | 1/1 |
 
 Gates after the change (all on a VM, `--hle all`, merged with main at `8a58544`): `hosttest.sh` PASS, `irqtest.sh` PASS

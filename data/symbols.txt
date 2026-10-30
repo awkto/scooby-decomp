@@ -347,3 +347,29 @@
 009F58 draw_text_plane_a_hi # draw_text_plane_a with tile priority (font base bit 15) set
 009FA2 draw_text_wrapped    # a0=cstring, d0=row, d1=col: plane at $AA82+row*128+col*2, wraps at 30 chars; d0.w=rows used
 00A054 draw_status_line     # a0=cstring: clears plane $D000 (1024 words) then draws wrapped text, sets reg $12 and $FF080A
+# ---- #19 (2nd pass): walk-to helpers, walk ops, TALK pieces (walkto.c, script_walk.c, script.c)
+0052C0 waypoint0_line_clear  # walk_line_clear from room waypoint 0 to (d0,d1)
+0052F4 waypoint1_line_clear  # same from waypoint 1
+00519C shaggy_leg0_from_wp0  # leg 0 of Shaggy's waypoint table: direction waypoint 0 -> (d0,d1)
+0051E4 shaggy_leg0_from_wp1
+00522E shaggy_leg1_from_wp0
+005276 shaggy_leg1_from_wp1
+005852 scooby_leg0_from_wp0
+00589A scooby_leg0_from_wp1
+0058E4 scooby_leg1_from_wp0
+00592C scooby_leg1_from_wp1
+0059C8 scooby_dir_to         # scooby_set_dir from Scooby's position
+00566A scooby_walk_wait      # scooby_walk_to, then (op word 2 >= 0) wait for the arrival and the stand pose
+004B24 actor_walk_to         # d0 = object (who >= 3), d1/d2 target, d3 speed (< 0 = put there), d7 anim
+00197E sprite_frame_hotspot  # d0 = frame index into sprite set a1 -> d0,d1 = the frame's hotspot
+0022F2 talk_bar_blank        # 6 rows x 32 blank tiles at VRAM d4 (the TALK menu area)
+0020DA talk_gesture          # random talking gesture for Shaggy (animation 36 + facing*4 + 0..3)
+0FC740 shaggy_face_anims     # w[4][4] Shaggy's turn-on-the-spot animation [old facing][new facing] (op $1E, say pose)
+
+# ---- #22 sound API glue (C in port/src/game/sound.c; docs/subsystems/sound.md)
+# C names: sound_cmd_play/stop/pause/unpause/stop_all keep their symbols; $009762 = sound_play_wrapper,
+# $009776 = sound_stop_wrapper, $1F6EA8 = sound_init_wrapper (C API: sound_driver_init), $1F6DDE = z80_reset_driver.
+
+# ---- #17 inventory arrows (port/src/game/verbs.c): spin until the VBlank consumed the last frame, then set it
+005C5A inventory_arrow_up_wait      # d0 = frame of the page-up arrow ($FF0804); spins on $FF0AB1; the range after the spin is inventory_arrow_up_set
+005C74 inventory_arrow_down_wait    # same for the page-down arrow ($FF0806, $FF0AB2)

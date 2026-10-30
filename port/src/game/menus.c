@@ -180,8 +180,8 @@ HLE_RANGE(0x00840E, title_bats_first, 20, BATS_FRAME)
 }
 
 /* $008416 title_bats_frame: one picture of the bat animation.  The bats fly in as scaled
- * sprites: the frame ($017064 list) is unpacked to the ring buffer, then drawn through the
- * sprite subsystem ($E40C, $F272) at the current scale depth; the depth ($FF0010, then
+ * pictures: the frame ($017064 list) is unpacked to the ring buffer, then shrunk by the
+ * scaled blits (scaled_blit_120x40 $E40C, scaled_blit_64x32 $F272) at the current scale depth; the depth ($FF0010, then
  * $FF0012) shrinks by $20 per picture until it reaches 0.  Sound $0B (the flap) on pictures
  * 27 and 13 (counting d6 down).  Ends in front of `bsr wait_vblank` ($0084AA).
  * Live out: d6, a6 (d0-d5, a0-a5: the movem pair around the scaler restores them, the rest is
@@ -248,14 +248,18 @@ HLE_RANGE(0x0084AE, title_bats_wait, 300, BATS_WAIT, BATS_FRAME, MENU_OPEN)
 /* $00851E menu_open: build the menu: the title menu (PLAY BLAKE'S HOTEL / PLAY HA HA CARNIVAL /
  * SOUND TEST, 3 items) or, once a game was started (MF_GAME_STARTED), the pause menu
  * (CONTINUE / QUIT MYSTERY, 2 items; 4 with DEBUG ROOMS / OBJECTS after the cheat code).
- * Picks the item's screen (RLE) and the action table; [68k from $00857A: push table and count,
- * unpack the screen, spin on the frame countdown].
- * Live out: a0 = screen stream, a1 = action table, d0 = item count. */
+ * Picks the item's screen (RLE) and the action table, then does what $00857A does: push the
+ * action table and the item count (they stay on the stack while the menu runs: menu_show pops
+ * the count, menu_dispatch the table), unpack the screen.  Leaves in front of the spin on the
+ * frame countdown ($008588, 68k) with SP 6 bytes lower (HLE_EXIT_SP, docs/porting.md "Ranges
+ * that push or pop").
+ * Live out: nothing (everything is reloaded by menu_show). */
 #define MENU_PUSH 0x00857A
+#define MENU_SPIN 0x008588
 #define ROM_SCREEN_PAUSE_DEBUG 0x018CBE
 #define ROM_SCREEN_PAUSE       0x018BFA
 #define ROM_SCREEN_TITLE_MENU  0x01896C
-HLE_RANGE(0x00851E, menu_open, 400, MENU_PUSH)
+HLE_RANGE(0x00851E, menu_open, 400, HLE_EXIT_SP(MENU_SPIN, -6))
 {
 	RAM16(0xFF0624) = 0;
 	RAM16(0xFF0626) = 0;
@@ -276,16 +280,20 @@ HLE_RANGE(0x00851E, menu_open, 400, MENU_PUSH)
 		ctx->a[1] = ROM_MENU_SCREENS;
 		ctx->d[0] = 3;
 	}
-	hle_jump(ctx, MENU_PUSH);
+	push32(ctx, ctx->a[1]);                     /* $00857A: move.l a1,-(sp) */
+	push16(ctx, (uint16_t)ctx->d[0]);           /*          move.w d0,-(sp) */
+	ctx->a[2] = LZSS_RING;
+	rle_call(ctx);                              /*          bsr rle_decompress */
+	hle_jump(ctx, MENU_SPIN);
 }
 
 /* $008590 menu_show: the frame countdown ran out: upload the planes and the menu screen;
  * in the pause menu draw the current password (2 text rows) above the items.
- * Ends in front of `move.w (sp)+,d0` ($0085CC: [68k pops the item count, bsr menu_select, then
- * the dispatch through the action table: lsl.w #2,d0 / movea.l (sp)+,a0 / jmp ([a0+d0])]).
- * Live out: nothing. */
-#define MENU_POP 0x0085CC
-HLE_RANGE(0x008590, menu_show, 300, MENU_POP)
+ * Then pops the item count into d0 ($0085CC) and leaves in front of `bsr menu_select`
+ * ($0085CE, 68k; the stack is 2 bytes higher than at entry).  The 68k returns to menu_dispatch.
+ * Live out: d0 = the item count. */
+#define MENU_SELECT_CALL 0x0085CE
+HLE_RANGE(0x008590, menu_show, 300, HLE_EXIT_SP(MENU_SELECT_CALL, +2))
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	menu_refresh_planes(ctx);
@@ -298,22 +306,54 @@ HLE_RANGE(0x008590, menu_show, 300, MENU_POP)
 		set_w(&ctx->d[2], ctx->d[2] + 1);
 		hle_call68k(ctx, A_TEXT_9F72);
 	}
-	hle_jump(ctx, MENU_POP);
+	set_w(&ctx->d[0], pop16(ctx));              /* $0085CC: move.w (sp)+,d0 */
+	cc_logic16(ctx, ctx->d[0]);
+	hle_jump(ctx, MENU_SELECT_CALL);
+}
+
+/* $0085D2: back from menu_select with the chosen item in d0: jump through the action table
+ * that menu_open pushed (title: PLAY BLAKE / PLAY CARNIVAL / SOUND TEST; pause: CONTINUE / QUIT
+ * MYSTERY / DEBUG ROOMS / DEBUG OBJECTS).  The table is popped (+4), so every target is entered
+ * with the SP the menu_open caller had.
+ * Live out: nothing. */
+HLE_RANGE(0x0085D2, menu_dispatch, 40,
+          HLE_EXIT_SP(0x008FB8, +4), HLE_EXIT_SP(0x008FC2, +4), HLE_EXIT_SP(0x00940C, +4),
+          HLE_EXIT_SP(0x008CD6, +4), HLE_EXIT_SP(0x008F8A, +4), HLE_EXIT_SP(0x0088A2, +4),
+          HLE_EXIT_SP(0x008C40, +4))
+{
+	set_w(&ctx->d[0], lslw(ctx, ctx->d[0], 2));         /* lsl.w #2,d0 */
+	ctx->a[0] = pop32(ctx);                             /* movea.l (sp)+,a0: the action table */
+	ctx->a[0] = bus_r32(ctx->a[0] + (int16_t)ctx->d[0]);
+	hle_jump(ctx, ctx->a[0]);                           /* jmp (a0) */
 }
 
 /* ================================================================== menu_choose ($008D36) */
 
-/* $008D4A: [68k: push d0 (item count), unpack the screen $FF3000, spin until the frame
- * countdown runs out]  Show the screen (planes + name table), then leave in front of the
- * item-count pop ($008D68) so that menu_select ($008D6A) follows with d0 = count.
+/* $008D36 menu_choose (a0 = screen stream, d0 = item count): push the count, unpack the screen,
+ * [68k: spin on the frame countdown at $008D42]; menu_choose_show shows it and pops the count
+ * again.  The push is the range's own: it leaves in front of the spin with SP 2 lower.
  * Live out: nothing. */
-#define MENU_CHOOSE_POP 0x008D68
-HLE_RANGE(0x008D4A, menu_choose_show, 100, MENU_CHOOSE_POP)
+#define MENU_CHOOSE_SPIN 0x008D42
+HLE_RANGE(0x008D36, menu_choose, 60, HLE_EXIT_SP(MENU_CHOOSE_SPIN, -2))
+{
+	push16(ctx, (uint16_t)ctx->d[0]);           /* move.w d0,-(sp) */
+	ctx->a[2] = LZSS_RING;
+	rle_call(ctx);                              /* bsr rle_decompress */
+	hle_jump(ctx, MENU_CHOOSE_SPIN);
+}
+
+/* $008D4A: the countdown ran out: show the screen (planes + name table), pop the item count
+ * into d0 ($008D68) and fall into menu_select ($008D6A), which runs with the stack as it was
+ * before menu_choose's push.
+ * Live out: d0 = the count. */
+HLE_RANGE(0x008D4A, menu_choose_show, 100, HLE_EXIT_SP(0x008D6A, +2))
 {
 	RAM16(FRAME_COUNTDOWN) = 4;
 	menu_refresh_planes(ctx);
 	menu_dma(ctx, 0xC000, 0x380, LZSS_RING);
-	hle_jump(ctx, MENU_CHOOSE_POP);
+	set_w(&ctx->d[0], pop16(ctx));              /* move.w (sp)+,d0 */
+	cc_logic16(ctx, ctx->d[0]);
+	hle_jump(ctx, 0x008D6A);
 }
 
 /* ================================================================== menu_select ($008D6A) */

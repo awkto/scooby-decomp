@@ -1,0 +1,35 @@
+# Use item on a room object (port/tools/mousetest.sh), from the Cafe state with 9 carried items.
+# USE, switch to the inventory, click the Pot (list entry 7: lower row, column 4); the Pot has
+# Use scripts with a second object, so the game waits for it ($FF09DE bit 0).  Back to the verb
+# bar view is not needed: the second object is clicked in the room (the counter, tid 125):
+# it lands in $FF06B6 and the action runs with both ("how would you suggest I use that").
+mouse 128 100
+run 10
+click L 190 200
+run 20
+peek verb FF06C0
+click L 220 190
+run 30
+peek inv FF09DC 1
+click L 220 200
+run 40
+click L 220 182
+run 40
+click L 180 200
+run 30
+peek wait FF09DE 1
+peek first FF06AE
+shot use_pot1
+mouse 88 92
+run 30
+peek hover2 FF06B6
+click L 88 92
+run 60
+peek second FF06B6
+peek act FF09DC 1
+peek actverb FF06BE
+shot use_pot2
+run 300
+peek done FF09DC 1
+peek wait2 FF09DE 1
+shot use_pot3

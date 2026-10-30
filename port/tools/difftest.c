@@ -2,6 +2,8 @@
  *
  *   difftest list
  *   difftest capture ADDR N [--out DIR] [--script FILE]... [--every K] [--skip K] [--hle SPEC]
+ *   difftest capture-multi N TAG ADDR... [--script FILE]...   every call (up to N) of each
+ *       ADDR in ONE pass over the route, into runs/states/<ADDR>_<TAG>/ (or --out DIR/<ADDR>_<TAG>)
  *   difftest run FUNC... [--states DIR] [--max N] [options]
  *   difftest check FUNC...|all [--n N] [capture/run options]   capture if needed, then run
  *
@@ -11,7 +13,7 @@
  * calls made on that route.
  *
  * For every captured entry state: load it, run the original 68k code until it returns
- * (an HLE_RANGE: until it reaches one of its declared exits at the entry SP; other HLE
+ * (an HLE_RANGE: until it reaches one of its declared exits at the exit's SP; other HLE
  * functions disabled unless --with-hle), snapshot; reload, run the C function,
  * snapshot; compare registers, SR, work RAM (minus dead stack), VRAM/CRAM/VSRAM, VDP
  * registers + port latches, Z80 RAM / bus state, I/O registers and the ordered list of
@@ -28,6 +30,11 @@
  *   --with-hle            keep other enabled HLE functions active on both sides
  *   --passthrough         C side = hle_call68k_orig (self-test of the harness)
  *   --keep-going          report every failing state, not just the first
+ *   --entry               "synthetic dispatch": use states captured at ANOTHER address with
+ *                         the same calling context (e.g. another script op handler, entered by
+ *                         the same `jsr (a0)`), with the PC set to the target. Combine with
+ *                         --poke to put the VM where that dispatch would have put it
+ *                         (A5 = an op of the target's kind, A0 = handler; tools/py/script_pokes.py)
  *   -v                    print one line per state
  */
 #include "capture.h"
@@ -54,6 +61,7 @@ typedef struct {
 	sb_cmp_opts cmp;
 	uint32_t stack_window;
 	bool with_hle, passthrough, keep_going, verbose;
+	bool entry;                 /* --entry: states captured elsewhere, PC set to the target */
 	const char *out;
 	const char *pokes[1024];    /* --poke variants, each "W:ADDR=VAL,B:ADDR=VAL,..." */
 	int npokes;
@@ -86,6 +94,7 @@ static void usage(void)
 	fprintf(stderr,
 	        "usage: difftest list\n"
 	        "       difftest capture ADDR N [--out DIR] [--script FILE]... [--every K] [--skip K] [--hle SPEC]\n"
+	        "       difftest capture-multi N TAG ADDR... [--out BASE] [--script FILE]...\n"
 	        "       difftest run FUNC... [--states DIR] [--max N] [--ignore-regs d1,a0] [--ignore-flags]\n"
 	        "                [--strict-stack] [--stack-window B] [--with-hle] [--passthrough] [--keep-going] [-v]\n"
 	        "       difftest check FUNC...|all [--n N] [capture and run options]\n");
@@ -257,8 +266,10 @@ static const struct {
 	{ 0x008416, 0x3FBF, 0x1F },   /* title_bats_frame: live d6, a6 */
 	{ 0x0084AE, 0x3FBF, 0x1F },   /* title_bats_wait: live d6, a6 */
 	{ 0x00851E, 0x7CFE, 0x1F },   /* menu_open: live d0, a0, a1 */
-	{ 0x008590, 0x7FFF, 0x1F },   /* menu_show: nothing live */
-	{ 0x008D4A, 0x7FFF, 0x1F },   /* menu_choose_show */
+	{ 0x008590, 0x7FFE, 0x1F },   /* menu_show: live d0 (the item count popped for menu_select) */
+	{ 0x0085D2, 0x7FFF, 0x1F },   /* menu_dispatch: nothing live in the targets */
+	{ 0x008D36, 0x7FFF, 0x1F },   /* menu_choose */
+	{ 0x008D4A, 0x7FFE, 0x1F },   /* menu_choose_show: live d0 (the count) */
 	{ 0x008D6A, 0x7F0F, 0x1F },   /* menu_select: live d4-d7 (the cursor state) */
 	{ 0x008D8E, 0x7F0F, 0x1F },
 	{ 0x008D96, 0x7F0F, 0x1F },
@@ -307,8 +318,17 @@ static const struct {
 	{ 0x0088AC, 0x0000, 0x1F },   /* debug_rooms_pick */
 	{ 0x0088B6, 0x0000, 0x1F },
 	{ 0x008C40, 0x0000, 0x1F },   /* debug_objects */
-	{ 0x008C80, 0x7FFF, 0x1F },   /* debug_objects_move: nothing live at $008CC0 */
+	{ 0x008C60, 0x0000, 0x1F },   /* debug_objects_pick: flags only (d0 = location, d1/d2/a0 untouched or pushed) */
+	{ 0x008C78, 0x7FFF, 0x1F },   /* debug_objects_move: nothing live at $008CC0 */
 	{ 0x008CC0, 0x0000, 0x1F },
+	/* scaled blits (blit.c): d3-d7 are the loop counters; every caller restores the registers or is a
+	 * range that leaves them undefined.  Flags are compared. */
+	{ 0x00E40C, 0x00F8, 0x00 },
+	{ 0x00F272, 0x00F8, 0x00 },
+	/* camera_update: d0-d3, a0 scratch and flags dead for its only caller vblank_main (camera.c) */
+	{ 0x00FA78, 0x010F, 0x1F },
+	/* palette_cycle: only caller vblank_main (palcycle.c); everything it touches is scratch */
+	{ 0x00A7CE, 0x033F, 0x1F },
 };
 
 static int do_run(const hle_def *target, const opts *o)
@@ -345,7 +365,7 @@ static int do_run(const hle_def *target, const opts *o)
 			err_n++;
 			continue;
 		}
-		if (cs.addr != target->addr) {
+		if (cs.addr != target->addr && !o->entry) {
 			printf("%s: captured at $%06X, not $%06X\n", files[i], cs.addr, target->addr);
 			cap_free(&cs);
 			err_n++;
@@ -354,6 +374,8 @@ static int do_run(const hle_def *target, const opts *o)
 		/* reference: original 68k */
 		set_hle_for_side(target, false, o);
 		cap_apply(&cs);
+		if (o->entry)
+			gx_m68k_set_pc(target->addr);
 		if (poke) apply_poke(poke);
 		uint32_t sp0 = gx_m68k_dar()[15];
 		uint32_t entry[16];
@@ -380,6 +402,8 @@ static int do_run(const hle_def *target, const opts *o)
 		/* C replacement */
 		set_hle_for_side(target, true, o);
 		cap_apply(&cs);
+		if (o->entry)
+			gx_m68k_set_pc(target->addr);
 		if (poke) apply_poke(poke);
 		sb_begin();
 		sb_record_begin();
@@ -403,6 +427,15 @@ static int do_run(const hle_def *target, const opts *o)
 		uint32_t lo = sp0 - o->stack_window;
 		if (min_sp < lo)
 			lo = min_sp;
+		/* a range ends with everything below its exit SP dead: with a negative stack
+		 * delta (HLE_EXIT_SP) what it pushed, [exit SP, entry SP), is live data and
+		 * compared; with a positive delta what it popped, [entry SP, exit SP), is dead
+		 * (and often overwritten by later calls inside the range) */
+		uint32_t hi = sp0;
+		if (target->exits)
+			hi = ref->a[7];
+		if (lo > hi)
+			lo = hi;
 		sb_cmp_opts co = o->cmp;
 		for (size_t k = 0; k < sizeof dt_ignores / sizeof dt_ignores[0]; k++)
 			if (dt_ignores[k].addr == target->addr) {
@@ -410,7 +443,7 @@ static int do_run(const hle_def *target, const opts *o)
 				co.ignore_sr |= dt_ignores[k].sr;
 			}
 		co.quiet = true;
-		int bad = sb_compare(ref, got, lo, sp0, &co, stdout);
+		int bad = sb_compare(ref, got, lo, hi, &co, stdout);
 		if (bad) {
 			fail_n++;
 			if (fail_n == 1 || o->keep_going) {
@@ -422,12 +455,12 @@ static int do_run(const hle_def *target, const opts *o)
 					printf("%s%c%d=%08X", r == 8 ? "\n        " : " ", r < 8 ? 'D' : 'A', r & 7, entry[r]);
 				printf("\n");
 				co.quiet = false;
-				sb_compare(ref, got, lo, sp0, &co, stdout);
+				sb_compare(ref, got, lo, hi, &co, stdout);
 			}
 		} else {
 			pass_n++;
 			if (o->verbose)
-				printf("ok   %s (frame %u, %lu insns, %lu cycles, %d port writes, exit $%06X)\n", files[i], cs.frame, insns, cycles, ref->nev, ref->pc);
+				printf("ok   %s (frame %u, %lu insns, %lu cycles, %d port writes, exit $%06X SP%+d)\n", files[i], cs.frame, insns, cycles, ref->nev, ref->pc, (int)(ref->a[7] - sp0));
 		}
 		sb_snap_free(ref);
 		sb_snap_free(got);
@@ -483,6 +516,7 @@ int main(int argc, char **argv)
 		else if (!strcmp(a, "--passthrough")) o.passthrough = true;
 		else if (!strcmp(a, "--keep-going")) o.keep_going = true;
 		else if (!strcmp(a, "-v")) o.verbose = true;
+		else if (!strcmp(a, "--entry")) o.entry = true;
 		else if (a[0] == '-' && a[1]) usage();
 		else if (npos < 64) pos[npos++] = a;
 	}
@@ -515,6 +549,29 @@ int main(int argc, char **argv)
 		else
 			default_dir(dir, sizeof dir, addr);
 		return do_capture(addr, atoi(pos[1]), dir, &o);
+	}
+	if (!strcmp(mode, "capture-multi")) {
+		if (npos < 3)
+			usage();
+		hle_set_all(false);
+		if (o.hle_spec)
+			hle_configure(o.hle_spec);
+		int n = atoi(pos[0]);
+		emu_reset();
+		for (int i = 2; i < npos; i++) {
+			uint32_t addr = (uint32_t)strtoul(pos[i] + (pos[i][0] == '$'), NULL, 16);
+			char dir[600];
+			snprintf(dir, sizeof dir, "%s/%06X_%s", o.out ? o.out : "runs/states", addr, pos[1]);
+			if (i == 2)
+				capture_start(addr, n, dir, 1, 0);
+			else
+				capture_add(addr, n, dir, 1, 0);
+		}
+		int rc = play_scripts(&o, "runs");
+		capture_stop();
+		for (int i = 2; i < npos; i++)
+			printf("captured %d entry states of %s (%s)\n", capture_slot_count(i - 2), pos[i], pos[1]);
+		return rc;
 	}
 	if (strcmp(mode, "run") && strcmp(mode, "check"))
 		usage();

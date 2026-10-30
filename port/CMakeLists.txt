@@ -20,7 +20,7 @@ include(cmake/gpgx.cmake)
 file(GLOB GAME_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/game/*.c")
 file(GLOB MOUSE_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse/*.c")
 add_library(scooby_common OBJECT
-  src/emu.c src/sha1.c src/script.c src/capture.c
+  src/emu.c src/sha1.c src/script.c src/capture.c src/sndlog.c src/ipprof.c
   hle/hle.c hle/sandbox.c hle/gx.c
   ${GAME_SOURCES} ${MOUSE_SOURCES})
 target_include_directories(scooby_common PUBLIC
