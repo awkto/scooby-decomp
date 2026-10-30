@@ -232,6 +232,13 @@ static const struct {
 	{ 0x006B28, 0x7FFF, 0x1F },
 	{ 0x006C28, 0x7FFF, 0x1F },
 	{ 0x006D24, 0x7FFF, 0x1F },
+	/* room.c: registers/flags are dead for the callers (see the comments in room.c) */
+	{ 0x00758A, 0x7FFF, 0x1F },   /* room_load */
+	{ 0x007950, 0x7FFF, 0x1F },   /* room_draw_view */
+	{ 0x007A8C, 0x7FFF, 0x1F },   /* room_setup_actors */
+	{ 0x007C04, 0x7FFF, 0x1F },   /* objects_update */
+	{ 0x007F22, 0x7FFF, 0x1F },   /* game_state_init */
+	{ 0x007D54, 0x0000, 0x1F },   /* overlay_apply: flags only */
 };
 
 static int do_run(const hle_def *target, const opts *o)
