@@ -1,0 +1,49 @@
+#!/bin/sh
+# Difftest the menu code (src/game/menu*.c, soundtest.c, issue #21) on states captured from the menu
+# tour routes (port/scripts/menus/tour*.txt; boot -> every menu, password screen, sound test, DEBUG
+# editors, pause menu, quit, repeated), instead of the Lobby capture route.
+#   port/tools/dt-menus                 run everything (states are captured on first use into runs/states/<ADDR>;
+#                                       delete them when a tour script changes)
+#   port/tools/dt-menus FUNC...         run the named functions
+# Register/flag exemptions are the table in difftest.c ("#21 menus"), with their proofs in the C sources.
+root=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$root"
+[ -f build/port/CMakeCache.txt ] || cmake -S port -B build/port -DCMAKE_BUILD_TYPE=Release >/dev/null
+cmake --build build/port -j"$(nproc)" --target difftest >/dev/null || exit 1
+D=build/port/difftest
+SCRIPTS="--script port/scripts/menus/tour1.txt --script port/scripts/menus/tour2.txt --script port/scripts/menus/tour3.txt"
+N=${DT_MENUS_N:-200}
+ALL="title_mask_irq title_setup title_bats_start title_bats_first title_bats_frame title_bats_wait
+ menu_open menu_show menu_choose_show menu_select menu_select_frame menu_select_draw menu_select_pad
+ menu_select_tick menu_select_done quit_confirm quit_confirm_done soft_reset_begin menu_start_game
+ menu_play_blake menu_play_carnival mystery_menu mystery_menu_done menu_refresh_planes menu_title_sprites
+ password_shift_bits password_shift_symbol password_scramble password_unscramble password_show
+ password_read_bit password_read_byte password_check password_accept password_cursor_left
+ password_cursor_right password_switch_row password_clear password_key_noop password_cancel
+ password_screen_start password_screen_frame password_screen_input password_screen_icon_done
+ password_screen_tick
+ sound_test sound_test_show sound_test_frame sound_test_poll sound_test_name sound_test_exit
+ rooms_browser rooms_page rooms_rows rooms_input objects_browser objects_page objects_rows objects_input
+ menu_load_screen menu_load_screen_dma debug_rooms debug_rooms_pick debug_rooms_done debug_objects
+ debug_objects_move debug_objects_done"
+ONLY=; [ $# -gt 0 ] && { ALL="$*"; ONLY=1; }
+mkdir -p runs/dt-menus
+# captures and checks run 4 at a time (each replays the tours from power-on)
+echo $ALL | tr ' ' '\n' | grep . | xargs -P "${DT_JOBS:-4}" -I{} sh -c \
+	"$D check {} --n $N $SCRIPTS --keep-going $DT_EXTRA > runs/dt-menus/{}.log 2>&1"
+# more states for the password code: patched work RAM (tools/py/menus_pokes.py)
+if [ -z "$ONLY" ]; then
+	PY=.venv/bin/python; [ -x $PY ] || PY=/opt/venv/bin/python
+	for spec in "password_show show 008660" "password_check check 009298" "password_scramble raw 00873E" \
+	            "password_unscramble raw 00876C" "password_accept raw 00933E"; do
+		set -- $spec
+		eval "$D run $1 --states runs/states/$3 --keep-going $($PY -I tools/py/menus_pokes.py $2 150)" 2>&1 |
+			tail -2 | sed "s/^/[pokes] /"
+	done
+fi
+rc=0
+for f in $ALL; do
+	tail -${DT_TAIL:-1} runs/dt-menus/$f.log
+	grep -q "states equal" runs/dt-menus/$f.log || rc=1
+done
+exit $rc

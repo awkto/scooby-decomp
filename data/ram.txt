@@ -236,3 +236,11 @@ FF0AC4 1    ram_actors_drawn # bit n: drawn into the SAT this frame
 FF0AC5 1    ram_actors_drawn_prev
 FF0AC6 1    ram_actors_follow_sync # follow mode: slot has a new frame, wait for the partner
 FF0ACE 1    ram_fx_blink     # effect sprite blink counter
+
+# ---- #21 menus (scratch that the title/menu code keeps in ram_sat_buf while no sprites are built)
+FF000A 2    ram_menu_room        # start room chosen in the menus (= ram_room_index; DEBUG ROOMS changes it)
+FF0010 2    ram_menu_pad_prev    # byte: pad 1 of the previous menu frame; as a word: bat scale depth (title)
+FF0012 2    ram_title_bat_depth_b # second title piece's scale depth
+FF001E 32   ram_pw_raw           # raw password bytes r[0..31] (password_show / password_check)
+FF003E 52   ram_pw_sym           # 5-bit password symbols
+FF08BA 2    ram_cheat_progress   # keys of the DEBUG cheat code matched so far (0..11)

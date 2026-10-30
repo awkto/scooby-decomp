@@ -193,41 +193,41 @@
 007f22 game_state_init -> -
 007f66 mystery_load -> mystery_intro sound_stop
 00801a actors_init -> actor_animate
-008196 title_screen -> font_tiles_load sub_00851E^ sub_008660 sub_008F40 wait_vblank sound_play lzss_decompress vdp_copy_to_vram vdp_write_word vdp_dma_vram vdp_fill_vram vdp_clear_vram rle_decompress palette_read_cram palette_fade sub_00E40C sub_00F272
-00851e sub_00851E -> sub_0088A2* sub_008C40* menu_start_game* sub_008D6A sub_008F1C sub_008F8A* sub_008FB8* sub_008FC2* sound_test* vdp_dma_vram rle_decompress draw_text_plane_a sub_00E40C sub_00F272
-008660 sub_008660 -> sub_00870E sub_008710 sub_00873E
-00870e sub_00870E -> -
-008710 sub_008710 -> -
-00873e sub_00873E -> -
-00876c sub_00876C -> -
+008196 title_screen -> font_tiles_load menu_open^ password_show menu_title_sprites wait_vblank sound_play lzss_decompress vdp_copy_to_vram vdp_write_word vdp_dma_vram vdp_fill_vram vdp_clear_vram rle_decompress palette_read_cram palette_fade sub_00E40C sub_00F272
+00851e menu_open -> debug_rooms* debug_objects* menu_start_game* menu_select menu_refresh_planes quit_confirm* menu_play_blake* menu_play_carnival* sound_test* vdp_dma_vram rle_decompress draw_text_plane_a sub_00E40C sub_00F272
+008660 password_show -> password_shift_symbol password_shift_bits password_scramble
+00870e password_shift_symbol -> -
+008710 password_shift_bits -> -
+00873e password_scramble -> -
+00876c password_unscramble -> -
 00879e title_anim -> -
-008876 sub_008876 -> vdp_dma_vram
-0088a2 sub_0088A2 -> sub_00851E^ sub_0088D8 sub_0096F4 vdp_dma_vram
-0088d8 sub_0088D8 -> wait_vblank sub_009F46
-008ab4 sub_008AB4 -> wait_vblank sub_009F46
-008c40 sub_008C40 -> font_tiles_load sub_00851E^ sub_0088D8 sub_008AB4 sub_0096F4 vdp_dma_vram
+008876 title_strip_dma -> vdp_dma_vram
+0088a2 debug_rooms -> menu_open^ rooms_browser menu_load_screen vdp_dma_vram
+0088d8 rooms_browser -> wait_vblank sub_009F46
+008ab4 objects_browser -> wait_vblank sub_009F46
+008c40 debug_objects -> font_tiles_load menu_open^ rooms_browser objects_browser menu_load_screen vdp_dma_vram
 008cd6 menu_start_game -> palette_read_cram
-008d36 sub_008D36 -> sub_008F1C vdp_dma_vram rle_decompress
-008d6a sub_008D6A -> sub_008F1C wait_vblank sound_play sub_00E40C sub_00F272
-008f1c sub_008F1C -> vdp_dma_vram
-008f40 sub_008F40 -> -
-008f8a sub_008F8A -> sub_00851E^ sub_008D36
+008d36 menu_choose -> menu_refresh_planes vdp_dma_vram rle_decompress
+008d6a menu_select -> menu_refresh_planes wait_vblank sound_play sub_00E40C sub_00F272
+008f1c menu_refresh_planes -> vdp_dma_vram
+008f40 menu_title_sprites -> -
+008f8a quit_confirm -> menu_open^ menu_choose
 008f9a soft_reset -> Reset* palette_read_cram
-008fb8 sub_008FB8 -> sub_008FCA^
-008fc2 sub_008FC2 -> -
-008fca sub_008FCA -> game_state_init sub_00851E^ sub_008660 menu_start_game^ sub_008D36 sub_008F1C sub_009162* sub_00927A* sub_009298* sub_0093A2* sub_0093B6* sub_0093CC* sub_0093DC* wait_vblank sound_play vdp_dma_vram rle_decompress sub_009F58 sub_00E40C sub_00F272
-009162 sub_009162 -> -
-00927a sub_00927A -> sub_00851E^ wait_vblank
-009298 sub_009298 -> sub_00876C menu_start_game^ sub_009382 wait_vblanks sound_play
-009382 sub_009382 -> sub_009392
-009392 sub_009392 -> -
-0093a2 sub_0093A2 -> sound_play
-0093b6 sub_0093B6 -> sound_play
-0093cc sub_0093CC -> sound_play
-0093dc sub_0093DC -> sub_008660 sound_play
-0093f8 sub_0093F8 -> menu_start_game^
-00940c sound_test -> sub_00851E^ sub_008F1C wait_vblank sound_play vdp_write_word vdp_dma_vram rle_decompress sub_009F30 draw_text_plane_a sub_00E40C sub_00F272 sound_cmd_stop_all
-0096f4 sub_0096F4 -> wait_vblank vdp_dma_vram rle_decompress
+008fb8 menu_play_blake -> mystery_menu^
+008fc2 menu_play_carnival -> -
+008fca mystery_menu -> game_state_init menu_open^ password_show menu_start_game^ menu_choose menu_refresh_planes password_key_noop* password_cancel* password_check* password_cursor_left* password_cursor_right* password_switch_row* password_clear* wait_vblank sound_play vdp_dma_vram rle_decompress sub_009F58 sub_00E40C sub_00F272
+009162 password_key_noop -> -
+00927a password_cancel -> menu_open^ wait_vblank
+009298 password_check -> password_unscramble menu_start_game^ password_read_byte wait_vblanks sound_play
+009382 password_read_byte -> password_read_bit
+009392 password_read_bit -> -
+0093a2 password_cursor_left -> sound_play
+0093b6 password_cursor_right -> sound_play
+0093cc password_switch_row -> sound_play
+0093dc password_clear -> password_show sound_play
+0093f8 password_unused_start -> menu_start_game^
+00940c sound_test -> menu_open^ menu_refresh_planes wait_vblank sound_play vdp_write_word vdp_dma_vram rle_decompress sub_009F30 draw_text_plane_a sub_00E40C sub_00F272 sound_cmd_stop_all
+0096f4 menu_load_screen -> wait_vblank vdp_dma_vram rle_decompress
 009716 sub_009716 -> vdp_clear_vram^
 009722 sub_009722 -> vdp_clear_vram^
 00972e sub_00972E -> -
