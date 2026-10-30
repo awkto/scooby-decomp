@@ -1,0 +1,37 @@
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+ram s0
+press C 4
+run 40
+ram sC
+shot sC
+press C 4
+run 40
+ram sC2
+shot sC2
+press A 3
+run 10
+ram sA
+shot sA
+press D 100
+run 5
+ram sD
+shot sD
+press B 20
+run 5
+ram sB
+shot sB
