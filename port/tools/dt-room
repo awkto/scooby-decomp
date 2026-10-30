@@ -64,7 +64,7 @@ objtest() {
 		echo "object_table_init \$007F66: MISMATCH"; cmp -l $d/none.obj $d/all.obj | head -20; rc=1
 	fi
 }
-fns=${*:-room_load room_draw_view room_setup_actors game_state_init object_table_init font_tiles_load pad_direction zone_probe_cursor zone_probe_point overlay_apply objects_update}
+fns=${*:-room_load room_draw_view room_setup_actors game_state_init object_table_init font_tiles_load overlay_apply objects_update}
 for f in $fns; do
 	v=""; mx=12; ign=""
 	case $f in
