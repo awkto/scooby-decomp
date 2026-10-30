@@ -341,8 +341,10 @@ function returns. The layer makes that safe (`nest_begin()` in hle.c):
   background (hosttest "Lobby HLE-on" fell to 60%). Calling DMA routines from C through
   `hle_call68k` is fine now. #19's script.c keeps some DMA calls in 68k from before this
   fix; that is harmless.
-- **The CPU clock** is rewound after the outermost nested call, and the nested time is
-  added to the C function's charge (see the next section). Before this, a nested LZSS run
+- **The CPU clock** runs on across the nested calls of one C function, together with the
+  raster line base and the V counter (#33, see "HV counter reads"). All three are rewound
+  when the C function returns, and the nested time is added to its charge (see the next
+  section). Before this, a nested LZSS run
   of millions of cycles followed by a Z80 bus request made the Z80/YM2612 catch up by
   frames at once (YM buffer overflow). room.c used to rewind the clock itself
   (`gx_m68k_set_cycles`); the layer does it now.
@@ -398,16 +400,34 @@ the test screen). difftest follows such a jump: after the C function it keeps ru
 
 ### Timing-dependent reads
 
-- **HV counter / VDP status reads** (not waits): in the sandbox the V counter stays at
-  the entry line and the H counter moves with the CPU clock. C code reads at the CPU time
-  of the function's entry (C takes no time until it returns).
-  - If only V matters (`sub_005C8E`: "is the raster still in lines `$E1`–`$F6`?"), C and 68k
-    agree in difftest.
-  - If the exact value flows into state, keep the function in 68k. `game_init` is the
-    example: HV → `rng_next` → X flag. A tail jump to the read doesn't help either: the C
-    prefix took no time, so the 68k still reads earlier than the original did. Tried and
-    measured in #12.
-  - In real play the earlier read just shifts a DMA by a frame.
+- **HV counter reads: the strategy (#33).** The 68k code reads the HV counter at
+  `$C00008` in four places:
+  - `hud_dma` `$005C8E`: upload the HUD only while the beam is in lines `$E1`–`$F6`.
+  - `actor_dma` `$00AF24`: actor tile DMA only in the HV window `$E000`–`$F000`.
+  - `game_init` `$00A248`: RNG step.
+  - `hblank_verb_bar` `$01006C`: raster wait.
+
+  None of them is in C. `hud_dma` and `actor_dma` are called from C `vblank_main`
+  through `hle_call68k`; `game_init` and `hblank_verb_bar` stay 68k (see below). The rules:
+  1. **Keep HV reads in 68k code, and call it nested.** Inside a top-level C function, time
+     runs on across its nested 68k calls. The CPU clock, the raster line base **and the V
+     counter** advance with the nested instructions, so an HV read after `camera_update`
+     and `palette_cycle` sees the line the original would see (roughly: C's own work
+     counts as zero). When the C function returns, the layer rewinds all three and charges
+     the time.
+  2. **Don't read `$C00008` from C code.** C runs at the time of its entry plus the nested
+     time so far, and has no notion of its own cost. If C must decide on the beam
+     position, call the 68k routine that does the read.
+  3. **If the HV value flows into game state** (`game_init`: HV → `rng_next` → X flag),
+     keep the routine in 68k: no C ordering reproduces the exact value.
+  4. In difftest the V counter is frozen at the entry line on both sides, so these
+     functions compare equal there. The live behaviour is checked by
+     `port/tools/storytest.sh` (closed-loop gameplay) and `irqtest.sh`.
+
+  **#33**: before #31, nested calls advanced the clock but not the V counter. After #31
+  each nested call was rewound on its own, so in C `vblank_main` the beam was always at
+  line `$E0` when `hud_dma` checked it. The HUD upload never happened, `VBF_HUD_DMA` (bit 5
+  of `$FF09DC`) was never cleared, and `inventory_redraw` (`$5D0E`) hung after every TAKE.
 - **Interrupt mask**: never lower the mask in `ctx->sr` before a nested `hle_call68k`. A
   pending HBlank would run `hblank_verb_bar` inside the nested call, and its raster wait
   never ends. Reproduce only the final SR the original leaves behind (see `vblank_main`).
@@ -492,3 +512,11 @@ sound, set_hotspot, on_event, freeze, pal_cycle, 9 sub-ops) as functions, the bl
 unfreeze_wait, bar_hide/bar_show) as ranges around their waits, and the drivers
 action_execute, run_object_events, the room scripts and the TALK menu loop as ranges.
 `tools/py/script_dt_all.sh` / `script_dt_pokes.sh` run them all.
+
+#14 (decompressors), file `decomp.c`, details in `docs/subsystems/decomp.md`; test driver
+`port/tools/dt-decomp` (captured states plus one variant per LZSS/RLE stream in the ROM):
+
+| Address | Name | File | difftest result |
+| --- | --- | --- | --- |
+| $0097AA | lzss_decompress (per-token cycle model, called directly by room.c / reset.c) | decomp.c | 484/484 (60 route states + 212 stream variants x 2 states) |
+| $009C64 | rle_decompress | decomp.c | 248/248 (8 route states + 31 title/logo streams, with and without the $FF09ED bit 3 side effect) |

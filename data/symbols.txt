@@ -21,8 +21,8 @@
 009C1E vdp_fill_cram
 009C58 vdp_clear_vram    # d0=addr, d1=count
 009C5E vdp_clear_cram
-009C64 rle_decompress    # PackBits-style RLE (docs/formats.md)
-0097AA lzss_decompress   # a0=stream, a1=4 KiB ring buffer ($FF3000)
+009C64 rle_decompress    # PackBits-style RLE: a0=stream a2=out; C in decomp.c (#14)
+0097AA lzss_decompress   # a0=stream a1=ring ($FF3000) a2=out, size left at (a1).l; C in decomp.c (#14)
 009DE0 palette_read_cram # reads 64 CRAM words into ram_pal_cur
 009E7E palette_fade      # 8-step fade of ram_pal_cur toward the 128-byte CRAM image at a0
 009F72 draw_text_plane_a # a0=cstring; writes tile (char + ram_font_base) into plane A at $C000
