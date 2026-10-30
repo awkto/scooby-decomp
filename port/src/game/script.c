@@ -879,3 +879,212 @@ done:
 	ctx->a[5] += 6;
 	hle_jump(ctx, 0x002E7C);
 }
+
+/* ------------------------------------------------------------------ action_execute */
+/* $0019B0 action_execute: the player used verb ram_action_verb on ram_target_obj (or walked
+ * onto a hot spot: verb 11). Flow (stack pushes and the script calls stay 68k):
+ *   1. object script of the target: A5/A6 = body, $FF06B0 = header word 2; push A5/A6;
+ *      script_run_nested collects the talk_choice ops                       ($0019B0)
+ *   2. verb pass: script_flags = 2, D7 = verb, push verb_state; script_run   ($001A16)
+ *   3. a case matched: run its body with script_run_frame                    ($001A46)
+ *   4. pop A5/A6; TALK with choices: the dialog menu sub_001C0C              ($001A84,
+ *      $001A9C after the menu)
+ *   5. nothing happened: "I can't <verb> that/him/her." in the text box     (ae_finish)
+ *   6. deselect the verb; sys then_talk re-enters with TALK                  ($001BA0) */
+#define RAM_ACTION_VERB   0xFF06BE
+#define RAM_PRONOUN       0xFF06B0   /* word: object script header word 2 (high byte: pronoun bits) */
+#define RAM_TEXT_BUF      0xFF08BC   /* status/text line buffer */
+#define RAM_THEN_TALK_OBJ 0xFF06DA
+#define VERB_FAIL_MSGS    0x02FEA0   /* 10 longs: "I can't open \1." ... (\1 = pronoun) */
+#define STR_THAT          0x02FFDB
+#define STR_HIM           0x02FFE0
+#define STR_HER           0x02FFE4
+#define STR_COPY          0x005B56
+#define VERB_REDRAW_BOTH  0x001BDA   /* repaint the selected and the default verb label */
+#define AE_START          0x0019B0
+#define AE_RTS            0x001BD6
+
+static void ae_deselect(hle_ctx *ctx);
+
+/* $001AAC..: after the verb pass (and TALK menu): failure text unless a script ran */
+static void ae_finish(hle_ctx *ctx)
+{
+	uint16_t verb = (uint16_t)ctx->d[7];
+	if (bit_test(ctx, RAM_SCRIPT_FLAGS, 6)) {             /* a verb script ran */
+		ae_deselect(ctx);
+		return;
+	}
+	bool z;
+	if (cmpw(ctx, verb, 5) == 0) {                         /* USE */
+		bit_clr(ctx, RAM_09E8, 0);
+		z = ctx->sr & CC_Z;
+		goto use_give;
+	}
+	if (cmpw(ctx, verb, 6) == 0) {                         /* GIVE */
+		bit_set(ctx, RAM_09E8, 0);
+		cc_btst(ctx, ctx->d[0], 0);                        /* btst #0,d0 (saved verb_state) */
+		z = ctx->sr & CC_Z;
+		goto use_give;
+	}
+	goto check;
+use_give:
+	/* USE: Z from bclr #0,($09E8) (quirk); GIVE: Z = bit 0 of the verb_state saved before
+	 * the verb pass clear */
+	if (!z) {
+		bit_clr(ctx, RAM_VERB_STATE, 0);
+		goto check;
+	}
+	if (bit_test(ctx, RAM_SCRIPT_FLAGS, 5))                /* waits for a second object */
+		goto check;
+	if (bit_test(ctx, RAM_VERB_STATE, 0)) {
+		bit_clr(ctx, RAM_VERB_STATE, 0);
+		goto check;
+	}
+	RAM16(RAM_TARGET2_OBJ) = 0;
+	cc_logic16(ctx, 0);
+	bit_set(ctx, RAM_VERB_STATE, 0);
+check:
+	if (bit_test(ctx, RAM_VERB_STATE, 0) || cmpw(ctx, verb, 11) == 0) {
+		ae_deselect(ctx);
+		return;
+	}
+	/* build "I can't <verb> \1." with \1 = that / him / her */
+	ctx->a[0] = VERB_FAIL_MSGS;
+	set_w(&ctx->d[7], cc_sub(ctx, verb, 1, 16, true));
+	set_w(&ctx->d[7], lslw(ctx, ctx->d[7], 2));
+	ctx->a[2] = bus_r32(VERB_FAIL_MSGS + (int16_t)ctx->d[7]);
+	ctx->a[1] = RAM_TEXT_BUF;
+	for (;;) {
+		uint8_t ch = bus_r8(ctx->a[2]++);
+		bus_w8(ctx->a[1]++, ch);
+		cc_logic8(ctx, ch);
+		if (!ch)
+			break;
+		cc_sub(ctx, ch, 1, 8, false);
+		if (ch != 1)
+			continue;
+		ctx->a[1]--;
+		cc_logic8(ctx, 1);                                 /* tst.b -(a1) */
+		if (!bit_test(ctx, RAM_PRONOUN, 0))
+			ctx->a[0] = STR_THAT;
+		else if (!bit_test(ctx, RAM_PRONOUN, 1))
+			ctx->a[0] = STR_HIM;
+		else
+			ctx->a[0] = STR_HER;
+		hle_call68k(ctx, STR_COPY);
+		ctx->a[1]--;
+		cc_logic8(ctx, 0);                                 /* tst.b -(a1): the NUL */
+	}
+	ctx->a[0] = RAM_TEXT_BUF;
+	hle_jump(ctx, 0x001B9A);                               /* jsr sub_00A130: print, wait */
+}
+
+/* $001BA0: deselect the verb unless it was the one used; sys then_talk -> TALK again */
+static void ae_deselect(hle_ctx *ctx)
+{
+	set_w(&ctx->d[0], RAM16(RAM_VERB_CUR));
+	if (cmpw(ctx, ctx->d[0], RAM16(RAM_ACTION_VERB)) != 0) {
+		RAM16(RAM_VERB_CUR) = 0;
+		cc_logic16(ctx, 0);
+	}
+	if (!bit_test(ctx, 0xFF0ACA, 3)) {
+		hle_jump(ctx, AE_RTS);
+		return;
+	}
+	RAM16(RAM_ACTION_VERB) = 8;
+	uint16_t t = RAM16(RAM_THEN_TALK_OBJ);
+	RAM16(RAM_TARGET_OBJ) = t;
+	cc_logic16(ctx, t);
+	hle_jump(ctx, AE_START);
+}
+
+HLE_RANGE(0x0019B0, action_execute, 200, 0x001BD8, 0x0019F6, 0x001A0E)
+{
+	RAM16(RAM_TALK_COUNT) = 0;
+	bit_clr(ctx, 0xFF0ACA, 3);
+	ctx->a[0] = RAM32(RAM_MYSTERY_HDR);
+	ctx->a[6] = bus_r32(ctx->a[0] + 0x2C);                /* script base */
+	ctx->a[0] = bus_r32(ctx->a[0] + 0x28);                /* object script table */
+	set_w(&ctx->d[0], RAM16(RAM_TARGET_OBJ));
+	set_w(&ctx->d[0], cc_sub(ctx, ctx->d[0], 3, 16, true));
+	if (ctx->d[0] & 0x8000) {                              /* Shaggy, Scooby, nothing */
+		hle_jump(ctx, 0x001BD8);
+		return;
+	}
+	if (cmpw(ctx, RAM16(RAM_ACTION_VERB), 2) == 0) {       /* TAKE something carried: no-op */
+		set_w(&ctx->d[1], (uint16_t)ctx->d[0]);
+		ctx->d[1] = (ctx->d[1] & 0xFFFF) * OBJ_SIZE;
+		ctx->a[1] = RAM_OBJECTS;
+		if (cmpw(ctx, RAM16(obj_addr(ctx->d[1], OBJ_ROOM)), 1) == 0) {
+			hle_jump(ctx, 0x0019F6);
+			return;
+		}
+	}
+	set_w(&ctx->d[0], lslw(ctx, ctx->d[0], 3));
+	ctx->a[6] += bus_r32(ctx->a[0] + (int16_t)ctx->d[0]);
+	ctx->a[5] = ctx->a[6];
+	uint16_t len = bus_r16(ctx->a[5]);
+	set_w(&ctx->d[0], len);
+	uint16_t pron = bus_r16(ctx->a[5] + 2);
+	RAM16(RAM_PRONOUN) = pron;
+	cc_logic16(ctx, bus_r16(ctx->a[5] + 4));
+	ctx->a[5] += 6;
+	/* quirk: the end is header + len, 6 bytes short of the body end that
+	 * run_object_events uses (header + 6 + len); ops starting in the last 6 bytes are never
+	 * scanned here (no data puts a case there) */
+	ctx->a[6] += (int16_t)len;
+	hle_jump(ctx, 0x001A0E);                               /* push A5/A6, script_run_nested */
+}
+
+HLE_RANGE(0x001A16, action_execute_verb_pass, 120, 0x001A3A)
+{
+	uint16_t n = RAM16(RAM_TALK_COUNT);
+	cc_logic16(ctx, n);
+	if (n)
+		hle_call68k(ctx, VERB_REDRAW_BOTH);
+	RAM8(RAM_SCRIPT_FLAGS) = SF_MATCH_CASE;
+	RAM32_W(RAM_SCRIPT_CB, 0x0023DC);
+	set_w(&ctx->d[7], RAM16(RAM_ACTION_VERB));
+	cc_logic16(ctx, ctx->d[7]);
+	hle_jump(ctx, 0x001A3A);                               /* push verb_state, script_run */
+}
+
+HLE_RANGE(0x001A46, action_execute_run_case, 120, 0x001A7C, 0x001A80)
+{
+	if (!bit_test(ctx, RAM_SCRIPT_FLAGS, 0)) {             /* no case for this verb */
+		hle_jump(ctx, 0x001A80);
+		return;
+	}
+	bit_set(ctx, RAM_SCRIPT_FLAGS, 6);
+	uint16_t len = opw(ctx, 6);
+	set_w(&ctx->d[0], len);
+	ctx->a[6] = ctx->a[5] + (int16_t)len;
+	ctx->a[5] += 8;
+	RAM32_W(RAM_SCRIPT_CB, 0x002406);
+	bit_clr(ctx, RAM_SCRIPT_FLAGS, 0);
+	hle_call68k(ctx, VERB_REDRAW_BOTH);
+	hle_jump(ctx, 0x001A7C);                               /* script_run_frame */
+}
+
+HLE_RANGE(0x001A84, action_execute_after, 300, 0x001A8C, 0x001B9A, AE_START, AE_RTS)
+{
+	if (cmpw(ctx, ctx->d[7], 8) == 0) {
+		hle_jump(ctx, 0x001A8C);                           /* TALK: the dialog menu */
+		return;
+	}
+	ae_finish(ctx);
+}
+
+HLE_RANGE(0x001A9C, action_execute_after_talk, 300, 0x001B9A, AE_START, AE_RTS)
+{
+	uint16_t n = RAM16(RAM_TALK_COUNT);
+	cc_logic16(ctx, n);
+	if (n)
+		bit_set(ctx, RAM_SCRIPT_FLAGS, 6);
+	ae_finish(ctx);
+}
+
+HLE_RANGE(0x001BA0, action_execute_done, 60, AE_START, AE_RTS)
+{
+	ae_deselect(ctx);
+}
