@@ -322,6 +322,8 @@ static const struct {
 	 * range that leaves them undefined.  Flags are compared. */
 	{ 0x00E40C, 0x00F8, 0x00 },
 	{ 0x00F272, 0x00F8, 0x00 },
+	/* camera_update: d0-d3, a0 scratch and flags dead for its only caller vblank_main (camera.c) */
+	{ 0x00FA78, 0x010F, 0x1F },
 };
 
 static int do_run(const hle_def *target, const opts *o)
