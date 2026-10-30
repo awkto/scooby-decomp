@@ -37,6 +37,10 @@ int  mg_default_verb(void);            /* $FF06C4 default verb of the hovered ob
 bool mg_inventory_view(void);          /* $FF09DC bit 4 */
 bool mg_bar_sliding(void);             /* $FF0ACB != $FF */
 int  mg_room(void);                    /* $FF06AC */
+/* has pad_read latched these buttons (emu.h PAD_* mask) as pressed in $FF09E0?
+ * _any: at least one of them; plain: all of them */
+bool mg_pad_latched(unsigned pad_mask);
+bool mg_pad_latched_any(unsigned pad_mask);
 
 /* The main loop's pointer hit test ($000E94-$001066, room area only), redone in C on
  * screen pixel (sx, sy) as if the crosshair were placed there with mg_pointer_place:

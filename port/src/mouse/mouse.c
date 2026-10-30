@@ -23,6 +23,11 @@
 #define SETTLE_TIMEOUT 40    /* frames: the main loop can lag behind (scripts, Scooby) */
 #define HOLD_TIMEOUT 30
 #define OPEN_TIMEOUT 8
+/* Frames to wait for pad_read to latch an injected press or release.  Not every emulated
+ * frame reads the pad: when the main loop overruns, the VBlank work (pad_read,
+ * player_update) is skipped, so a press must be held until the game has seen it. */
+#define LATCH_TIMEOUT 60
+#define INJECTABLE (PAD_A | PAD_B | PAD_C | PAD_START | DIRS)
 #define VERB_LOOK 10
 
 typedef enum {
@@ -61,6 +66,7 @@ static struct {
 	int still;            /* frames run with the same crosshair position written */
 	int wx, wy;           /* position written last */
 	int drift;            /* movement while passive (see ACTIVATE_DRIFT) */
+	int kclose;           /* frames left to hold A closing the hover pointer for the pad */
 	const char *status;
 } M = { .enabled = true, .status = "idle" };
 
@@ -393,34 +399,27 @@ static unsigned run_plan(void)
 		mg_mode mode = mg_mode_get();
 		bool done = false;
 		switch (s->op) {
-		case OP_OPEN:
-			if (mode == MG_POINTER) {
+		case OP_OPEN:                               /* A edge -> verb_menu_open_check */
+		case OP_CLOSE:                              /* A edge in pointer mode: leave ($0062E8) */
+			if ((s->op == OP_OPEN) == (mode == MG_POINTER)) {
 				done = true;
 				break;
 			}
-			if (s->t > OPEN_TIMEOUT || (mode != MG_FREE && s->t == 0)) {
+			if (s->op == OP_OPEN && mode != MG_FREE && s->t == 0) {
 				abort_plan("cannot open pointer mode");
 				return inject;
 			}
-			if (s->t == 0) {
-				M.opened = true;
-				inject |= PAD_A;                    /* press edge -> verb_menu_open_check */
-			}
-			s->t++;
-			return inject;
-		case OP_CLOSE:
-			if (mode != MG_POINTER) {
-				done = true;
-				break;
-			}
-			if (s->t > OPEN_TIMEOUT) {
-				abort_plan("cannot close pointer mode");
+			if (s->t++ > LATCH_TIMEOUT) {
+				abort_plan(s->op == OP_OPEN ? "cannot open pointer mode" : "cannot close pointer mode");
 				return inject;
 			}
-			if (s->t == 0)
-				inject |= PAD_A;                    /* A edge in pointer mode: leave ($0062E8) */
-			s->t++;
-			return inject;
+			if (s->op == OP_OPEN)
+				M.opened = true;
+			/* phase 0: hold A until pad_read has latched it (a frame can pass without a
+			 * pad read: lag frames); phase 1: release and wait for player_update */
+			if (s->x == 0 && mg_pad_latched(PAD_A))
+				s->x = 1;
+			return inject | (s->x == 0 ? PAD_A : 0);
 		case OP_AT:
 			M.override = true;
 			M.ox = s->x;
@@ -473,12 +472,15 @@ static unsigned run_plan(void)
 			done = true;
 			break;
 		case OP_PRESS:
-			if (s->t++ < s->n)
+			/* at least n frames, and until the game's pad_read has latched the buttons */
+			if (s->t++ < s->n || (!mg_pad_latched(s->pad) && s->t < LATCH_TIMEOUT))
 				return inject | s->pad;
 			done = true;
 			break;
 		case OP_GAP:
-			if (s->t++ < s->n)
+			/* at least n frames, and until the release has been latched too (the next
+			 * press must be an edge) */
+			if (s->t++ < s->n || (mg_pad_latched_any(INJECTABLE) && s->t < LATCH_TIMEOUT))
 				return inject;
 			done = true;
 			break;
@@ -509,6 +511,7 @@ static unsigned run_plan(void)
 			return inject;
 		}
 		if (done) {
+			mlog("step %d done after %d frames (target %d verb %d still %d)", s->op, s->t, mg_target(), mg_verb(), M.still);
 			M.pos++;
 			continue;
 		}
@@ -538,7 +541,12 @@ unsigned mouse_frame(unsigned pad_in)
 		 * press closes it again (A edge) so that the D-pad walks as the player expects. */
 		unsigned inject = 0;
 		if (M.active && M.opened && mode == MG_POINTER && (pad_in & DIRS) && !busy())
-			inject = PAD_A;
+			M.kclose = LATCH_TIMEOUT;
+		if (M.kclose > 0 && mode == MG_POINTER && !mg_pad_latched(PAD_A)) {
+			M.kclose--;
+			inject = PAD_A;                         /* until pad_read has latched it */
+		} else
+			M.kclose = 0;
 		M.active = false;
 		M.drift = 0;
 		M.hover = false;

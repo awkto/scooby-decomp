@@ -36,7 +36,7 @@ for hle in all none; do
 	mkdir -p "$d"
 	{ echo "load $out/lobby.state"; python3 -c "
 import random
-r = random.Random(23)
+r = random.Random(${MOUSE_SOAK_SEED:-23})
 for i in range(60):
     print('click L %d %d' % (r.randrange(256), r.randrange(16, 168)))
     print('run %d' % r.choice((60, 200, 400)))
@@ -94,8 +94,10 @@ for hle in ("all", "none"):
     check(f"[{hle}] click on the window runs LOOK", ran and p.get("actverb") == 10,
           f"$FF09DC={p.get('act1', 0):02x}/{p.get('act2', 0):02x}/{p.get('act3', 0):02x} $FF06BE={p.get('actverb')}")
     check(f"[{hle}] click closes the text", not (p.get("after", 0x80) & 0x80), f"$FF09DC={p.get('after', 0):02x}")
-    check(f"[{hle}] right click = LOOK at the rug", bool(p.get("ract", 0) & 0x80) and p.get("ractverb") == 10
-          and p.get("rtarget") == 35 + 3, f"$FF09DC={p.get('ract', 0):02x} $FF06BE={p.get('ractverb')} $FF06AE={p.get('rtarget')}")
+    ract = [p.get(f"ract{i}", 0) for i in range(1, 5)]
+    check(f"[{hle}] right click = LOOK at the rug", any(v & 0x80 for v in ract) and p.get("ractverb") == 10
+          and p.get("rtarget") == 35 + 3,
+          f"$FF09DC={'/'.join('%02x' % v for v in ract)} $FF06BE={p.get('ractverb')} $FF06AE={p.get('rtarget')}")
 
     p = peeks(f"{out}/{hle}/exit/peek.log")
     check(f"[{hle}] click on the top door walks into the Hallway", p.get("room") == 9 and bool(p.get("moving", 0) & 1),

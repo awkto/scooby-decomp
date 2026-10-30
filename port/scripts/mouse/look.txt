@@ -27,8 +27,15 @@ mouse 128 100
 run 10
 peek verb2 FF06C0
 click R 20 110
+# (the LOOK cell detour takes a while; frames without a pad read stretch it further)
 run 40
-peek ract FF09DC 1
+peek ract1 FF09DC 1
+run 40
+peek ract2 FF09DC 1
+run 40
+peek ract3 FF09DC 1
+run 40
+peek ract4 FF09DC 1
 peek ractverb FF06BE
 peek rtarget FF06AE
 shot rlook_text

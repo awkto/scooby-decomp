@@ -1,6 +1,7 @@
 /* Game-side hooks for mouse control: see mousehook.h and docs/mouse.md. */
 #include "mousehook.h"
 #include "walk.h"
+#include "emu.h"
 
 #define VBLANK_HOOK     0xFF0000   /* l: current VBlank work routine */
 #define VBLANK_MAIN     0x00A65C   /* in-game VBlank handler */
@@ -89,6 +90,20 @@ int mg_default_verb(void) { return s16(DEFAULT_VERB); }
 bool mg_inventory_view(void) { return bit8(VBLANK_FLAGS, 4); }
 bool mg_bar_sliding(void) { return RAM8(VERB_BAR_SLIDE) != 0xFF; }
 int mg_room(void) { return s16(ROOM_INDEX); }
+
+/* $FF09E0 is active low in the order U D L R B C A S; emu.h's mask is U D L R A B C S */
+static unsigned pad_latched_mask(void)
+{
+	unsigned g = (uint8_t)~RAM8(PAD1_CUR), m = g & 0x0F;
+	if (g & 0x10) m |= PAD_B;
+	if (g & 0x20) m |= PAD_C;
+	if (g & 0x40) m |= PAD_A;
+	if (g & 0x80) m |= PAD_START;
+	return m;
+}
+
+bool mg_pad_latched(unsigned pad_mask) { return (pad_latched_mask() & pad_mask) == pad_mask; }
+bool mg_pad_latched_any(unsigned pad_mask) { return (pad_latched_mask() & pad_mask) != 0; }
 
 int mg_object_default_verb(int target)
 {
