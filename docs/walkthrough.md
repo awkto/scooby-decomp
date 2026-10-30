@@ -1,10 +1,11 @@
 # Story walkthrough routes (issue #29)
 
-Status, honestly: **neither mystery is solved.** What exists is (a) the tooling that drives the game through its
-real verb UI and observes the story state, (b) six verified flat routes that make real story progress (items,
-puzzle states), and (c) a static table of every Use/Give combination the scripts accept, from which the full
-puzzle chains can be planned. Each route replays from power-on with the plain batch harness and ends in the state
-recorded in its header (checked, see "Verification").
+Status: **both mysteries are solved end to end, closed loop, from power-on to the credits**: Blake's Hotel (`hotel_1`..`hotel_12`, route
+`w0_full`) and Ha Ha Carnival (`carnival_1`..`carnival_13`, route `w1_full`; `w1_part` is its first five segments, up to the Dart and the
+Ball). Everything is closed-loop: each
+input is decided from RAM read back from the running game (hit-test target, room, inventory, story bytes), never from frame counts, so
+the same driver runs on the harness and on the native port (`port/tools/storytest.sh`, `--hle none` vs `--hle all`). The flat harness
+scripts the driver records replay from power-on with the plain batch harness and end in the state in their header (`verify.py`).
 
 ## Tools
 
@@ -17,6 +18,11 @@ recorded in its header (checked, see "Verification").
 | `tools/py/collect_points.py`, `tools/scripts/story/points_w{0,1}.json` | cache of crosshair hit points per object (world coordinates) so strict routes need no scans |
 | `tools/py/objects.py`, `scriptdump.py`, `combos.py` | static dump of the object table / scripts / the (verb, second object) handlers |
 | `tools/py/verify.py` | replay a flat route in the batch harness and print room / inventory / story bytes |
+| `tools/py/story_full.py` | the long walkthroughs: `hotel_1..12`, `carnival_1..13`, minigame / timed drivers `crane_game`, `bumper_tug`, `roller_coaster` |
+| `tools/py/walkplan.py` | walk planner over the game's collision map (distance field, D-pad geometry, exit avoidance) |
+| `tools/py/hotspots.py` | static hotspot rectangle of every object (ROM object record +2 -> overlay table) |
+| `tools/py/blk.py`, `objrooms.py`, `storybytes.py` | puzzle-logic readers: disassembled script of an object without animation noise; initial room of every object; the 29-byte story table |
+| `tools/dev/*.sh`, `run.py` | the exploration loop on a VM: persistent session (`start.sh`), detached snippets (`bg.sh`, `bgr.sh`), route generator (`genroute.sh`), port gate (`st.sh`) |
 
 Key tricks:
 
@@ -25,23 +31,25 @@ Key tricks:
   generic refusals `"I can't open ."` are at `$2FECC`). `said()` returns them in order. No OCR needed.
 * **Routes are flat and deterministic.** Savestates are *not* bit-exact (a route recorded across `load`s replayed to a
   different state), so exploration may use savestates but the route generator runs in *strict* mode: no loads, no scans,
-  object points from the JSON cache (`world = crosshair + camera`), everything it presses is recorded. The only extras
-  the recorder emits are `poke FF06DC/FF06DE` (crosshair position), which is plain input the game reads every frame.
+  object hit points computed from the ROM hotspot rectangles and probed with the live hit test (`world = crosshair + camera`, plus
+  the +8/-8 hit-cell offset, see below; the points.json cache is only the fallback), and **everything the driver does to the
+  emulator is recorded**, including the crosshair pokes and frames of a probe (a replay that skipped them diverged).
 * Interaction recipe (all verified): `press A` enters/leaves pointer mode; poke the crosshair onto a verb cell and hold B
   4+ frames after >= 10 settle frames (shorter settle loses the click); poke it onto an object, check `$FF06AE`, press B;
   wait until `$FF09DC` bit 7 has been clear for 30 frames. **Use/Give**: select the verb, `press C` (inventory view,
   24 frames), put the crosshair on the item slot (slot c = 40*(c+1)+20, y 176/200), `press B`, `press C` back, click
   the target (the target then lands in `$FF06B6`, not `$FF06AE`). Two-object mode only starts if the *first* object's
   script has a Use/Give block with a second object (see `combos.py`), otherwise the verb fires at once on the item.
-* Walking: D-pad is ~0.35 px/frame; floors are irregular, so `walk_to` moves axis-wise with sidesteps. Room exits are
-  walked through (`exit_via`): after reaching the exit object keep pressing towards it. Pointer coordinates: `world =
-  crosshair + camera ($FF06CA/$FF06CE)`, Shaggy's world y ~ crosshair y - 8.
+* Walking: `walk_to` / `go_to` / `exit_via` plan on the game's collision map (`walkplan.py`, details in the Blake section below) and
+  fall back to the old greedy axis-wise walker with sidesteps when the model finds no way (exits just outside the collision fence).
+  Room exits are walked through (`exit_via`): after reaching the exit's hotspot keep pressing towards it. Pointer coordinates: the hit
+  cell is `((px+8+cam_x)>>3, (py-8+cam_y)>>3)` with `cam = $FF06CA/$FF06CE`.
 
 ## Routes (`tools/scripts/story/`)
 
 All start at power-on. "warp" = through the CONTINUE password screen with the initial story state (script from
 `tools/scripts/rooms/`), i.e. an isolated puzzle, not a from-the-start natural route. End states are asserted by the
-generator and re-checked with `verify.py` (batch replay) - all six matched.
+generator and re-checked with `verify.py` (batch replay) - all eight matched.
 
 | route | start | what it does | end state |
 |---|---|---|---|
@@ -51,32 +59,248 @@ generator and re-checked with `verify.py` (batch replay) - all six matched.
 | `w0_kitchen` | warp Kitchen (15) | take the **Chili**, the **Beads**, push the Flour sack: reveals the **Peephole** (back of the Lobby painting) | inventory `[100,99]`, `$0D=c2` |
 | `w1_front_lot` | natural (Front Lot, room 12) | take the Help Wanted **Sign**, walk through the Office Door into the Front Office | room 11, inventory `[84]` |
 | `w1_boathouse` | warp Boathouse (14) | take the message **Bottle** and the **Boat** | inventory `[108,110]` |
+| `w0_full` | natural | **the whole of Blake's Hotel**, power-on to the credits (12 segments, see below) | room 0 (game reset after the credits), same 29 story bytes as the header |
+| `w1_part` | natural | Carnival: pole cheat, Magnet, Tokens, Crane Game, Tickets, Dart Game, Teddy Bear, Ball, Fun House, Bumper Car duel, Dart | room 7, inventory has Dart + Ball |
+| `w1_full` | natural | **the whole of Ha Ha Carnival**, power-on to the credits (13 segments, see below) | room 0 (game reset after the credits), same 29 story bytes as the header |
 
-Not done: connecting the rooms into one run (kitchen is behind the Cook, the Lobby's Outside Door is not reachable with
-the greedy walker, the Carnival start room's other exits were not mapped), the cutscene/ending chains, the Carnival
-puzzles.
+The six short routes start from password warps (isolated puzzles); `w0_full` and `w1_part` are the natural ones. Generate a route with
+`tools/dev/genroute.sh ROUTE` on a VM (strict mode: no savestates, every probe recorded; it writes `runs/routes/ROUTE.txt`; pull it
+before the next `vmrun`, which would wipe files outside `build/` and `runs/`).
 
 ## Story state ($FF2A00, 29 bytes)
 
-The password carries exactly these 29 bytes. Mostly *one bit per event/item/door*; observed transitions (byte:bits,
-Blake unless `(C)` = Carnival):
+The password carries exactly these 29 bytes: one bit per event / item / door. The tables below are **complete**: they are generated by
+`tools/py/storybytes.py MYST` from the disassembly: for every flag bit, what the password-restore script (start script 2, which
+rebuilds the world from the 29 bytes: items into the inventory, doors, objects moved) does when it is set, and which object script sets
+or clears it under which verb (`event` = the object's timer script). `Fxx.b` in the disassembly = bit b of byte xx. Flags marked
+*(none: engine/scratch flag)* are cutscene/minigame state that is never restored (the restore script ignores them).
+Bytes `00`, `09`-`0B` are mostly engine scratch (scare-scene and animation phases); byte `0A` is also
+reseeded from the RNG during the intro (the story checkpoints of storytest mask it).
 
-| byte | bit (value) | meaning |
-|---|---|---|
-| `00` | 2, 3 | runtime scratch bits written by script ops `1C`/`1D` (copies of `$FF0AB7`/`$FF0ABC` bits); not story |
-| `01` | 6 (C: `0x40`) | Boat taken (C); 2 = Coffin opened (C) |
-| `02` | 4 (`10`) | Beads taken; 5 (`20`) Chili taken; 1 (`02`) Heater taken; 0 (`01`) Scissors taken |
-| `03` | 6 (`40`) | Can Opener taken; (C) 1 = Boots taken |
-| `04` | 1 (`02`) | Bottle of Oil taken; 2 (`04`) Battery taken; 3 (`08`) Screwdriver taken; (C) 0 Sign taken, 7 Bottle taken, 4 Bottle opened |
-| `05` | 7 (`80`) | Shovel taken |
-| `07` | 1,4,5,6 | Mine wheels collected: `12` (one) -> `36` (two) -> `7e` (three) |
-| `08` | 4 (`10`) | Mine Car repaired (`20 -> 30`); (C) Diving Bell hatch `06 -> 86` |
-| `0D` | 6, 7... | `82` base; Drawer opened `->02`, Microwave opened `->8a`, Flour pushed (Peephole) `->c2`, Christmas Lights tried `->83` |
-| `0E` | one bit per door/cabinet | `ff` all shut: Lobby Door bit0, Main Entrance bit1 (`fd`), Outside Door `fd`, Hallway doors `fb/f7/ef`, Cafe Cabinet bit7 (`7f`), Office Door bit0 |
-| `0F` | 1 / 6 | Basement Locker opened `01 -> 03`; Office "missing book" seen `01 -> 41` |
-| `10` | 0 / 1 | Cafe Radio turned (`01`), battery compartment opened (`03`) |
+### Blake's Hotel (mystery 0)
 
-(Everything else is still unobserved; the table is meant to be extended from `crawl.py` output.)
+| byte | bit | restore effect (password load) | set by (object, verb) |
+|---|---|---|---|
+| `00` | 4 | (none: engine/scratch flag) | Door OPEN =1; Door OPEN =0 |
+| `00` | 5 | Ancient Chieftan -> room 2 (The Basement); Scooby -> room 2 (The Basement); The Cook -> nowhere | Termites USE =1 |
+| `00` | 6 | Fire -> nowhere | Pot o' Water USE =1 |
+| `00` | 7 | Goblet -> INVENTORY |  |
+| `01` | 0 | Goblet -> room 16 (The Lobby); Doll -> nowhere | Bellhop TALK =1; Doll GIVE =1 |
+| `01` | 2 | Goblet state $00C6; Goblet -> room 20 (The Tomb) | Goblet USE =1 |
+| `01` | 3 | Crumpled Note -> INVENTORY | Crumpled Note TAKE =1 |
+| `01` | 4 | Light Bulb -> INVENTORY; Christmas Lights -> nowhere | Christmas Lights TAKE =1 |
+| `01` | 5 | Bed Spring -> INVENTORY | Bed Spring TAKE =1 |
+| `01` | 6 | Book -> INVENTORY | Book TAKE =1 |
+| `01` | 7 | Antacid -> INVENTORY | Antacid TAKE =1 |
+| `02` | 0 | Scissors -> INVENTORY | Scissors TAKE =1 |
+| `02` | 1 | Heater -> INVENTORY | Heater TAKE =1 |
+| `02` | 2 | Heater -> room 11 (Outside the Hotel); Heater state $0057 | Poison Oak USE =0; Heater TAKE =0; Heater USE =1 |
+| `02` | 3 | Beads -> nowhere | Beads GIVE =1 |
+| `02` | 4 | Beads -> INVENTORY | Beads TAKE =1 |
+| `02` | 5 | Chili -> INVENTORY | Chili TAKE =1 |
+| `02` | 6 | Chili -> nowhere; Empty Chili Can -> INVENTORY |  |
+| `02` | 7 | Empty Chili Can -> nowhere; Termites -> INVENTORY | Empty Chili Can USE =1 |
+| `03` | 0 | Vent Cover -> nowhere | Screwdriver USE =1 |
+| `03` | 1 | Cow Bell -> INVENTORY | Cow Bell TAKE =1 |
+| `03` | 2 | Soda Tab -> INVENTORY | Soda Tab TAKE =1 |
+| `03` | 3 | Note -> INVENTORY | Note TAKE =1 |
+| `03` | 4 | Pot -> INVENTORY | Pot TAKE =1 |
+| `03` | 5 | Pot -> nowhere; Pot o' Water -> INVENTORY | Pot o' Water USE =0; Pot USE =1 |
+| `03` | 6 | Can Opener -> INVENTORY | Can Opener TAKE =1 |
+| `03` | 7 | Key -> INVENTORY | Key TAKE =1 |
+| `04` | 0 | Lock -> nowhere | Key USE =1 |
+| `04` | 1 | Bottle of Oil -> INVENTORY | Bottle of Oil TAKE =1 |
+| `04` | 2 | Battery -> INVENTORY | Battery TAKE =1 |
+| `04` | 3 | Screwdriver -> INVENTORY | Screwdriver TAKE =1 |
+| `04` | 4 | Rack state $0009 | Crumpled Note USE =1 |
+| `04` | 5 | Killer Lettuce -> nowhere |  |
+| `04` | 6 | Medallion -> INVENTORY | Medallion TAKE =1 |
+| `04` | 7 | Rope -> INVENTORY | Rope TAKE =1 |
+| `05` | 0 | Rope state $0027; Rope -> room 4 (The Dungeon) | Rope USE =1 |
+| `05` | 1 | Snow Covered Doors -> nowhere | Shovel USE =1 |
+| `05` | 2 | Locked Doors -> nowhere | Crowbar USE =1 |
+| `05` | 3 | Weed Killer -> INVENTORY | Weed Killer TAKE =1 |
+| `05` | 4 | Work Gloves -> INVENTORY | Work Gloves TAKE =1 |
+| `05` | 5 | Crowbar -> INVENTORY | Crowbar TAKE =1 |
+| `05` | 6 | Poison Oak -> INVENTORY | Work Gloves USE =1 |
+| `05` | 7 | Shovel -> INVENTORY | Shovel TAKE =1; Shovel USE =1 |
+| `06` | 0 | Snowman -> nowhere; Hat -> room 12 (Outside the Hotel); Frozen Bell -> room 12 (Outside the Hotel) | Shovel USE =1 |
+| `06` | 1 | Air Freshener -> INVENTORY |  |
+| `06` | 2 | Pole -> INVENTORY | Pole TAKE =1; Pole USE =1 |
+| `06` | 3 | Doll -> INVENTORY | Pole USE =1 |
+| `06` | 4 | Battery -> nowhere; Soda Tab -> nowhere; Soda Tab and Battery -> INVENTORY | Soda Tab USE =1; Battery USE =1 |
+| `06` | 5 | Battery -> nowhere; Light Bulb -> nowhere; Bulb and Battery -> INVENTORY | Battery USE =1; Light Bulb USE =1 |
+| `06` | 6 | Light Bulb -> nowhere; Soda Tab -> nowhere; Bulb and Soda Tab -> INVENTORY | Soda Tab USE =1; Light Bulb USE =1 |
+| `06` | 7 | Bulb and Battery -> nowhere; Soda Tab and Battery -> nowhere; Bulb and Soda Tab -> nowhere; Flashlight -> INVENTORY | Soda Tab USE =1; Battery USE =1; Light Bulb USE =1; Bulb and Soda Tab USE =1 |
+| `07` | 0 | Frozen Bell -> INVENTORY | Frozen Bell TAKE =1 |
+| `07` | 1 | Wheel -> nowhere | Wheel TAKE =1 |
+| `07` | 2 | Wheel -> nowhere | Wheel TAKE =1 |
+| `07` | 3 | Wheel -> nowhere | Wheel TAKE =1 |
+| `07` | 4 | Wheel -> INVENTORY | Wheel TAKE =1 |
+| `07` | 5 | Wheels -> INVENTORY | Wheel TAKE =1 |
+| `07` | 6 | Wheels -> INVENTORY | Wheel TAKE =1 |
+| `07` | 7 | Hose -> INVENTORY | Hose TAKE =1; Hose USE =1 |
+| `08` | 0 | Hose state $00B6; Hose -> room 18 (The Shaft) | Hose USE =1 |
+| `08` | 1 | Hose state $00B7; Hose -> room 18 (The Shaft) | Hose USE =1 |
+| `08` | 2 | Extension Cord -> INVENTORY | Extension Cord TAKE =1 |
+| `08` | 3 | Extension Cord state $0058; Extension Cord -> room 11 (Outside the Hotel);   -> room 11 (Outside the Hotel); Extension Cord state $0055;   -> nowhere; Heater state $0057 | Poison Oak USE =0; Extension Cord TAKE =0; Extension Cord USE =1 |
+| `08` | 4 | Wheels -> nowhere; Mine Car state $0003 | Wheels USE =1 |
+| `08` | 5 | (none: engine/scratch flag) | Passage WALK_ON =1; Door OPEN =0; Door OPEN =1 |
+| `08` | 6 | (none: engine/scratch flag) | Passage WALK_ON =0; Secret Door WALK_ON =1 |
+| `08` | 7 | (none: engine/scratch flag) | Door OPEN =1; Door OPEN =0 |
+| `09` | 0 | (none: engine/scratch flag) | Christmas Lights TAKE =0; Bed Spring event =0; Bed Spring USE =1 |
+| `09` | 3 | (none: engine/scratch flag) | Fred event =0 |
+| `09` | 4 | (none: engine/scratch flag) | Daphne event =0 |
+| `09` | 5 | (none: engine/scratch flag) | Velma event =0 |
+| `09` | 6 | (none: engine/scratch flag) |   event =0 |
+| `09` | 7 | (none: engine/scratch flag) |   event =0 |
+| `0A` | 0 | (none: engine/scratch flag) |   event =0 |
+| `0A` | 1 | (none: engine/scratch flag) |   event =0 |
+| `0A` | 2 | (none: engine/scratch flag) |   event =0 |
+| `0A` | 3 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0A` | 4 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0A` | 5 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0A` | 6 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0A` | 7 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0B` | 0 | Statue state $00CA; Goblet state $00C8; Tomb state $00CC | Statue TALK =1 |
+| `0B` | 1 | (none: engine/scratch flag) | Mine Car USE =0; Hose TAKE =0; Switch USE =1 |
+| `0B` | 2 | Villain -> nowhere; Crumpled Note -> room 16 (The Lobby) | Peephole LOOK =1 |
+| `0B` | 3 | (none: engine/scratch flag) | Door OPEN =1 |
+| `0B` | 4 | (none: engine/scratch flag) | Door OPEN =1; Door OPEN =0 |
+| `0B` | 5 | (none: engine/scratch flag) | Television USE =1; Television USE =0 |
+| `0C` | 0 | Book -> nowhere | Book GIVE =1 |
+| `0C` | 2 | (none: engine/scratch flag) | Antacid EAT =1; Termites USE =0 |
+| `0C` | 4 | (none: engine/scratch flag) | Termites USE =1; Medallion USE =0 |
+| `0C` | 5 | Uncle Blake -> room 20 (The Tomb); Uncle Blake state $0002 | Termites USE =1 |
+| `0C` | 6 | (none: engine/scratch flag) | Rope USE =1 |
+| `0D` | 0 | (none: engine/scratch flag) | Christmas Lights TAKE =1 |
+| `0D` | 1 | (none: engine/scratch flag) | Archway WALK_ON =0 |
+| `0D` | 2 |   -> room 21 (Across the River) | Scissors USE =1 |
+| `0D` | 3 | (none: engine/scratch flag) | Microwave OPEN =1; Microwave SHUT =0; Microwave USE =0; Frozen Bell USE =1 |
+| `0D` | 4 | (none: engine/scratch flag) | Refrigerator PUSH =0; Refrigerator OPEN =1; Refrigerator SHUT =0; Fridge Door SHUT =0 |
+| `0D` | 5 | (none: engine/scratch flag) | Refrigerator PULL =0; Refrigerator PUSH =1 |
+| `0D` | 6 | Flour state $0096; Peephole -> room 15 (The Kitchen) | Flour PUSH =1 |
+| `0D` | 7 | (none: engine/scratch flag) | Drawer OPEN =0; Drawer SHUT =1 |
+| `0E` | 0 | (none: engine/scratch flag) | Door OPEN =0; Door SHUT =1 |
+| `0E` | 1 | (none: engine/scratch flag) | Outside Door OPEN =0; Outside Door SHUT =1; Main Entrance OPEN =0; Main Entrance SHUT =1 |
+| `0E` | 2 | (none: engine/scratch flag) | Door OPEN =0 |
+| `0E` | 3 | (none: engine/scratch flag) | Drawer OPEN =0; Drawer SHUT =1 |
+| `0E` | 4 | (none: engine/scratch flag) | Drawer OPEN =0; Drawer SHUT =1 |
+| `0E` | 5 | (none: engine/scratch flag) | Shed OPEN =0; Shed SHUT =1 |
+| `0E` | 7 | (none: engine/scratch flag) | Cabinet OPEN =0; Cabinet SHUT =1 |
+| `0F` | 0 | (none: engine/scratch flag) | Double Doors OPEN =0; Double Doors SHUT =1 |
+| `0F` | 1 | (none: engine/scratch flag) | Locker OPEN =1; Locker SHUT =0 |
+| `0F` | 2 | Bear state $0001 | Poison Oak USE =0; Heater TAKE =0; Heater USE =1 |
+| `0F` | 3 | Frozen Bell -> nowhere | Microwave USE =1 |
+| `0F` | 4 | Frozen Bell -> nowhere | Microwave USE =0; Frozen Bell TAKE =0; Frozen Bell USE =1 |
+| `0F` | 5 | Totem Pole Bridge -> room 11 (Outside the Hotel) | Poison Oak USE =1 |
+| `0F` | 6 | (none: engine/scratch flag) | Missing Book LOOK =1 |
+| `0F` | 7 | (none: engine/scratch flag) | Refrigerator OPEN =1 |
+| `10` | 0 | (none: engine/scratch flag) | Radio PUSH =1; Radio PULL =0 |
+| `10` | 1 | (none: engine/scratch flag) | Radio OPEN =1; Radio SHUT =0 |
+
+Door/cabinet open-shut states are bits `F0E.x`/`F0F.x`, `F0D.x` (set on restore, so not listed as restore effects): Lobby Door F0E.0,
+Outside Door/Main Entrance F0E.1, Hallway Gardener door F0E.2, Gardener drawers F0E.3/F0E.4, Shed F0E.5, Cafe Cabinet F0E.7, cellar Double
+Doors F0F.0, Basement Locker F0F.1, Office Drawer F0D.7, Microwave F0D.3, fridge F0D.4/F0D.5, Flour/Peephole F0D.6, Bear warmed F0F.2,
+Totem Pole Bridge F0F.5, Missing Book seen F0F.6, fridge looked-in F0F.7; Hallway doors puzzle F0B.3 (all six opened) / F0B.4 (scare scene
+running); Peephole scene seen F0B.2; engine running F0B.1; Statue answered F0B.0; Uncle Blake: freed F0C.5, in the Tomb F0C.3,
+read the Book F0C.0, Scooby captured F0C.4 + F00.5; credits via `Medallion USE Hook`.
+
+### Ha Ha Carnival (mystery 1)
+
+| byte | bit | restore effect (password load) | set by (object, verb) |
+|---|---|---|---|
+| `00` | 4 | (none: engine/scratch flag) | Ladder to the Bungee Jump USE =1; Ladder to the Bungee Jump USE =0; Ladder USE =1; Ladder USE =0 |
+| `00` | 5 | (none: engine/scratch flag) | Exit WALK_ON =0 |
+| `00` | 6 | (none: engine/scratch flag) | Exit WALK_ON =1 |
+| `00` | 7 | Dart -> room 7 (The Bumper Cars) | Bumper Car USE =1 |
+| `01` | 0 | Dart -> INVENTORY | Dart TAKE =1 |
+| `01` | 1 | Magnet -> room 27 (The Ferris Wheel); Magnet -> room 2 (The Ferris Wheel); Magnet state $0033 | Balloons USE =0; Pole PULL =1 |
+| `01` | 2 | Bandage -> room 21 (The Haunted House) | Coffin OPEN =1 |
+| `01` | 3 | Paint Brush -> INVENTORY | Paint Brush TAKE =1 |
+| `01` | 4 | Paint Brush -> nowhere; Inky Brush -> INVENTORY | Paint Brush USE =1; Bucket with Inky USE =1 |
+| `01` | 5 | Boat -> nowhere; Spark Plug -> nowhere; Boat with Spark Plug -> INVENTORY | Spark Plug USE =1; Boat USE =1 |
+| `01` | 6 | Boat -> INVENTORY | Spark Plug USE =1; Boat TAKE =1 |
+| `01` | 7 | Spark Plug -> INVENTORY | Spark Plug TAKE =1; Boat USE =1 |
+| `02` | 0 | Magnet -> INVENTORY | Balloons USE =1 |
+| `02` | 1 | Ball -> room 13 (The Back Lot); Balancing Bear -> nowhere | Teddy Bear GIVE =1 |
+| `02` | 2 | Ball -> INVENTORY | Ball TAKE =1 |
+| `02` | 3 | Bucket -> INVENTORY |   event =1 |
+| `02` | 4 | Bucket -> nowhere; Bucket of Water -> INVENTORY | Bucket USE =1 |
+| `02` | 5 | Bucket of Water -> nowhere; Bucket with Inky -> INVENTORY; Inky -> nowhere | Bucket of Water USE =1 |
+| `02` | 6 | Tokens -> INVENTORY | Magnet USE =1 |
+| `02` | 7 | Coupon -> INVENTORY | Coupon TAKE =1 |
+| `03` | 0 | Hammer -> INVENTORY | Coupon GIVE =1; Pole PULL =1 |
+| `03` | 1 | Boots -> INVENTORY | Boots TAKE =1 |
+| `03` | 2 | Water Pistol -> INVENTORY | Water Pistol TAKE =1 |
+| `03` | 3 | Darts -> room 19 (The Game Tent) | Darts USE =0; Tickets GIVE =1 |
+| `03` | 4 | Application -> INVENTORY | Application TAKE =1 |
+| `03` | 5 | Application -> nowhere | Rubber Stamp USE =1 |
+| `03` | 6 | Wrench -> INVENTORY | Wrench TAKE =1 |
+| `03` | 7 | Bolts -> INVENTORY | Wrench USE =1 |
+| `04` | 0 | Sign -> INVENTORY | Sign TAKE =1 |
+| `04` | 1 | Sign -> nowhere; Sign -> INVENTORY | Inky Brush USE =1 |
+| `04` | 2 | Sign -> room 13 (The Back Lot) | Sign USE =1 |
+| `04` | 3 | Taffy -> INVENTORY | Taffy TAKE =1; Taffy EAT =0; Taffy USE =0 |
+| `04` | 4 | Bottle -> nowhere; Note -> INVENTORY | Bottle OPEN =1 |
+| `04` | 5 | Kid -> room 12 (The Front Lot) |  |
+| `04` | 6 | Kid -> room 24 (The Boardwalk) |  |
+| `04` | 7 | Bottle -> INVENTORY | Bottle TAKE =1 |
+| `05` | 0 | Rubber Stamp -> INVENTORY | Rubber Stamp TAKE =1 |
+| `05` | 1 | Mummy Bandages -> INVENTORY | Mummy Bandages TAKE =1 |
+| `05` | 2 | Boat with Spark Plug -> nowhere | Boat with Spark Plug USE =1 |
+| `05` | 3 | (none: engine/scratch flag) | Dart USE =1 |
+| `05` | 4 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `05` | 5 | Clown -> room 13 (The Back Lot) | Application USE =1; Sign USE =1 |
+| `05` | 6 | (none: engine/scratch flag) | Boots GIVE =1 |
+| `05` | 7 | (none: engine/scratch flag) | Dart USE =1; Dart USE =0 |
+| `06` | 0 | (none: engine/scratch flag) | Dart USE =1; Dart USE =0 |
+| `06` | 1 | Dart Attendant -> nowhere | Window 3 LOOK =1; Tent Flap WALK_ON =0 |
+| `06` | 2 | (none: engine/scratch flag) | Madame Zelda TALK =1 |
+| `06` | 3 | (none: engine/scratch flag) | Bucket TAKE =1 |
+| `06` | 5 | (none: engine/scratch flag) | Window 2 LOOK =1 |
+| `06` | 6 | (none: engine/scratch flag) | Mummy Bandages TAKE =1; Bottle OPEN =1 |
+| `06` | 7 | (none: engine/scratch flag) | Boots GIVE =1 |
+| `07` | 0 | Engine state $0000; Engine state $0001; Engine state $0003 | Switch USE =1; Switch USE =0 |
+| `07` | 1 | (none: engine/scratch flag) | Taffy USE =1 |
+| `07` | 3 | The Gang -> nowhere; Manager -> room 11 (The Front Office); Rubber Stamp -> room 11 (The Front Office) | Boat with Spark Plug USE =1 |
+| `07` | 4 | (none: engine/scratch flag) | Balloons USE =1; Balloons USE =0 |
+| `07` | 5 | (none: engine/scratch flag) | Pole PULL =1 |
+| `07` | 6 | Mirror state $0015 | Mirror PUSH =1 |
+| `07` | 7 | (none: engine/scratch flag) | Shed OPEN =1; Shed SHUT =0 |
+| `08` | 0 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `08` | 1 | (none: engine/scratch flag) |   event =0;   event =1 |
+| `08` | 2 | (none: engine/scratch flag) | Bolts USE =0 |
+| `08` | 3 | Brake state $000D | Brake USE =1; Brake USE =0 |
+| `08` | 4 | Brake state $000E | Brake USE =1; Brake USE =0 |
+| `08` | 5 | (none: engine/scratch flag) | Darts USE =1 |
+| `08` | 6 | Water Pistol -> nowhere; Tickets -> INVENTORY; Kid state $0002 | Water Pistol GIVE =1 |
+| `08` | 7 | (none: engine/scratch flag) | Bucket of Water USE =1; Hatch OPEN =1; Hatch SHUT =0; Magnet USE =1 |
+| `09` | 0 | Water Pistol -> room 19 (The Game Tent) |  |
+| `09` | 1 | (none: engine/scratch flag) | Tent Flap WALK_ON =1 |
+| `09` | 2 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `09` | 3 | (none: engine/scratch flag) | Trash Can OPEN =1; Trash Can SHUT =0 |
+| `09` | 4 | (none: engine/scratch flag) | Bandage PULL =1 |
+| `09` | 5 | (none: engine/scratch flag) | Coffin OPEN =1 |
+| `09` | 6 | (none: engine/scratch flag) | Coffin OPEN =1; Coffin SHUT =0 |
+| `09` | 7 | (none: engine/scratch flag) | Pole PULL =0 |
+| `0A` | 0 | Hammer Game state $0066 | Pole PULL =1 |
+| `0A` | 2 | (none: engine/scratch flag) | Balancing Bear event =0; Balancing Bear event =1 |
+| `0A` | 3 | (none: engine/scratch flag) | Teddy Bear GIVE =0 |
+| `0A` | 4 | (none: engine/scratch flag) | Trunk OPEN =1; Trunk SHUT =0 |
+| `0A` | 6 | (none: engine/scratch flag) |   event =0 |
+| `0A` | 7 | (none: engine/scratch flag) |   event =0 |
+| `0B` | 0 | (none: engine/scratch flag) |   event =0 |
+| `0B` | 1 | (none: engine/scratch flag) |   event =0 |
+| `0B` | 2 | (none: engine/scratch flag) |   event =0 |
+| `0B` | 3 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0B` | 4 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0B` | 5 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0B` | 6 | (none: engine/scratch flag) |   event =1;   event =0 |
+| `0B` | 7 | (none: engine/scratch flag) |   event =1;   event =0 |
+
+Carnival state not restored but used: Switch/Engine F07.0/F07.1 (engine on / taffy belt), Gang rescued F07.3, Clown lured F05.5, Kid
+tall enough F05.6, Coffin opened F09.5/F09.6, Bandage pulled F09.4, Hammer game broken F0A.0, Fun House choice object 3 var.
 
 ## Object scripts (found while decoding)
 
@@ -118,14 +342,166 @@ Bucket(128) Use with Faucet(96)/Pond(33)/Inky(143), Paint Brush(22) Use with Buc
 Sign(87); Magnet(147) Use with Treasure(138); Wrench(72) Use with Bolts(154) (Haunted House); Coupon(148) Give to Attendant(144).
 Ending: the Dart Attendant, Charlie, is the clown villain.
 
+## Blake's Hotel: the complete walkthrough (`tools/py/story_full.py`, route `w0_full`)
+
+Power-on to the credits in twelve chained segments (`hotel_1` .. `hotel_12`), every action decided from RAM (hit-test
+target, room word, story bytes, inventory), none from frame counts. Each segment ends with `need()` assertions on RAM
+conditions; the checkpoints (`story.py checkpoint`) are what `port/tools/storytest.sh` compares between `--hle none` and `--hle all`.
+`tools/scripts/story/w0_full.txt` is the flat harness script of the same run (12 000 lines, replays with `verify.py`
+to the same end state: room 0 = the game restarted at the Sega logo after the credits, same inventory, same 29 story bytes).
+Object numbers are hit-test ids (object index + 3); `Fxx.b` = bit b of `$FF2A00+xx`.
+
+The solution is the dependency chain below (found by reading the disassembled scripts, `scriptdis.py` / `blk.py`, not by trial):
+
+```
+END   Medallion USE Hook (Basement)  -> unmasking cutscene, Jim the Gardener, credits, reset            F0C.4=0
+ Medallion  <- Statue TALK "XYZZY!" (Tomb; menu shows 4 wrong words first)         needs F0C.0 (Uncle Blake read the Book)
+   F0C.0    <- Book GIVE Uncle Blake (Tomb)  needs F0C.3 (Tomb entered after he was freed, F0C.5)
+   Book     <- Gardener's Room drawer 2 (Hallway door 81, unlocked by opening all six Hallway doors)
+ Uncle Blake free (F0C.5) <- Termites USE Uncle Blake (lower Dungeon, room 5)
+   Termites <- Empty Chili Can USE Termites (Kitchen)  needs the Vent Cover off (Screwdriver USE Vent Cover, Basement item)
+   Empty Chili Can <- Can Opener (Cafe cabinet) USE Chili (Kitchen)
+   room 5   <- Rope USE (room 4) after Rope USE Cuffs;  Rope <- Scissors USE Rope across the river (Office drawer)
+   room 4   <- Tomb Archway;  Tomb needs the Killer Lettuce dead (Weed Killer, Shed)
+ Tomb <- Pond Archway -> Maze (dark: Flashlight = Light Bulb + Battery + Soda Tab; the walk planner then solves the maze) -> Exit 161
+   Pond <- Shaft Stone Path;  Air Freshener USE at the pond makes the Stone Bridge walkable
+   Shaft <- Mine Car (three Wheels in the Mine fix it);  back up: Hose -> Engine -> Gas then Switch (engine on, F0B.1; the ride resets it)
+   Mine <- Basement Secret Door, revealed by the Crumpled Note USE Rack (note from the Lobby after the peephole scene, fire put out with the Pot o' Water)
+   Basement <- Outside Double Doors: Shovel USE Snow Covered Doors + Crowbar USE Locked Doors (Shed, opened with the Key)
+ across the river <- Totem Pole Bridge <- Poison Oak USE Bear (Work Gloves from the Shed) after Heater + Extension Cord (Basement locker) warmed the cave
+ Light Bulb <- Christmas Lights TAKE while Scooby bounces on the Bed Spring (Gardener's Room item, USE outside)
+ Key <- Cafe shelf, only when the Cook is gone: Antacid (Gardener drawer 1) EAT in the Cafe
+```
+
+| seg | what | end condition (RAM) |
+|---|---|---|
+| `hotel_1` | boot, Lobby -> Cafe: Oil, Can Opener (cabinet), Battery (radio: push, open) | inventory has Can Opener, Battery |
+| `hotel_2` | Hallway: open the six doors (each plays an Ancient Chieftan scare scene), Gardener door unlocks (F0B.3, F0E.2 clear); Gardener's Room: Air Freshener, Bed Spring, Antacid, Book | all four items |
+| `hotel_3` | Cafe: EAT Antacid in front of the Cook, take the Key | Key |
+| `hotel_4` | Hallway dumb waiter (Scooby rides along) -> Kitchen: Can Opener on Chili, Pot, Pot on Sink, push the fridge -> Soda Tab, push the Flour sack + LOOK Peephole (cutscene, F0B.2), back; Lobby: Pot o' Water on the Fire, Crumpled Note | Note, Soda Tab, Empty Can |
+| `hotel_5` | Office: Heater, Scissors (drawer) | both |
+| `hotel_6` | Outside -> Shed (Key on Lock, open): Crowbar, Work Gloves, Weed Killer, Shovel; Shovel/Crowbar open the cellar doors; Basement: Screwdriver, Extension Cord (locker), Note on the Rack | F04.4 |
+| `hotel_7` | Secret Door -> Mine: three Wheels, Wheels on the Mine Car, ride; Shaft: Hose -> Engine, Hose -> Gas; Pond: Air Freshener; Switch, ride up, Basement | F08.1, F0B.1 |
+| `hotel_8` | Outside: Cord + Heater (F0F.2), Gloves on the Poison Oak (Gardener's Room), Bed Spring -> Light Bulb, Poison Oak on the Bear -> bridge (F0F.5); across the river: Scissors on the Rope, Take Rope | Rope |
+| `hotel_9` | Kitchen again: Screwdriver on the Vent Cover, Chili Can on the Termites; Battery + Light Bulb + Soda Tab -> Flashlight | Flashlight |
+| `hotel_10` | Kitchen -> ... -> Basement -> Mine -> Shaft -> Pond -> dark Maze (room 7): USE Flashlight (room 8, 512x440 px), the planner walks to Exit 161 -> Tomb | room 20 |
+| `hotel_11` | Tomb: Weed Killer on the Lettuce; Dungeon: Rope on the Cuffs, down the rope, Termites on Uncle Blake (cutscene, F0C.5); Tomb: Give Book (F0C.0), TALK Statue "XYZZY!" (Medallion appears), Take | Medallion |
+| `hotel_12` | Pond, Shaft (Switch again), ride, Mine, Basement: Medallion on the Hook; wait for the credits to end | room word 0 |
+
+Not needed for the ending (the scripts never test them): the Goblet (Bellhop trade for the Kachina Doll caught with the Pole across the
+river), Beads, Frozen Bell/Cow Bell, Oil, Christmas-light order, the Snowman. `Statue TALK` works without the Goblet in place;
+only the Medallion's animation shows the missing goblet.
+
+Gotchas found on the way (all handled in `story.py` / `story_full.py`):
+
+* **Pointer hit test**: the object under the crosshair is the world cell `((px+8+cam_x)>>3, (py-8+cam_y)>>3)`. The static hotspot
+  rectangle of every non-actor object is in the ROM (`hotspots.py`: object record +2 -> overlay table), so `locate()` computes the
+  point instead of scanning the screen; it probes the rectangle with the live hit test (and, in two-object mode, `$FF06B6`).
+  Shaggy/Scooby/actors win the hit test where they overlap, so the whole rectangle is probed; actors (Uncle Blake, Scooby) are
+  probed around their sprite (`probe_actor`). Every probe poke/frame is recorded in the flat route: the pointer position is
+  game input and a replay that skips it diverges (found the hard way: the route replayed to a different state).
+* **Walking**: `walkplan.py` plans on the game's own collision map (`walkmap.py`): D-pad geometry (x moves by the speed, y by half,
+  diagonals stop at a wall, only straight moves slide), a 2 px safety margin off the collision fence, other exits' hotspots
+  (`tools/scripts/story/walkon_w*.json`: objects with a WALK_ON that changes rooms) as no-go areas, stepping out of the zone first
+  when a spawn point lies on another exit, off-model pixels (spawn just outside the fence) handled with axis-wise moves, walls
+  the model does not know learned on the fly (replan around the pixel that blocked us), and "get as close as possible" for
+  items in parts of a room Shaggy cannot enter (the Basement screwdriver; the pickup script walks him there itself). This solved
+  the Lobby Outside Door gap, the Gardener door auto-entry from the Hallway spawn, and the dark Maze.
+* **Inventory** is 4 slots per row, 8 visible, page in `$FF06EC` (scroll by clicking the arrows in the right cell); `pick_item` pages and
+  retries; the second object of "Use X with Y" shows in `$FF06B6`.
+* **TALK menu**: wait for `$FF06EE == $FFFF` (pointer hidden by `talk_menu_begin`), choice texts at `$FF0838`, used bits `$FF0874`,
+  D moves the highlight (6-frame presses), B picks.
+* **Ending**: `sys ending_credits` runs the credits and the game resets to the Sega logo (`$FF06AC` = 0).
+
+## Ha Ha Carnival: the complete walkthrough (`carnival_1` .. `carnival_13`, route `w1_full`; `w1_part` = the first five)
+
+`w1_full` plays all thirteen segments closed-loop from power-on to the credits (about 8 min of game time on the harness; the strict generator
+run takes ~6 min wall clock; `tools/scripts/story/w1_full.txt` replays to the same end state, verified with `verify.py`). The first five
+segments (`w1_part`, 104 s) end with the **Dart and the Ball** in the inventory, the rest is the long chain to the ending:
+
+| seg | what | end condition |
+|---|---|---|
+| `carnival_1` | Front Lot -> Boardwalk: Taffy; Archway -> Hammer Game: **pull the pole** instead of playing (Orbit cutscene: the Magnet flies to the Ferris wheel, the attendant gives the hammer) | F01.1 |
+| `carnival_2` | Back Lot: Balloons USE with Scooby (he has to be on screen and still: `probe_actor` waits) -> Ferris wheel -> Magnet; Diving Bell: Valve down, Magnet USE Treasure -> Tokens, Valve up | Magnet, Tokens |
+| `carnival_3` | Game Tent: Tokens in the Crane Game (**claw minigame**: `crane_game()` reads the pistol's path offset `$FF0610` and drops the claw so the offset at the bottom is in `$FC..$110`), Water Pistol -> Kid (Front Lot) for the Tickets, Tickets -> Dart Attendant, Darts x3 -> Teddy Bear | Teddy Bear |
+| `carnival_4` | Back Lot: Teddy Bear GIVE Balancing Bear -> Ball | Ball |
+| `carnival_5` | Boardwalk -> Fun House (the script op `wait_dpad_choice` waits for a direction: D = Bumper Cars, L = Haunted House, R = Hall of Mirrors) -> Bumper Cars: **Taffy on the Engine with the Switch off**, Switch on, the **car duel** (`bumper_tug()`: steer at the Clown's car, hold the gas; it wins on the first try), Dart on the floor | Dart |
+| `carnival_6` | Bumper Cars -> Boardwalk: Trash Can OPEN, **Mummy Bandages**; **Tokens on Madame Zelda** (they are not consumed), TALK "What's the meaning of life?": she blows up (F06.2); take her **Head** | Head |
+| `carnival_7` | Boathouse: Bottle TAKE, then OPEN it from the inventory (`act_inv`): the **Note**; Boat TAKE. Note + Bandages together set F06.6 | F06.6 |
+| `carnival_8` | Fun House, prompt **R = Hall of Mirrors** (room 9): Mirror PUSH, the Clown drops the **Spark Plug**; Boat + Spark Plug; Front Lot -> Pond: Boat with Spark Plug USE Pond rescues the gang (F07.3; the cutscene ends in the Front Lot); Help Wanted **Sign** TAKE | F07.3, Sign |
+| `carnival_9` | Fun House, **L = Haunted House** (room 21): **Boots**, Coffin OPEN, Bandage PULL (needs F06.6): the carnival manager is freed, F09.4 (the staff-only Tent Flap opens), cutscene back to the Front Lot | F09.4 |
+| `carnival_10` | Front Office: **Rubber Stamp**; Game Tent -> Tent Flap -> Dressing Room (17): **Application**, Trunk OPEN, **Wrench**; Stamp USE Application = accepted Application | accepted Application |
+| `carnival_11` | Haunted House: Wrench USE Bolts (**Bolts**); Back Lot -> Ladder -> Bungee Jump platform -> Harness -> room 15: **TAKE the Bucket while the jump script runs** (sets F06.3; the script then hands it over), Ladder back; Boardwalk Faucet: Bucket of Water; Diving Bell (Valve down): Bucket of Water USE Inky = **Bucket with Inky**; Valve up | Bucket with Inky |
+| `carnival_12` | Front Lot: Kid TALK ("How come you're just standing around", then "Wanna ride the roller coaster": he walks to the Boardwalk, the Attendant says he is too short); **Boots GIVE Kid** with the Head in the inventory sets F05.6 and F06.7 and the party rides: `roller_coaster()` (below) -> **Paint Brush**; Paint Brush USE Bucket with Inky = Inky Brush; Inky Brush USE Sign = painted Sign | painted Sign |
+| `carnival_13` | Back Lot: painted Sign USE (hangs on the board, needs the Balancing Bear gone, F04.2); Dressing Room: accepted Application USE Bulletin Board: the Clown appears in the Back Lot (F05.5, the script moves Shaggy back); **Dart USE Ball** (room 13, Clown present): unmasking of Charlie the Dart Attendant, Orbit, credits, reset | room 0 |
+
+Minigame notes (decoded from `script_subop_27_minigame_throw` `$3F58` and `script_subop_32_minigame_tug` `$3142`): the Crane Game
+claw is x `$FF04E8` (100..148), A/B drops it (2 px/frame down to y `$4A`), and it catches iff the pistol's path offset at the bottom is in
+`$F8..$114` (claw x != $94) or `$5C..$78` (x = $94); the offset advances about 1.66 per frame and wraps at $140. The Bumper Car duel is a
+top-down arena: headings 0..7 clockwise from north in the actor anim word `$FF0488`, L/R turn, A/B gas (speed `$FF0A90`, 0..7,
+vectors in `dat_003D96`), two 63-point meters `$FF0A98` (ours) / `$FF0A9A` (the Clown's), the first one below zero loses; a loss
+returns to room 7 and the car can be driven again. The duel needs input from its first frame, so `start_bumper()` clicks USE without the
+usual wait for the script to finish.
+
+
+**The roller coaster (`roller_coaster()`, room 8; the only timed puzzle).** Object #17 is the ride's state machine: its stage `+0E` advances
+with Shaggy's path (about 100 frames from the room entry to stage 1, 30 more for the camera pan, 110 from stage 3 to stage 4). The track is broken
+(F08.2 = 1, "I think this is going to be a short ride!"); at stage 1 the car **crashes** (-> Ferris Wheel -> Back Lot, F05.4) unless **Brake #18**
+(F08.3) is on, which stops it (F08.0, "stopped", stage 6). While stopped: Bolts USE Track with the Wrench in hand clears F08.2 ("It looks okay to
+me"); Brake #18 USE again releases it, the camera pans right (256 px). At stage 4 the ride ends at the Boardwalk unless **Brake #19** (F08.4) is on,
+which stops the car again (F08.0, stage 7) beside the **Shed** (#21, world x 432..472, only on screen with the camera panned): OPEN it
+(F07.7) and the Paint Brush is inside; Brake #19 USE again lets the ride finish at the Boardwalk. The driver clicks Brake #18 the moment
+the room is entered (`quick_use`: hit-test probe, no waiting for scripts), waits for F08.0, fixes the track, releases the brake and then
+parks the crosshair on Brake #19's future spot. The catch is the hit test: while the pointer is "busy" (`$FF09DC` = `$444C`, the 35 frames
+after the release) `$FF06AE` is frozen at its old value, while the stage-3 path runs the car drives over the lever and the hit test
+reads 20 (Track) and then 0, and Brake #19 only reports under the crosshair from about frame 127 after the release, i.e. in a window of
+**~17 frames** before stage 4 (frame 144), which tests F08.4 on its very first tick. So the driver polls `$FF06AE` every frame and presses B as
+soon as it is 19 (retrying if F08.4 did not flip). A first version that probed and re-selected the verb after the camera had stopped
+took ~75 frames and passed on the harness but missed the window under `--hle all`; the per-frame poll is deterministic in both. Then
+it waits for F08.0 again and takes the brush.
+
+**What the chain needs** (the documented dependency graph, as played; Fxx.b = story bit):
+
+```
+END   Dart USE Ball in the Back Lot (room 13) while the Clown is there (F05.5) -> unmasking, Charlie the Dart Attendant, Orbit, credits
+ Clown in room 13 (F05.5) <- Application #70 (accepted) USE Bulletin Board (Dressing Room) with the painted Sign #88 already in room 13
+                              (or, if the application was posted first, painted Sign USE in the Back Lot)
+   painted Sign #88  <- Inky Brush USE Sign #87 (Help Wanted board, taken in the Front Lot; Back Lot needs the Balancing Bear gone)
+     Inky Brush     <- Paint Brush #22 USE Bucket with Inky #131
+       Paint Brush  <- Shed #21 in the Roller Coaster (room 8): OPEN while the car is stopped at Brake #19 (see above)
+                       needs F05.6 (Kid + Boots + Head), the Wrench + Bolts in hand (brake 1 -> fix Track)
+       Bucket with Inky <- Bucket of Water USE Inky (Diving Bell, hatch already open: F08.7 from the Magnet step)
+         Bucket of Water <- Bucket #128 USE Faucet #96 (Boardwalk);   Bucket <- TAKE it during the Bungee jump (Back Lot ladder -> Harness)
+   Application #70 <- Rubber Stamp #79 USE Application #69 (rejected, Dressing Room: Take)
+     Rubber Stamp #79 / Manager: placed in the Front Office when the gang is rescued AND the manager freed (either order: Boat with Spark Plug
+                       USE Pond checks F09.4, Bandage PULL checks F07.3)
+       Boat #113 (Boathouse) + Spark Plug #29 (Hall of Mirrors: Mirror PUSH, F07.6)
+     Dressing Room (room 17): Game Tent flap #66, walk-on needs F09.4 (manager freed; "Employees only." before)
+ Kid + Boots + Head: Kid TALK "Wanna ride the roller coaster..." (Front Lot; Kid moves to the Boardwalk), Boots #153 (Haunted House) GIVE Kid on the
+              Boardwalk: **only with Madame Zelda's Head #95 in the inventory** (Zelda explodes after "What's the meaning of life?", F06.2, then the
+              glass is gone) does it set F06.7/F05.6 and the Attendant #99 let the party ride; without the Head the Boots come back ("Lemme just
+              hold onto these")
+ Haunted House (Fun House, L): Coffin #155 OPEN (F09.5), Bandage #157 PULL needs F06.6 (Mummy Bandages from the Trash Can AND the Note from the
+              Boathouse Bottle, both in the inventory) -> manager freed, F09.4; Wrench #72 (Trunk, Dressing Room) USE Bolts #154 -> Bolts
+```
+
+Corrections to the notes above: Madame Zelda **is** needed (the Head, for the Kid's boots); the Fun House prompt's R is the Hall of Mirrors
+(room 9, the Clown / Spark Plug), not "back". The Wrench / Dressing Room / Haunted House dependency is circular looking but resolves in the order the
+segments run: Haunted House (Bandage pull) -> Dressing Room (Wrench) -> Haunted House again (Bolts).
+
+Things that are *not* needed: Hammer, Coupon, the Ferris-wheel peek windows, the Bungee ride itself (only the Bucket), the second roller-coaster
+stop if the Paint Brush could be had otherwise (it cannot: the Shed is only reachable at the second stop).
+
 ## Verification
 
-    tools/py/verify.py tools/scripts/story/w0_cafe_items.txt runs/x     # on a VM (needs build/harness)
+    tools/py/verify.py tools/scripts/story/w0_full.txt runs/x     # on a VM (needs build/harness); ~80 s
 
-prints `room`, `inv`, `story`; all six routes reproduce the header's end state. `make` still prints `build/scooby.md: OK`
-(and `data/exec_starts.txt` gained 77 instruction starts, 83.1 % -> 83.6 %; see `docs/coverage.md`).
+prints `room`, `inv`, `story`; all nine routes reproduce the header's end state (`w0_full`: room 0 after the credits, 18 items, the
+29 story bytes of the header; `w1_part`: room 7, Dart + Ball; `w1_full`: room 0 after the credits, 15 items, the 29 story bytes of the header). The closed-loop drivers pass on the port (below). `make` still prints
+`build/scooby.md: OK`; the merged coverage went from 83.6 % to 92.0 % with the two long routes (+1121 instruction starts with `w0_full` + `w1_part`, +105 with the
+rest of the Carnival chain in `w1_full`; see `docs/coverage.md`).
 
-## Disassembler note: "8 traced instructions overlap ROM data reads"
+## Disassembler note: "14 traced instructions overlap ROM data reads"
 
 The `tools/py/disasm.py` warning (`00259e 00272c 00286c 002870 002874 002878 00287a 00287e`) is **not a mis-trace**. Each of
 the 8 instructions has its execute bit set by the CPU hook (they genuinely run: `$259e` is `bset #2,ram_game_state` in
@@ -137,6 +513,9 @@ fetched from `a5`-relative script words, so the likeliest source is an interpret
 code (out-of-range object index / offsets under the all-ones and random story states of the earlier campaign). The
 story crawl, some 1500 verb attempts on password-warp states and the six routes, never produced such a read (the crawler logs any read of those addresses to
 `runs/overlap_hits.txt`; empty), which agrees with it needing a corrupt state. Open: a state that triggers it.
+The two long routes added six more instructions to the list (`$226a 2270 2276 2278 227e` in `sub_00221A`/`sub_002278`, the room
+enter/after-fade script runners, and `$2e7e`): same signature, same conclusion (the instructions run, and something also read the same
+bytes as data; the disassembly is correct either way). The generator lists them in the note it prints.
 
 Also fixed while here: `mergecov.py` now ignores the spurious exec start at `$000000` (the core reports it when a savestate is
 loaded into a running session), and `covreport.py` now finds function entries through symbolic labels (it only knew
@@ -168,3 +547,30 @@ in `$E1..$F6`; in the C VBlank the V counter apparently never gets there (not ch
 cleared and the game stays at `$FF09DC` = `$E4` (action pending, verb Take selected; the PC alternates `$5D0E/$5D16` for
 thousands of frames) and further clicks are ignored. More frames never help, so it is not a timing artefact. The fix belongs to
 the vblank owner (e.g. let the HLE'd `$5C8E` ignore the beam test).
+
+**Result of the long routes (#29, after merging main with the later replacements; `w1_part` was later replaced by `w1_full`, see below)**: `port/tools/storytest.sh long` passes with the
+plain `--hle all` (no `-vblank_main` exclusion needed any more; the Take/inventory hang above no longer occurs): `w0_full` none == all
+over 132 checkpoints (power-on to the credits, end room 0), `w1_part` none == all over 39 checkpoints (end room 7). No bisect was needed,
+so there is no divergence to report. What the long routes added for the closed loop: every probe, hit test and wait is decided from RAM
+(the pointer hit test, `$FF09DE` bit 0 for the second-object mode, `$FF06EE` for the TALK menu, the claw and pistol offsets of the
+Crane Game, both meters of the Bumper Car duel), so emulated-time differences between the replacements and the 68k code do not matter;
+a step that waited a fixed number of frames would have been fragile (the first fixed-wait drafts of the hose, Poison Oak and Kid steps were).
+Two timing-sensitive spots that are *handled*, not hidden: the main loop sets the two-object flag a few frames after the item click (the
+driver polls up to 36 frames), and Scooby trails Shaggy by an unpredictable distance (the driver waits until he is on screen and standing still
+before using him as a click target).
+
+One real finding while running the long routes on the merged main (walk-to/camera/palette ports): `--hle all` failed once at the Lobby
+Outside Door in `hotel_8` while `--hle none` passed. It was **not an HLE divergence**: the planner drifted along the Lobby's diagonal
+stair fence (position inside its safety margin, field unknown there, axis-wise fallback oscillating) and in one of the two timings
+walked into the door's walk-on zone. Fix: the margin is chosen per position (largest margin whose field covers where Shaggy stands, re-chosen
+every step), after which both specs complete (`hlebisect.py` was not needed). Lesson for the driver: anything that wanders is
+timing-fragile; the zone-avoidance and per-position margin keep it deterministic enough for both specs.
+
+**Result with the complete Carnival route (#29, `w1_full`)**: `STORYTEST_HLE=all port/tools/storytest.sh long` = `w0_full` (132 checkpoints) and `w1_full`
+(110 checkpoints, power-on to the credits, end room 0): `--hle none` == `--hle all` on both; hosttest, irqtest, mousetest and the six short routes
+pass as well. One driver bug found by this and fixed: the second roller-coaster brake click (see the roller coaster paragraph) was timed by
+frames spent in the driver, which differ between the 68k code and the C replacements, so it passed on the harness and `--hle none` but
+missed its 17-frame window under `--hle all` (the ride then ends at the Boardwalk; checkpoint `need` failed). It was **not** an HLE divergence: both specs
+run the same game logic, the harness itself only passed with a margin of ~37 frames. No `hlebisect.py` run was needed. The plain port
+has no emulator-time access, so every timed step in `story_full.py` has to poll RAM per frame; `roller_coaster()` is the only step with
+a window that small.

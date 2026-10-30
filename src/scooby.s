@@ -2187,20 +2187,7 @@ script_op_table:
 	dc.l script_op_11_goto_room
 	dc.l script_op_12_set_hotspot
 	dc.l script_op_13_on_event
-	dc.l script_op_14_set_hotspot2
-	dc.l script_op_15_wait
-	dc.l script_op_16_freeze
-	dc.l script_op_17_wait_anim
-	dc.l script_op_18_goto_room_cut
-	dc.l script_op_19_unfreeze_wait
-	dc.l script_op_1A_pal_cycle
-	dc.l script_op_0E_walk_spawn
-	dc.l script_op_1C_test_moving
-	dc.l script_op_1D_test_anim_done
-	dc.l script_op_1E_face
-	dc.l script_op_1F_wait_stop
-	dc.l script_op_20_stop_path
-	dc.l script_op_21_path
+	.incbin "baserom.md",0x23A4,0x38
 script_run:
 	cmpa.l a5,a6
 	ble.w loc_002404
