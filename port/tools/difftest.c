@@ -239,6 +239,13 @@ static const struct {
 	{ 0x007C04, 0x0000, 0x1F },   /* objects_update: flags only */
 	{ 0x007F22, 0x7FFF, 0x1F },   /* game_state_init */
 	{ 0x007D54, 0x0000, 0x1F },   /* overlay_apply: flags only */
+	/* sprite.c (#15): see the proofs in sprite.c */
+	{ 0x00D3F0, 0x3EFF, 0x1F },   /* frame_pack_48x80: only caller actor_animate discards regs */
+	{ 0x00D42C, 0x3EFF, 0x1F },   /* frame_pack_80x48 */
+	{ 0x00D468, 0x3EFF, 0x1F },   /* frame_scale_48x80 */
+	{ 0x00DA6A, 0x3EFF, 0x1F },   /* frame_scale_80x48 */
+	{ 0x00B0B8, 0x0000, 0x1F },   /* actor_animate: flags only (registers restored by movem) */
+	{ 0x00AF24, 0x0040, 0x00 },   /* actor_dma (only with -DSPRITE_ACTOR_DMA_C): D6 = HV counter read; dead */
 };
 
 static int do_run(const hle_def *target, const opts *o)

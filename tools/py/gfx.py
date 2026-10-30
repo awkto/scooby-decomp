@@ -15,6 +15,10 @@ Usage (from repo root, ROM at rom/baserom.md):
                                           acclaim, sunsoft, illusions, title)
   gfx.py vram  DUMP.vram DUMP.cram OUT.png [--plane ADDR] [--w 64] [--h 32]
                                           render a nametable from a harness `vdp` dump
+  gfx.py sprite shaggy|scooby|TYPE|ADDR [OUT.png] [--anim N] [--depth D] [--list]
+                                          actor animation frames (sheet) / scripts
+  gfx.py spritecheck DUMP.ram DUMP.vram [--shot S.ppm]
+                                          rebuild Shaggy/Scooby tiles from ROM, compare with VRAM
 """
 import argparse
 import os
@@ -620,6 +624,280 @@ def dump_world(world, only_room=None, out=sys.stdout):
             P('  objects here: ' + ', '.join(str(i) for i in here))
 
 
+# ---------------------------------------------------------------------------
+# Actor sprites (docs/formats.md "Actor sprites"; code: port/src/game/sprite.c)
+#
+# An actor slot (0 Shaggy, 1 Scooby, 2..5 room actors) plays animations from an
+# "animation set".  A frame is one RLE stream (rle_decompress) that unpacks either to
+# chunky pixels (one byte per pixel, w*h bytes: Shaggy and Scooby, which are depth-scaled)
+# or straight to 4bpp tiles in "piece order" (w*h/2 bytes: the other actors).  The tiles go
+# to a fixed VRAM area per slot and are shown as 4..8 hardware sprites ("pieces") laid out
+# by a per-size table.
+
+SPRITE_SETS = 0x032670      # l[36]: animation set pointers, indexed by object type id
+SPRITE_SET_SHAGGY = 0x032700
+SPRITE_SET_SCOOBY = 0x0642D0
+SLOT_VRAM = 0x0FC860        # w[6]: VRAM byte address of each slot's tiles
+SLOT_BUFFER = 0x0FC9F4      # l[6]: RAM staging buffer of each slot ($FF3000 + $800*i)
+SCALE_MASKS = 0x00C3F0      # 256 x 8 words: keep-masks per depth (bit set = keep pixel/row)
+CHUNKY_OFS_48x80 = 0x00BC70  # w[80*6]:  byte offset in the tile buffer of each 8-pixel row group
+CHUNKY_OFS_80x48 = 0x00C030  # w[48*10]
+ANIM_OPS = {2: 'frame', 3: 'goto', 4: 'delay', 5: 'wait', 6: 'move', 9: 'end', 0xD: 'anim', 0x11: 'sound'}
+
+
+def _s16(v):
+    return v - 0x10000 if v & 0x8000 else v
+
+
+def sprite_layout(w, h):
+    """Piece layout of a w x h frame: list of (x, y, x_hflip, tile_offset, cols, rows),
+    from the tables at $0FC86C.. that sprite_build uses (x,y relative to the frame's top left)."""
+    b = rom()
+    if w == 0x70:
+        t = (0xFC86C, 0xFC87C, 0xFC88C, 0xFC968, 0xFC9C0, 8)
+    elif w == 0x40:
+        t = (0xFC92C, 0xFC934, 0xFC93C, 0xFC984, 0xFC9DC, 4)
+    elif w == 0x30:
+        t = (0xFC8C0, 0xFC8CC, 0xFC8D8, 0xFC950, 0xFC9A8, 6)
+    elif w != 0x20:
+        t = (0xFC89C, 0xFC8A8, 0xFC8B4, 0xFC944, 0xFC99C, 6)
+    elif h == 0x50:
+        t = (0xFC8E4, 0xFC8F0, 0xFC8FC, 0xFC95C, 0xFC9B4, 6)
+    else:   # 32-wide, not 80 high: odd table (6 stacked 32x32 pieces, y -$4C); never seen used
+        t = (0xFC908, 0xFC914, 0xFC920, 0xFC978, 0xFC9D0, 6)
+    dx, dxf, dy, to, sz, n = t
+    x = y = xf = 0
+    out = []
+    for i in range(n):
+        x += _s16(u16(b, dx + 2 * i))
+        xf += _s16(u16(b, dxf + 2 * i))
+        y += _s16(u16(b, dy + 2 * i))
+        s = (u16(b, sz + 2 * i) >> 8) & 15
+        out.append((x, y, xf, u16(b, to + 2 * i), ((s >> 2) & 3) + 1, (s & 3) + 1))
+    return out
+
+
+def sprite_dma_words(w, h):
+    """Words DMA'd to VRAM per frame (actor_animate $00B2EA)."""
+    if w == 0x70:
+        return 0x700
+    if w == 0x40:
+        return 0x400
+    if w == 0x20:
+        return 0x280 if h == 0x50 else 0x200
+    return 0x3C0
+
+
+class AnimSet:
+    """Animation set header (all offsets relative to the set):
+      +0 w kind (1 Shaggy, 2 Scooby, ...)   +2 w anim table   +4 w frame table   +6 w data start
+    anim table: w[] offsets of the animation scripts; frame table: w[] frame-header offsets."""
+
+    def __init__(self, addr):
+        b = rom()
+        self.addr = addr
+        self.kind, self.anim_tbl, self.frame_tbl, self.data_off = (u16(b, addr + 2 * i) for i in range(4))
+        self.n_anims = (self.frame_tbl - self.anim_tbl) // 2
+        first_script = min(u16(b, addr + self.anim_tbl + 2 * i) for i in range(self.n_anims))
+        self.n_frames = (first_script - self.frame_tbl) // 2
+
+    def anim_offset(self, i):
+        return u16(rom(), self.addr + self.anim_tbl + 2 * i)
+
+    def frame_offsets(self):
+        return [u16(rom(), self.addr + self.frame_tbl + 2 * i) for i in range(self.n_frames)]
+
+    def script(self, i, limit=64):
+        """Decode animation i: list of (op name, arg) up to the first end/goto/anim."""
+        b = rom()
+        p = self.addr + self.anim_offset(i)
+        out = []
+        for _ in range(limit):
+            op, arg = u16(b, p), u16(b, p + 2)
+            p += 4
+            out.append((ANIM_OPS.get(op, f'op{op:x}'), arg))
+            if op in (3, 9, 0xD):
+                break
+        return out
+
+    def frame(self, off):
+        """Frame header (14 bytes at set + off)."""
+        b = rom()
+        a = self.addr + off
+        return dict(off=off, hx=_s16(u16(b, a)), hy=_s16(u16(b, a + 2)), w=b[a + 4], h=b[a + 5],
+                    data=self.addr + u32(b, a + 6), attr=u16(b, a + 10), extra=u16(b, a + 12))
+
+
+def depth_mask(depth, nbits):
+    """Keep-bits for one depth level: list of nbits booleans (MSB of the first word first)."""
+    b = rom()
+    a = SCALE_MASKS + (depth & 0xFF) * 16
+    bits = []
+    for i in range((nbits + 15) // 16):
+        w = u16(b, a + 2 * i)
+        bits += [bool(w & (0x8000 >> k)) for k in range(16)]
+    return bits[:nbits]
+
+
+def chunky_to_tiles(px, w, h, depth_x=0, depth_y=0):
+    """The depth scaler ($00D468 for 48x80, $00DA6A for 80x48; depth 0 = $00D3F0/$00D42C):
+    keep the rows / columns whose mask bit is set, pack them to the top left (right/bottom
+    filled with colour 0) and scatter each 8-pixel group to its tile-buffer offset."""
+    b = rom()
+    ofs_tbl = CHUNKY_OFS_48x80 if w == 0x30 else CHUNKY_OFS_80x48
+    groups = w // 8
+    ofs = [u16(b, ofs_tbl + 2 * i) for i in range(groups * h)]
+    xm, ym = depth_mask(depth_x, w), depth_mask(depth_y, h)
+    rows = []
+    for y in range(h):
+        if ym[y]:
+            row = [px[y * w + x] for x in range(w) if xm[x]]
+            rows.append(row + [0] * (w - len(row)))
+    rows += [[0] * w for _ in range(h - len(rows))]
+    buf = bytearray(len(ofs) * 4)
+    for y, row in enumerate(rows):
+        for g in range(groups):
+            v = 0
+            for x in range(8):
+                v = ((v << 4) | row[g * 8 + x]) & 0xFFFFFFFF
+            o = ofs[y * groups + g]
+            buf[o:o + 4] = struct.pack('>I', v)
+    return bytes(buf)
+
+
+def frame_tiles(aset, fr, depth_x=0, depth_y=0):
+    """Tile buffer (piece order, as DMA'd to the slot's VRAM) of one frame."""
+    data, _ = rle_decompress(rom(), fr['data'])
+    w, h = fr['w'], fr['h']
+    if len(data) == w * h:          # chunky (Shaggy / Scooby)
+        return chunky_to_tiles(data, w, h, depth_x, depth_y), True
+    return data, False
+
+
+def tiles_to_image(tiles, fr, pal, bg=(255, 0, 255)):
+    """Assemble the pieces of a frame (as sprite_build places them, no flip)."""
+    w, h = fr['w'], fr['h']
+    img = [[bg] * w for _ in range(h)]
+    for (x, y, _xf, tofs, cols, rows) in sprite_layout(w, h):
+        for c in range(cols):
+            for r in range(rows):
+                t = tofs + c * rows + r          # sprite tiles are column-major
+                if (t + 1) * 32 > len(tiles):
+                    continue
+                p = tile_pixels(tiles, t * 32)
+                for yy in range(8):
+                    for xx in range(8):
+                        v = p[yy * 8 + xx]
+                        X, Y = x + c * 8 + xx, y + r * 8 + yy
+                        if v and 0 <= X < w and 0 <= Y < h:
+                            img[Y][X] = pal[v]
+    return img
+
+
+def sprite_palette(attr, room_pals=None):
+    """Sprite palette (attr bits 13-14): 0-1 are the shared UI/Shaggy/Scooby palettes."""
+    n = (attr >> 13) & 3
+    b = rom()
+    if n < 2:
+        return palette(b, UI_PALETTES + 32 * n)
+    if room_pals:
+        return room_pals[n - 2]
+    return [(v * 17, v * 17, v * 17) for v in range(16)]
+
+
+def sprite_sheet(aset, anim=None, depth=0, cols=8, scale=1):
+    """Render frames (all, or those of one animation) side by side with their hot spot marked."""
+    if anim is not None:
+        offs = [a for op, a in aset.script(anim) if op == 'frame']
+    else:
+        offs = aset.frame_offsets()
+    frames = [aset.frame(o) for o in offs]
+    cw = max(f['w'] for f in frames) + 4
+    ch = max(f['h'] for f in frames) + 4
+    nrow = (len(frames) + cols - 1) // cols
+    img = [[(40, 40, 40)] * (cw * min(cols, len(frames))) for _ in range(ch * nrow)]
+    for i, fr in enumerate(frames):
+        tiles, _ = frame_tiles(aset, fr, depth, depth)
+        sub = tiles_to_image(tiles, fr, sprite_palette(fr['attr']), bg=(40, 40, 40))
+        ox, oy = (i % cols) * cw + 2, (i // cols) * ch + 2
+        for y, row in enumerate(sub):
+            img[oy + y][ox:ox + len(row)] = row
+        hx, hy = fr['hx'], fr['hy']
+        if 0 <= hx < fr['w'] and 0 <= hy < fr['h']:
+            img[oy + hy][ox + hx] = (255, 0, 0)
+    return img
+
+
+def sprite_check(ram, vram, shot=None):
+    """Rebuild the tiles of slots 0 (Shaggy) and 1 (Scooby) from ROM using the frame and depth
+    latched in a RAM dump, compare them with a VRAM dump, and optionally compare the drawn
+    sprite with a screenshot (PPM). Returns True if every check passes."""
+    ok = True
+    r16 = lambda a: struct.unpack_from('>H', ram, a & 0xFFFF)[0]
+    r32 = lambda a: struct.unpack_from('>I', ram, a & 0xFFFF)[0]
+    img = None
+    if shot:
+        with open(shot, 'rb') as f:
+            data = f.read()
+        parts = data.split(maxsplit=4)
+        sw, sh = int(parts[1]), int(parts[2])
+        pix = parts[4][-sw * sh * 3:]
+        img = [[tuple(pix[(y * sw + x) * 3:(y * sw + x) * 3 + 3]) for x in range(sw)] for y in range(sh)]
+    for slot in (0, 1):
+        hdr = r32(0xFF0558 + 4 * slot)
+        if hdr & 0x80000000:
+            print(f'slot {slot}: no frame shown')
+            continue
+        aset = AnimSet(r32(0xFF0470 + 4 * slot))
+        fr = aset.frame(hdr - aset.addr)
+        dx, dy = r16(0xFF05C4 + 2 * slot), r16(0xFF05D0 + 2 * slot)
+        tiles, chunky = frame_tiles(aset, fr, dx, dy)
+        vaddr = u16(rom(), SLOT_VRAM + 2 * slot)
+        n = sprite_dma_words(fr['w'], fr['h']) * 2
+        same = vram[vaddr:vaddr + n] == tiles[:n]
+        note = ''
+        if not same:
+            # the tiles of the next frame may already be in VRAM: sprite_build latches its
+            # header only when no newer frame is waiting (docs/formats.md "From script to screen")
+            nfr = aset.frame(r32(0xFF0570 + 4 * slot) - aset.addr)
+            ntiles, _ = frame_tiles(aset, nfr, r16(0xFF05A0 + 2 * slot), r16(0xFF05AC + 2 * slot))
+            nn = sprite_dma_words(nfr['w'], nfr['h']) * 2
+            if vram[vaddr:vaddr + nn] == ntiles[:nn]:
+                same, note = True, f' (holds the NEXT frame +{nfr["off"]:#x}, not latched yet)'
+            else:
+                # the depth latched for display is read when the frame is latched, not the
+                # one the scaler used: search nearby depths
+                for dd in range(-16, 17):
+                    t2, _ = frame_tiles(aset, fr, dx + dd, dy + dd)
+                    if vram[vaddr:vaddr + n] == t2[:n]:
+                        same, note = True, f' (scaled at depth {dx + dd:#x}; the latched depth is stale)'
+                        break
+        ok &= same
+        print(f'slot {slot}: set {aset.addr:#08x} frame +{fr["off"]:#x} {fr["w"]}x{fr["h"]} depth {dx:#x}/{dy:#x}: '
+              f'VRAM ${vaddr:04X} {"identical" if same else "DIFFERS"} ({n} bytes){note}')
+        if img is not None:
+            hx, hy = r16(0xFF04C4 + 2 * slot), r16(0xFF04D0 + 2 * slot)
+            sx = _s16((r16(0xFF04DC + 4 * slot) - r16(0xFF06CA)) & 0xFFFF) - hx
+            sy = _s16((r16(0xFF04F4 + 4 * slot) - r16(0xFF06CE)) & 0xFFFF) + 16 - hy
+            pal = sprite_palette(fr['attr'])
+            sub = tiles_to_image(tiles, fr, pal, bg=None)
+            flip = fr['attr'] & 0x800
+            match = total = 0
+            for y, row in enumerate(sub):
+                for x, c in enumerate(row):
+                    if c is None:
+                        continue
+                    X = sx + (fr['w'] - 1 - x if flip else x)
+                    if 0 <= X < len(img[0]) and 0 <= sy + y < len(img):
+                        total += 1
+                        e = img[sy + y][X]
+                        match += all(abs(a - b) <= 40 for a, b in zip(c, e))
+            hidden = ' (rest hidden by high-priority foreground tiles?)' if match < 0.9 * total else ''
+            print(f'        screen ({sx},{sy}): {match}/{total} sprite pixels match the screenshot{hidden}')
+            # (informational: a partly hidden actor is normal; the VRAM comparison decides)
+    return ok
+
+
 def parse_int(s):
     return int(s, 0) if not s.startswith('$') else int(s[1:], 16)
 
@@ -652,6 +930,16 @@ def main(argv=None):
     p.add_argument('--frame', type=int, help='title: plane-A animation frame 0..27 (default 27)')
     p.add_argument('--scale', type=int, default=1)
     p.add_argument('--dump', metavar='PREFIX', help='also write PREFIX.vram / PREFIX.cram')
+    p = sub.add_parser('sprite', help='render actor animation frames (docs/formats.md "Actor sprites")')
+    p.add_argument('set', help='shaggy, scooby, a type index 0..35 of $032670, or a set address')
+    p.add_argument('out', nargs='?')
+    p.add_argument('--anim', type=int, help='only the frames of this animation')
+    p.add_argument('--depth', type=lambda s: int(s, 0), default=0, help='depth scale 0..$FF')
+    p.add_argument('--cols', type=int, default=8)
+    p.add_argument('--scale', type=int, default=2)
+    p.add_argument('--list', action='store_true', help='print the header and animation scripts')
+    p = sub.add_parser('spritecheck', help='compare slots 0/1 rebuilt from ROM with harness ram/vdp dumps')
+    p.add_argument('ram'); p.add_argument('vram'); p.add_argument('--shot', help='harness PPM of the same frame')
     args = ap.parse_args(argv)
     r = rom()
 
@@ -702,6 +990,28 @@ def main(argv=None):
         print('# LZSS/RLE ends are where the decompressor stops consuming input.')
         for a, b, k, d in asset_list():
             print(f'{a:06x} {b:06x} {k:11} {d}')
+    elif args.cmd == 'sprite':
+        name = args.set.lower()
+        if name == 'shaggy':
+            addr = SPRITE_SET_SHAGGY
+        elif name == 'scooby':
+            addr = SPRITE_SET_SCOOBY
+        else:
+            v = parse_int(args.set)
+            addr = u32(r, SPRITE_SETS + 4 * v) if v < 36 else v
+        aset = AnimSet(addr)
+        if args.list:
+            print(f'set {addr:#08x}: kind {aset.kind}, {aset.n_anims} animations, {aset.n_frames} frames')
+            for i in range(aset.n_anims):
+                print(f'  anim {i:3d} +{aset.anim_offset(i):#06x}: ' +
+                      ' '.join(f'{op}:{a:#x}' for op, a in aset.script(i)))
+        if args.out:
+            write_png(args.out, sprite_sheet(aset, args.anim, args.depth, args.cols), args.scale)
+            print(f'-> {args.out}')
+    elif args.cmd == 'spritecheck':
+        ok = sprite_check(open(args.ram, 'rb').read(), open(args.vram, 'rb').read(), args.shot)
+        print('OK' if ok else 'MISMATCH')
+        sys.exit(0 if ok else 1)
     elif args.cmd == 'screen':
         vram, cram, s = build_screen(args.name, args.frame)
         if args.dump:

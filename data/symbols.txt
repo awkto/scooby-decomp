@@ -14,7 +14,7 @@
 # ---- VDP / palette / graphics helpers (docs/formats.md)
 00992C vdp_copy_to_vram  # d0=VRAM addr, a0=src, d1=word count
 009964 vdp_write_word    # d0=VRAM addr, d1=value
-0099F6 vdp_dma_vram      # a0=src, d0=VRAM dest, d1=words; splits at 128 KiB boundaries, calls vdp_dma_setup
+0099F6 vdp_dma_vram      # a0=src, d0=VRAM dest, d1=words; splits at 64 KiB source boundaries, calls vdp_dma_setup; C (#13)
 009A3C vdp_dma_setup     # programs DMA length/source regs (bus request around it)
 009B10 vdp_dma_cram      # CRAM DMA, same args as vdp_dma_vram
 009BE4 vdp_fill_vram     # d0=addr, d1=count, d2=value
@@ -270,11 +270,38 @@
 002278 run_arrival_script  # run the room entry +$10 script
 # (dup, superseded) 0013BA mystery_intro       # mystery title card + start script (from header +$30)
 # ---- text and dialogue rendering (#20, docs/subsystems/text.md) ----
-009F30 draw_text_centered  # a0 = string, d2 = row: plane A, centred in 32 cells (then draw_text_plane_a)
-009F46 draw_text_line_clear_first # blank the plane-A row with 34 spaces, then draw_text_priority
-009F58 draw_text_priority  # draw_text_plane_a with the font base priority bit forced on
-009FA2 talk_line_print     # a0 = string, d0 = row, d1 = col: TALK menu choice, wrapped at 30 into plane $A000 at $AA82; d0 = lines
-00A054 text_box_print      # a0 = string: clear window plane $D000, print centred/wrapped at 30, set window height (reg $12), arm timer
 00A130 text_show           # a0 = string: pointer mode off, text_box_print, text_wait, text_clear, restore (dialogue line)
 00A172 text_clear          # empty ram_text_buf and text_box_print it
 00A18C text_wait           # wait for the shown text: timer (len*4 frames) or A/B/Start; actors keep running
+# ---- #15 sprite / actor animation (port/src/game/sprite.c, docs/subsystems/sprite.md)
+00801A actors_init          # reset the 6 actor slots; Shaggy set $032700, Scooby $0642D0; then actor_animate
+00AD14 sprite_build_nop     # lone rts (dead)
+00AD16 actor_draw           # sprite_build helper: latch the DMA'd frame, emit its pieces into the SAT
+00B0B8 actor_animate        # step every slot's animation script, RLE-decode / depth-scale new frames
+00D3F0 frame_pack_48x80     # chunky $FF6000 -> 4bpp tiles (table $00BC70), no scaling
+00D42C frame_pack_80x48     # same, 80x48 (table $00C030)
+00D468 frame_scale_48x80    # depth scaler: keep masked rows/columns ($00C3F0 + depth*16), pack to tiles
+00DA6A frame_scale_80x48    # same, 80x48
+00BC70 chunky_ofs_48x80     # w[480] tile-buffer offset of each 8-pixel row group (48x80 frames)
+00C030 chunky_ofs_80x48     # w[480] same for 80x48 frames
+00C3F0 depth_masks          # 256 x 8 words: keep bits per depth level (MSB first)
+032670 sprite_sets          # l[36] animation set per sprite type (object +$02)
+032700 animset_shaggy       # animation set 0 (docs/formats.md "Actor sprites")
+0642D0 animset_scooby       # animation set 1
+0FC760 follow_anim_tbl      # w[]: partner animation per Shaggy animation (follow mode)
+0FC860 slot_vram_tbl        # w[6] VRAM address of each slot's tiles
+0FC9F4 slot_buffer_tbl      # l[6] RAM staging buffer of each slot
+
+# ---- #13 VDP helpers (C in port/src/game/vdp.c, palette.c; docs/subsystems/vdp.md).
+# C names of the older #11 functions: vdp_copy_to_vram=vram_write_words, vdp_write_word=vram_write_word,
+# vdp_fill_vram=vram_fill_words.
+009996 vram_read_word       # d0=VRAM addr -> d1.w
+0099C4 cram_write_word      # d0=CRAM addr, d1=value (no static caller)
+00972E vdp_reg_set          # d0=register, d1=value: writes $8000|reg<<8|val to the control port
+009716 plane_a_clear        # fill plane A nametable ($C000, $800 words) with 0
+009722 plane_b_clear        # same for plane B ($E000)
+009F30 draw_text_centered   # a0=cstring, d2=row: column = (32-len)/2, then draw_text_plane_a
+009F46 draw_text_labelled   # draws the string at $02FFF4 at column 0, then falls into draw_text_plane_a_hi
+009F58 draw_text_plane_a_hi # draw_text_plane_a with tile priority (font base bit 15) set
+009FA2 draw_text_wrapped    # a0=cstring, d0=row, d1=col: plane at $AA82+row*128+col*2, wraps at 30 chars; d0.w=rows used
+00A054 draw_status_line     # a0=cstring: clears plane $D000 (1024 words) then draws wrapped text, sets reg $12 and $FF080A

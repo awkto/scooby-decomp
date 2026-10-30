@@ -18,6 +18,43 @@ void lzss_call(hle_ctx *ctx);          /* C-to-C: same, adds the original's cycl
 void rle_call(hle_ctx *ctx);
 void vram_write_word(hle_ctx *ctx);    /* $009964 */
 void vram_fill_words(hle_ctx *ctx);    /* $009BE4 */
+void vram_read_word(hle_ctx *ctx);     /* $009996 */
+void cram_write_word(hle_ctx *ctx);    /* $0099C4 */
+void vdp_fill_cram(hle_ctx *ctx);    /* $009C1E */
+void vdp_clear_vram(hle_ctx *ctx);   /* $009C58 */
+void vdp_clear_cram(hle_ctx *ctx);   /* $009C5E */
+void vdp_reg_set(hle_ctx *ctx);        /* $00972E */
+void plane_a_clear(hle_ctx *ctx);      /* $009716 */
+void draw_text_plane_a(hle_ctx *ctx);  /* $009F72 */
+void draw_text_wrapped(hle_ctx *ctx);  /* $009FA2 */
+void draw_status_line(hle_ctx *ctx);   /* $00A054 */
+void plane_b_clear(hle_ctx *ctx);      /* $009722 */
+void vdp_dma_vram(hle_ctx *ctx);       /* $0099F6 a0=src d0=VRAM dst d1=words; splits at 64 KiB */
+void vdp_dma_setup(hle_ctx *ctx);      /* $009A3C one VRAM transfer */
+void vdp_dma_cram(hle_ctx *ctx);       /* $009B10 one CRAM transfer */
+/* C callers of the DMA helpers add this to ctx->cycles (the HLE_FUNC cost is only charged
+ * to calls that come from 68k code): the original's overhead per transfer, DMA stall excluded */
+#define VDP_DMA_CYCLES 1000
+
+/* Semantic VDP operations: hook point for a native renderer (docs/subsystems/vdp.md).
+ * Every upload/fill done by the helpers in vdp.c is described by a vdp_op and offered to
+ * the hook first; returning true means the renderer applied it and the VDP is not touched. */
+typedef enum { VDP_VRAM, VDP_CRAM } vdp_mem;
+typedef enum {
+	VDP_OP_COPY,   /* `words` words from 68k address `src` to `dst` (byte address in VRAM/CRAM) */
+	VDP_OP_FILL,   /* `words` words of `value` at `dst` (a single word write is a fill of 1) */
+} vdp_op_kind;
+typedef struct vdp_op {
+	vdp_op_kind kind;
+	vdp_mem mem;
+	bool dma;          /* COPY only: DMA (the 68k stalls) instead of CPU data-port writes */
+	uint32_t src;      /* COPY: 68k address of the first word (ROM or work RAM) */
+	uint16_t value;    /* FILL */
+	uint16_t dst;      /* destination byte address; the VDP auto-increment is 2 */
+	uint32_t words;
+} vdp_op;
+typedef bool (*vdp_hook_fn)(const vdp_op *op);
+void vdp_set_hook(vdp_hook_fn fn);     /* NULL (default) = the emulated VDP does everything */
 
 /* util.c */
 void str_copy(hle_ctx *ctx);           /* $005B56 */
@@ -112,9 +149,6 @@ void logo5_frame(hle_ctx *ctx);        /* $000BC8 */
 
 /* ---- text.c (#20: text/dialogue rendering, docs/subsystems/text.md) */
 void str_length(hle_ctx *ctx);          /* $00A236 */
-void draw_text_plane_a(hle_ctx *ctx);   /* $009F72 */
-void talk_line_print(hle_ctx *ctx);     /* $009FA2 */
-void text_box_print(hle_ctx *ctx);      /* $00A054 */
 void text_clear(hle_ctx *ctx);          /* $00A172 */
 void status_line_update(hle_ctx *ctx);  /* $00A828 */
 

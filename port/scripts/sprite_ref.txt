@@ -1,0 +1,31 @@
+# Title -> Lobby (harness route from the README/brief), then a screenshot
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+run 30
+shot a
+ram a
+vdp a
+press L 40
+run 3
+shot b
+ram b
+vdp b
+press D 30
+run 2
+shot c
+ram c
+vdp c

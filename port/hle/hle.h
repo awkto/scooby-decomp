@@ -91,6 +91,16 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
  * interrupts masked it is charged at once (the original loses those VBlanks too). */
 /* 68k cycles run by nested calls so far in the current C function (outermost level) */
 int hle_nested_cycles(void);
+/* VDP DMA started from C (#13). A 68k->VDP DMA stalls the CPU for its whole length. The
+ * frame loop advances a DMA line by line, so C that starts one must bracket the sequence:
+ *   hle_dma_begin();  ...ctrl-port writes that start the DMA...;  hle_dma_complete();
+ *   ...restore reg 1, release the Z80...;  hle_dma_end();
+ * The transfer then completes at once (as for nested 68k code, #31) and the stall time is
+ * part of the nested time the layer charges when the C function returns. In difftest
+ * (sandbox) the calls are harmless. Never poll the DMA-busy flag from C. */
+void hle_dma_begin(void);
+void hle_dma_complete(void);
+void hle_dma_end(void);
 /* forget layer state that is not in the savestate (pending cycle debt): emu reset/load */
 void hle_state_reset(void);
 

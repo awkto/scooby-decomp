@@ -2,15 +2,10 @@
  *
  * The game never draws text with sprites. Strings are plain ASCII (NUL terminated); a glyph is
  * the tile  char + ram_font_base  (the 94-tile font $030F12 is loaded after the room tiles by
- * font_tiles_load, room.c). Three places use the same word-wrap code:
- *
- *   text_box_print   $00A054  the WINDOW plane ($D000, 32 cells wide): status line "Take Archway",
- *                             room name and every dialogue box. Clears the plane, wraps at 30
- *                             characters, centres each line and sets the window height (VDP reg
- *                             $12) to the number of text rows.
- *   talk_line_print  $009FA2  one entry of the TALK menu, left aligned, into the verb-bar plane.
- *   draw_text_plane_a $009F72 plain, unwrapped text at (col, row) of plane A (title/password/
- *                             sound-test screens) plus three small helpers.
+ * font_tiles_load, room.c). The glyph writers are in vdp.c (#13): draw_status_line $00A054
+ * draws the WINDOW plane ($D000, 32 cells wide: status line, room name, every dialogue box;
+ * wraps at 30 characters, centres, sets the window height), draw_text_wrapped $009FA2 the TALK
+ * menu lines, draw_text_plane_a $009F72 and friends the plane-A menus.
  *
  * A line is "shown" by text_show ($00A130 = print, wait, clear). The wait ($00A18C text_wait)
  * is a timer proportional to the text length that A or B (or Start in a skippable cutscene)
@@ -83,207 +78,10 @@ HLE_FUNC(0x00A236, str_length, 0)
 	ctx->cycles = 60 + 34 * (int)n;
 }
 
-/* ------------------------------------------------------------------ plane A text */
-/* One glyph: tile (char + font base) at VRAM address `addr` via vram_write_word
- * (D0 = address, D1 = tile; X ends up as the carry of the following addq.w #2,d0). */
-static void put_glyph(hle_ctx *c, uint8_t ch, uint32_t *x)
-{
-	set_w(&c->d[1], ch);                                      /* andi.w #$ff,d1 */
-	set_w(&c->d[1], lo16(c->d[1]) + RAM16(RAM_FONT_BASE));    /* add.w font_base,d1 */
-	vram_write_word(c);
-	*x = ((uint32_t)lo16(c->d[0]) + 2) > 0xFFFF;              /* addq.w #2,d0 */
-	set_w(&c->d[0], lo16(c->d[0]) + 2);
-}
-
-/* $009F72: print the string at A0 (advanced past the NUL) at column D1, row D2 of plane A
- * ($C000, 32 cells = 64 bytes per row). D0-D2 preserved (movem.w: sign-extended words). */
-HLE_FUNC(0x009F72, draw_text_plane_a, 0)
-{
-	uint16_t w0 = VRAM_PLANE_A, w1 = lo16(ctx->d[1]), w2 = lo16(ctx->d[2]);
-	uint16_t addr = (uint16_t)(VRAM_PLANE_A + (uint16_t)(w1 << 1) + (uint16_t)(w2 << 6));
-	uint32_t x = ((uint32_t)(uint16_t)(VRAM_PLANE_A + (uint16_t)(w1 << 1)) + (uint16_t)(w2 << 6)) > 0xFFFF;
-	int n = 0;
-	set_w(&ctx->d[0], addr);
-	for (;;) {
-		uint8_t ch = bus_r8(ctx->a[0]++);
-		set_b(&ctx->d[1], ch);
-		if (!ch)
-			break;
-		put_glyph(ctx, ch, &x);
-		n++;
-	}
-	ctx->d[0] = (uint32_t)(int32_t)(int16_t)w0;
-	ctx->d[1] = (uint32_t)(int32_t)(int16_t)w1;
-	ctx->d[2] = (uint32_t)(int32_t)(int16_t)w2;
-	cc_set(ctx, CC_N | CC_Z | CC_V | CC_C | CC_X, CC_Z | (x ? CC_X : 0));
-	ctx->cycles = 110 + 270 * n;
-}
-
-/* $009F30 (centred), $009F58 (priority bit forced on) and $009F46 (blank row first) are small
- * wrappers around draw_text_plane_a used only by the title/sound-test/debug-room menus. No route
- * reaches them, so they cannot be difftested and stay 68k (docs/subsystems/text.md). */
-
-/* ------------------------------------------------------------------ word wrap */
-/* Find where to cut a string longer than 30 characters. Scans backwards from the 31st byte:
- * the cut is at the last space at or before offset 30, or just before a '-' (the byte after
- * the candidate). Original: `lea (31,a0),a1 / cmpi.b #$20,-(a1) / beq / cmpi.b #$2d,(1,a1) /
- * beq / addq.w #1,d1`. Leaves A1 at the cut and D1.w = steps taken (0 = space at offset 30).
- * Returns the number of characters for the line = 30 - steps. (The char at the cut stays at
- * the head of the next line; a string without space or '-' scans below A0 - the original does
- * too and nothing in the game triggers it.) */
-static uint16_t wrap_find_cut(hle_ctx *c)
-{
-	uint32_t a1 = c->a[0] + 0x1F;
-	uint16_t steps = 0;
-	set_w(&c->d[1], 0);
-	c->d[1] = 0;                                       /* moveq #0,d1 */
-	for (;;) {
-		a1--;
-		if (bus_r8(a1) == 0x20 || bus_r8(a1 + 1) == 0x2D)
-			break;
-		steps++;
-	}
-	c->a[1] = a1;
-	set_w(&c->d[1], steps);
-	return (uint16_t)(TEXT_COLS - steps);
-}
-
-/* ------------------------------------------------------------------ text_box_print $00A054 */
-/* A0 = string. Fills the 32x32 window plane with the blank cell, then writes the string
- * centred, wrapped at 30 characters, from row 1 on, sets the window height to rows+1 (reg
- * $12 and RAM_WINDOW_ROWS; a one-line text gives 2) and arms the pacing timer
- * RAM_TEXT_TIMER = length * 16 (see text_wait). An empty string just clears the box.
- *
- * Regs out: D0 = $9200 | rows (the reg-write word), D1.w = rows, D2.w = chars left in the
- * last chunk (-1 after printing it), D3.w = next row address, D4 = timer, D5/A1 = wrap scan
- * leftovers, A0 = past the last char. CCR = flags of `move.w d4,(timer)` after `lsl.w #4`. */
-HLE_FUNC(0x00A054, text_box_print, 0)
-{
-	uint32_t *d = ctx->d;
-	uint32_t x = 0;
-	int glyphs = 0;
-
-	/* clear the window plane (1024 words) */
-	set_w(&d[2], 0x3FF);
-	set_w(&d[1], RAM16(RAM_BLANK_TILE));
-	set_w(&d[0], VRAM_WINDOW);
-	for (int i = 0; i < 0x400; i++) {
-		vram_write_word(ctx);
-		set_w(&d[0], lo16(d[0]) + 2);
-	}
-	set_w(&d[2], 0xFFFF);
-
-	str_length(ctx);                                   /* D0.l = length */
-	set_w(&d[2], lo16(d[0]));
-	RAM16(RAM_TEXT_TIMER) = lo16(d[0]);
-	set_w(&d[3], VRAM_WINDOW_TEXT);
-	d[4] = 2;                                          /* moveq #2,d4: first row index + 1 */
-
-	/* full lines of up to 30 characters, each centred: start = row + 30 - (n & ~1) bytes */
-	while ((int16_t)lo16(d[2]) > TEXT_COLS) {
-		uint16_t n = wrap_find_cut(ctx);               /* D1.w = steps, A1 = cut */
-		set_w(&d[1], n);                               /* subi.w #$1e / neg.w */
-		set_w(&d[2], lo16(d[2]) - n);
-		set_w(&d[5], n);
-		set_w(&d[0], lo16(d[3]));
-		set_w(&d[5], lo16(d[5]) - 1);
-		set_w(&d[1], n & 0xFFFE);
-		set_w(&d[0], lo16(d[3]) + 0x1E - (n & 0xFFFE));
-		for (uint16_t i = 0; i < n; i++, glyphs++)
-			put_glyph(ctx, bus_r8(ctx->a[0]++), &x);
-		set_w(&d[5], 0xFFFF);
-		set_w(&d[3], lo16(d[3]) + 0x40);               /* next row of the 32-wide window */
-		set_w(&d[4], lo16(d[4]) + 1);
-	}
-	/* the last (or only) line */
-	if (lo16(d[2]) != 0) {
-		uint16_t n = lo16(d[2]);
-		set_w(&d[5], n & 0xFFFE);
-		set_w(&d[0], lo16(d[3]) + 0x1E - (n & 0xFFFE));
-		for (uint16_t i = 0; i < n; i++, glyphs++)
-			put_glyph(ctx, bus_r8(ctx->a[0]++), &x);
-		set_w(&d[2], 0xFFFF);
-	}
-
-	/* window height: reg $12 = number of text rows (+1 for the blank top row) */
-	set_w(&d[1], lo16(d[4]));
-	RAM8(RAM_WINDOW_ROWS) = (uint8_t)d[1];
-	set_w(&d[0], 0x9200 | (uint8_t)d[1]);              /* sub_00972E: d0 = $8000 | reg<<8 | value */
-	vdp_ctrl_w(lo16(d[0]));
-	set_w(&d[4], RAM16(RAM_TEXT_TIMER));
-	{
-		uint16_t t = lo16(d[4]);
-		uint16_t r = (uint16_t)(t << 4);
-		set_w(&d[4], r);
-		RAM16(RAM_TEXT_TIMER) = r;
-		cc_set(ctx, CC_X | CC_N | CC_Z | CC_V | CC_C,
-		       (((t >> 12) & 1) ? CC_X : 0) | ((r & 0x8000) ? CC_N : 0) | (r ? 0 : CC_Z));
-	}
-	ctx->cycles = 280600 + 270 * glyphs;   /* original avg 284.9k: 1024 blank words + the glyphs */
-}
-
-/* ------------------------------------------------------------------ talk_line_print $009FA2 */
-/* One TALK-menu choice. A0 = string, D0 = line (row of the verb-bar plane, 128 bytes each),
- * D1 = column. Wraps like text_box_print but left-aligned. Returns D0.w = number of display
- * lines and stores lines * 300 in RAM_TEXT_TIMER (a pause estimate used by the menu).
- * D2-D4 preserved (movem). */
-HLE_FUNC(0x009FA2, talk_line_print, 0)
-{
-	uint32_t *d = ctx->d;
-	uint32_t save2 = d[2], save3 = d[3], save4 = d[4];
-	uint32_t x = 0;
-	int glyphs = 0;
-	uint16_t rows;
-
-	set_w(&d[4], lo16(d[0]));
-	set_w(&d[4], (uint16_t)(lo16(d[4]) << 7));
-	set_w(&d[1], (uint16_t)(lo16(d[1]) << 1));
-	x = ((uint32_t)lo16(d[4]) + lo16(d[1])) > 0xFFFF;
-	set_w(&d[4], lo16(d[4]) + lo16(d[1]));
-	str_length(ctx);
-	x = lo16(d[0]) ? 0 : x;                            /* addq.w #1,d0 in strlen clears X */
-	set_w(&d[2], lo16(d[0]));
-	set_w(&d[3], VRAM_TALK_MENU);
-	x = ((uint32_t)lo16(d[3]) + lo16(d[4])) > 0xFFFF;
-	set_w(&d[3], lo16(d[3]) + lo16(d[4]));
-	d[4] = 1;                                          /* lines so far */
-
-	while ((int16_t)lo16(d[2]) > TEXT_COLS) {
-		uint16_t n = wrap_find_cut(ctx);
-		set_w(&d[1], n);
-		set_w(&d[2], lo16(d[2]) - n);
-		set_w(&d[5], n);
-		set_w(&d[0], lo16(d[3]));
-		set_w(&d[5], lo16(d[5]) - 1);
-		set_w(&d[1], n & 0xFFFE);
-		for (uint16_t i = 0; i < n; i++, glyphs++)
-			put_glyph(ctx, bus_r8(ctx->a[0]++), &x);
-		set_w(&d[5], 0xFFFF);
-		set_w(&d[3], lo16(d[3]) + 0x80);
-		set_w(&d[4], lo16(d[4]) + 1);
-		x = 0;                                         /* addq.w #1,d4 */
-	}
-	if (lo16(d[2]) != 0) {
-		uint16_t n = lo16(d[2]);
-		set_w(&d[5], n);
-		set_w(&d[2], n - 1);
-		set_w(&d[0], lo16(d[3]));
-		set_w(&d[5], n & 0xFFFE);
-		for (uint16_t i = 0; i < n; i++, glyphs++)
-			put_glyph(ctx, bus_r8(ctx->a[0]++), &x);
-		set_w(&d[2], 0xFFFF);
-	}
-	rows = lo16(d[4]);
-	set_w(&d[0], rows);
-	{
-		uint32_t prod = (uint32_t)rows * 300;
-		RAM16(RAM_TEXT_TIMER) = (uint16_t)prod;
-		cc_set(ctx, CC_X | CC_N | CC_Z | CC_V | CC_C,
-		       (x ? CC_X : 0) | ((prod & 0x8000) ? CC_N : 0) | ((prod & 0xFFFF) ? 0 : CC_Z));
-	}
-	d[2] = save2; d[3] = save3; d[4] = save4;
-	ctx->cycles = 600 + 270 * glyphs;
-}
+/* The glyph writers live in vdp.c (#13, they go through the renderer hook): draw_text_plane_a
+ * $009F72 (+ the plane-A menu helpers $009F30/$009F46/$009F58), draw_text_wrapped $009FA2 (TALK
+ * menu line) and draw_status_line $00A054 (window plane: status line / dialogue box, word wrap
+ * at 30 characters, centred, window height). text.c uses draw_status_line for every box. */
 
 /* ------------------------------------------------------------------ text_clear $00A172 */
 /* Empty the status/dialogue buffer and print it: clears the window plane (and resets the
@@ -292,13 +90,13 @@ HLE_FUNC(0x00A172, text_clear, 0)
 {
 	ctx->a[0] = RAM_TEXT_BUF;
 	RAM8(RAM_TEXT_BUF) = 0;
-	text_box_print(ctx);
+	draw_status_line(ctx);
 }
 
 /* ------------------------------------------------------------------ text_show $00A130 */
 /* Show the string at A0 as a dialogue line and wait until it is done:
  *     pointer-mode bit saved, pointer mode off  (the bar must not react while text is up)
- *     text_box_print(a0)            print the box
+ *     draw_status_line(a0)            print the box
  *     text_wait()                   timer / button, actors keep moving     <- blocks (68k)
  *     text_clear()                  empty the box again
  *     window height reg $12 = 2 (the status line), pointer-mode bit restored,
@@ -317,7 +115,7 @@ HLE_RANGE(0x00A13C, text_show_print, 60, 0x00A148)
 {
 	cc_btst(ctx, RAM8(RAM_VBLANK_FLAGS), 3);
 	RAM8(RAM_VBLANK_FLAGS) &= ~8;                      /* bclr #3: pointer mode off */
-	text_box_print(ctx);
+	draw_status_line(ctx);
 	ctx->cycles += 20;
 	hle_jump(ctx, 0x00A148);                           /* bsr text_wait */
 }
@@ -341,7 +139,7 @@ HLE_RANGE(0x00A162, text_show_done, 44, 0x00A170)
 }
 
 /* ------------------------------------------------------------------ text_wait $00A18C */
-/* The "line is on screen" wait. RAM_TEXT_TIMER (= length * 16, set by text_box_print) is
+/* The "line is on screen" wait. RAM_TEXT_TIMER (= length * 16, set by draw_status_line) is
  * halved, then every frame reduced by the pacing table entry (10,5,2,1,0 selected by
  * RAM_TEXT_SPEED, always 4 -> 2): a 30-character line stays 30*8/2 = 120 frames. Nothing is
  * typed out: the whole text appears at once. The box goes away when
@@ -445,7 +243,7 @@ HLE_FUNC(0x00A828, status_line_update, 150)
 					return;                            /* same room as last pass */
 			}
 		}
-		text_box_print(ctx);
+		draw_status_line(ctx);
 		return;
 	}
 
@@ -528,7 +326,7 @@ HLE_FUNC(0x00A828, status_line_update, 150)
 		}
 	}
 	ctx->a[0] = RAM_TEXT_BUF;
-	text_box_print(ctx);
+	draw_status_line(ctx);
 }
 
 /* ================================================================== script op $10: say */

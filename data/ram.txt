@@ -32,10 +32,8 @@ FF001A 2    ram_title_fade_c
 FF001D 1    ram_title_scroll # title sprite tile offset base (>>3)
 FF0328 128  ram_inv_nametable # inventory name table rows (inventory_build_page), also minigame_tug meters; not a script stack (#19)
 FF0428 4    ram_rng_state    # seeded 45C3F2D1 at game_init, stepped by rng_next
-FF0484 12   ram_list_484     # six-entry list walked at $00B0F8 (a6) ?
-FF0488 2    ram_cur_index    # index used by the $0FC760 table (spritesheet/frame lookup ?)
-FF048A 2    ram_484a
-FF048C 2    ram_484c
+FF0470 24   ram_actor_animset # l[6] animation set per actor slot (0 Shaggy, 1 Scooby, 2-5 room actors) (#15, docs/formats.md "Actor sprites")
+FF0488 12   ram_actor_anim   # w[6] animation number (restart: bit n of ram_actors_anim_new)
 
 # ---- Shaggy (player) -- 16.16 fixed point, integer part is the first word
 FF04DC 4    ram_shaggy_x     # actor 0 X 16.16 (actor arrays: X[6] at $FF04DC, Y[6] at $FF04F4; docs/subsystems/walking.md)
@@ -47,7 +45,7 @@ FF04FC 16   ram_actor_y2     # actors 2-5 Y 16.16
 
 # ---- level / room state (docs/formats.md)
 FF05B8 2    ram_shaggy_facing # 0 right 1 left 2 up 3 down
-FF0618 2    ram_618
+FF0618 2    ram_actor_timer  # w[6] frames until the animation script continues (VBlank decrements); [1] = ram_scooby_anim_lock, [2..5] = ram_actor_timer2
 FF0642 4    ram_walk_probe_x # candidate Shaggy position 16.16, tested by walk_blocked_probe
 FF0646 4    ram_walk_probe_y
 FF0652 4    ram_line_from_x  # start of a straight-line walkability test (walk_line_clear), 16.16
@@ -102,7 +100,7 @@ FF09E9 1    ram_09e9
 FF09EA 1    ram_09ea
 FF09EB 1    ram_09eb
 FF09ED 1    ram_09ed         # bit3: RLE decompressor side effect
-FF0AB5 1    ram_0ab5
+FF0AB5 1    ram_actors_anim_new # bit n: slot n starts animation ram_actor_anim[n]
 FF0AC9 1    ram_script_flags # bit0 stop, 1 match case (verb pass), 2 collect talk_choice, 4 match on_event, 5 waits for 2nd object, 6 a verb script ran, 7 walk-on script done (docs/script.md)
 FF0ACA 1    ram_script_flags2 # bit0 Start pressed, 1 cutscene skippable, 2 end TALK menu, 3 TALK after this action
 
@@ -210,5 +208,36 @@ FF087C 40   ram_palcyc       # palette cycling slots (op pal_cycle): w[5] first,
 FF0ACD 1    ram_palcyc_on    # bit n: cycling slot n on
 FF0ABF 1    ram_actors_frozen # bit n: actor n frozen by a script (op freeze / unfreeze_wait)
 # ---- text (#20) ----
-FF080A 2    ram_text_timer   # text_box_print: length*16, text_wait halves it and counts it down; talk_line_print: lines*300
 FF080C 2    ram_text_speed   # byte offset into the pacing table $00A182 (5 words 10,5,2,1,0); game_reset sets 4 (2 per frame), never changed
+
+# ---- #15 sprite / actor animation (port/src/game/sprite.[ch], docs/subsystems/sprite.md)
+FF0494 12   ram_actor_script_pos # w[6] offset (in the set) of the next animation script command
+FF04A0 12   ram_actor_frame  # w[6] offset of the frame header being decoded
+FF04AC 12   ram_actor_hot_x  # w[6] depth-scaled hot spot of that frame
+FF04B8 12   ram_actor_hot_y
+FF04C4 12   ram_actor_shown_hot_x # w[6] hot spot of the frame on screen (latched by sprite_build)
+FF04D0 12   ram_actor_shown_hot_y
+FF050C 8    ram_actor_anim_delay # w[6] frames per frame (script op 4); [4],[5] lie inside ram_actor_step_x
+FF0540 24   ram_actor_src    # l[6] RLE stream to decode, then the tile DMA source
+FF0558 24   ram_actor_shown_frame # l[6] frame header on screen (byte 0 < 0: none)
+FF0570 24   ram_actor_next_frame # l[6] frame header decoded, waiting for its DMA
+FF0588 12   ram_actor_dma_words # w[6] tile DMA length of that frame
+FF05C4 12   ram_actor_shown_depth_x # w[6] depth of the frame on screen (latched)
+FF05D0 12   ram_actor_shown_depth_y
+FF061C 8    ram_actor_timer2 # ram_actor_timer[2..5]
+FF0624 2    ram_scale_depth_x # depth handed to the frame scalers
+FF0626 2    ram_scale_depth_y
+FF08A4 2    ram_fx_sprite_tile # effect sprite ($09E8 bit 4) tile
+FF08A6 4    ram_fx_sprite_ptr # effect sprite (x, y) table pointer
+FF08B0 2    ram_follow_slot  # slot attached to Shaggy in follow mode ($09E8 bit 3)
+FF0AB6 1    ram_actors_tiles_ready # bit n: slot buffer holds a decoded frame, DMA pending
+FF0AB9 1    ram_actors_need_scale # bit n: chunky frame waits for decode + depth scaling
+FF0ABA 1    ram_actors_draw_todo # sprite_build scratch: slots not drawn yet
+FF0AC1 1    ram_actors_dma_done # bit n: new frame latched for display (cleared by its DMA)
+FF0AC4 1    ram_actors_drawn # bit n: drawn into the SAT this frame
+FF0AC5 1    ram_actors_drawn_prev
+FF0AC6 1    ram_actors_follow_sync # follow mode: slot has a new frame, wait for the partner
+FF0ACE 1    ram_fx_blink     # effect sprite blink counter
+
+# ---- #13 VDP helpers (vdp.c)
+FF080A 2    ram_text_count   # draw_text_wrapped: rows*300 (pause length); draw_status_line: characters*16

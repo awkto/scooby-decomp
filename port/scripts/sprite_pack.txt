@@ -1,0 +1,33 @@
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+# shrink Shaggy/Scooby to nothing (depth $FC) with $09E9 bit 3: actor_animate then packs
+# frames with the unscaled $00D3F0/$00D42C (bit 1 freezes the depth computation)
+poke FF09E9 1 0A
+poke FF05AC 2 00FC
+poke FF05AE 2 00FC
+poke FF0ABE 1 03
+press R 60
+press L 80
+press U 30
+press D 30
+press R 60
+run 100
+press L 120
+press R 120
+press U 40
+press D 40
+run 300

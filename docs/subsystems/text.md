@@ -1,6 +1,6 @@
 # Text and dialogue rendering, font (GitLab #20)
 
-C: `port/src/game/text.c`. Strings listing: `tools/py/textdump.py` -> `build/textdump.txt` (ROM-derived, gitignored).
+C: `port/src/game/text.c` (text_show, text_wait, status line, say) and `port/src/game/vdp.c` (the glyph writers, ported by #13; names there are authoritative: `draw_status_line` = text_box_print, `draw_text_wrapped` = talk_line_print). Strings listing: `tools/py/textdump.py` -> `build/textdump.txt` (ROM-derived, gitignored).
 Everything below was read from `src/scooby.s` and checked with difftest on captured states.
 
 ## 1. How text gets on the screen (summary)
@@ -12,9 +12,9 @@ Everything below was read from `src/scooby.s` and checked with difftest on captu
 * **Two places show text**:
   * the **window plane** (VRAM `$D000`, 32 x 32 cells, shown through VDP window register `$12`): the status line
     at the top ("Take Archway", the room name), every dialogue (`say`) box and the failure messages
-    ("I can't open that."). One routine, `text_box_print` `$00A054`, draws all of it.
+    ("I can't open that."). One routine, `draw_status_line` `$00A054`, draws all of it.
   * **plane A** (`$C000`) for title / sound-test / debug-room menus (`draw_text_plane_a` `$009F72` + 3 helpers) and
-    the **verb-bar plane** (`$A000`, row `$AA82`+) for the entries of the TALK menu (`talk_line_print` `$009FA2`).
+    the **verb-bar plane** (`$A000`, row `$AA82`+) for the entries of the TALK menu (`draw_text_wrapped` `$009FA2`).
 * **A dialogue line is not typed out.** The whole text appears at once, stays for a time proportional to its
   length (`4 * length` frames) and goes away when A or B is pressed (or Start in a skippable cutscene).
   `text_show` `$00A130` = print, wait, clear.
@@ -27,13 +27,13 @@ Everything below was read from `src/scooby.s` and checked with difftest on captu
 | address | name (C) | what | status |
 | --- | --- | --- | --- |
 | `$00A236` | `str_length` (strlen) | D0.l = length of the NUL-terminated string at A0 | C |
-| `$009F72` | `draw_text_plane_a` | print A0 at column D1, row D2 of plane A (`$C000`, 32 cells/row); regs preserved | C |
-| `$009F30` | `draw_text_centered` | same, column = (32 - length) / 2 (D1 ignored) | 68k (`draw_text_centered`: no route reaches it, cannot be tested) |
-| `$009F58` | `draw_text_priority` | `draw_text_plane_a` with the font base's priority bit forced on (menus, in front of sprites) | 68k (untestable, as above) |
-| `$009F46` | `draw_text_line_clear_first` | blank the row (34 spaces `$02FFF4`), then print with `draw_text_priority` | 68k (untestable, as above) |
-| `$009FA2` | `talk_line_print` | one TALK-menu choice: left aligned into plane `$A000` from `$AA82`, 128 bytes per row, wraps like `text_box_print`; returns D0 = lines, `$FF080A` = lines * 300 | C |
-| `$00A054` | `text_box_print` | clear the window plane, print A0 centred + wrapped at 30 chars, set the window height, arm the timer | C |
-| `$00A172` | `text_clear` | empty `$FF08BC`, `text_box_print` it (clears the box, height 2) | C |
+| `$009F72` | `draw_text_plane_a` | print A0 at column D1, row D2 of plane A (`$C000`, 32 cells/row); regs preserved | C, port/src/game/vdp.c (#13; goes through the renderer hook) |
+| `$009F30` | `draw_text_centered` | same, column = (32 - length) / 2 (D1 ignored) | C, port/src/game/vdp.c (#13; goes through the renderer hook) |
+| `$009F58` | `draw_text_plane_a_hi` | `draw_text_plane_a` with the font base's priority bit forced on (menus, in front of sprites) | C, port/src/game/vdp.c (#13; goes through the renderer hook) |
+| `$009F46` | `draw_text_labelled` | blank the row (34 spaces `$02FFF4`), then print with `draw_text_priority` | C, port/src/game/vdp.c (#13; goes through the renderer hook) |
+| `$009FA2` | `draw_text_wrapped` | one TALK-menu choice: left aligned into plane `$A000` from `$AA82`, 128 bytes per row, wraps like `draw_status_line`; returns D0 = lines, `$FF080A` = lines * 300 | C, port/src/game/vdp.c (#13; goes through the renderer hook) |
+| `$00A054` | `draw_status_line` | clear the window plane, print A0 centred + wrapped at 30 chars, set the window height, arm the timer | C, port/src/game/vdp.c (#13; goes through the renderer hook) |
+| `$00A172` | `text_clear` | empty `$FF08BC`, `draw_status_line` it (clears the box, height 2) | C |
 | `$00A130` | `text_show` (+ `_print`, `_clear`, `_done`) | show a line and wait for it: 4 ranges around the stack push and the wait | C (ranges) |
 | `$00A18C` | `text_wait` (+ `_frame`, `_tick`) | the wait: pacing timer, A/B/Start, keeps the actors running | C (ranges; the VBlank/actor/pad spins stay 68k) |
 | `$00A828` | `status_line_update` | builds "Verb object [with/to object2]" or the room name for the top line | C |
@@ -98,7 +98,7 @@ names / UI); it walks the script byte code with `scriptdis.py` (759 `say`, 55 `t
    one-line text gives 2, two lines 3, etc. Reg `$12` bit 7 = 0 means "window covers the top N rows".
 5. Pacing timer `$FF080A` = **length * 16** (word, *total* length, not per line).
 
-`talk_line_print` does steps 2-3 without centring: column D1, row D0 of the verb-bar plane (`$AA82` + row * 128 +
+`draw_text_wrapped` does steps 2-3 without centring: column D1, row D0 of the verb-bar plane (`$AA82` + row * 128 +
 col * 2), returns the number of lines in D0.
 
 `status_line_update` (called from the main loop and the action code) only rewrites the line when something changed
@@ -157,7 +157,7 @@ each stack push/pop and each call that waits for VBlank (`sub_00B0B8`, `text_sho
 | `$FF068C` | `ram_font_base` | tile base added to a character; palette bits 13-14, priority bit 15 |
 | `$FF08B8` | `ram_ui_tile_base_f` | name-table word of the empty window cell |
 | `$FF08BC` | `ram_08bc` | string buffer: status line / failure message / empty string |
-| `$FF080A` | text timer | `length*16` after `text_box_print` (halved at the start of `text_wait`), `lines*300` after `talk_line_print` |
+| `$FF080A` | text timer | `length*16` after `draw_status_line` (halved at the start of `text_wait`), `lines*300` after `draw_text_wrapped` |
 | `$FF080C` | text speed | byte offset in the pacing table `$00A182` (always 4) |
 | `$FF0AD1` | `ram_verb_bar_window` | reg `$12` value as seen by the HBlank hook |
 | `$FF09DC` bit 3 | pointer mode | cleared while a text is up |

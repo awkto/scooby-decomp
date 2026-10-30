@@ -415,6 +415,15 @@ static void call68k(hle_ctx *c, uint32_t addr, bool orig)
 }
 
 void hle_call68k(hle_ctx *c, uint32_t addr) { call68k(c, addr, false); }
+
+/* VDP DMA started by C: behave like a nested 68k instruction (see hle.h) */
+void hle_dma_begin(void) { nest_begin(); }
+void hle_dma_complete(void) { nest_step_done(); }
+void hle_dma_end(void)
+{
+	nest_step_done();
+	nest_end();
+}
 void hle_set_usp(uint32_t usp) { gx_m68k_set_usp(usp); }
 
 void hle_run68k_until(hle_ctx *c, const uint32_t *exits)
