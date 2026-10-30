@@ -534,6 +534,10 @@ It may call anything non-blocking through `hle_call68k`.
   counts, first/last hits of watched addresses, and the hottest instructions. Use it to
   see where code runs and how often.
 - `tools/py/blocking.py`: see above.
+- `SCOOBY_IPPROF=file` (any of scoobyport / frameprof / the gate scripts): interpreted-instruction profile,
+  every executed 68k instruction per address, top level vs nested in a C function (and which C function),
+  written at exit (`port/src/ipprof.c`). `port/tools/ipprof.sh` runs all gameplay routes with it and
+  `tools/py/remaining68k.py` turns the result into `docs/remaining68k.md` (the #24 checklist).
 - `port/tools/irqtest.sh`: no gameplay frame may miss vblank_main with IRQs unmasked
   (uses `frameprof --hle SPEC`, which also counts this).
 
