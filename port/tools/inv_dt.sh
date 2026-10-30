@@ -27,7 +27,20 @@ echo $PAIRS | xargs -n 2 | xargs -P "${DT_JOBS:-4}" -L 1 sh -c '
 		'"$D"' capture $addr '"$N"' --out $d '"$SCRIPTS"' > runs/dt-inv/$name.cap.log 2>&1
 	fi
 	'"$D"' run $name --states $d --keep-going $DT_EXTRA > runs/dt-inv/$name.log 2>&1'
-rc=0
+# main_loop_pass again, on the passes that take the arrow exits ($00116C $001174 $0011A8 $0011B0):
+# rare among all passes, so port/scripts/inv_arrows.txt switches the capture on while it clicks them
+a=runs/states_inv/000D3E_arrows
+if [ -z "$DT_RERUN" ] && [ ! -d $a ]; then
+	mkdir -p $a runs/inv_arrows
+	cat tools/scripts/story/w0_cafe_items.txt port/scripts/inv_items.txt port/scripts/inv_arrows.txt > runs/inv_arrows_route.txt
+	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/port/scoobyport --hle none --script runs/inv_arrows_route.txt \
+		--outdir runs/inv_arrows --frames 0 > runs/dt-inv/arrows.cap.log 2>&1
+fi
+$D run main_loop_pass --states $a --keep-going -v > runs/dt-inv/main_loop_pass_arrows.log 2>&1
+echo "main_loop_pass, arrow passes: $(tail -1 runs/dt-inv/main_loop_pass_arrows.log | cut -c1-60)"
+grep -o 'exit \$[0-9A-F]*' runs/dt-inv/main_loop_pass_arrows.log | sort | uniq -c | tr '\n' ' '; echo
+tail -1 runs/dt-inv/main_loop_pass_arrows.log | grep -q "states equal" || rc=1
+rc=${rc:-0}
 set -- $PAIRS
 while [ $# -ge 2 ]; do
 	tail -${DT_TAIL:-1} runs/dt-inv/$1.log
