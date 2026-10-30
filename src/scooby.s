@@ -16889,8 +16889,90 @@ loc_1F6F52:
 	moveq #0x16,d0
 	jsr (loc_1F6E52).l
 	jmp (loc_1F6E40).l
-| data 0x1F6F66-0x200000
-	.incbin "baserom.md",0x1F6F66,0x11C
+loc_1F6F66:
+	jsr (loc_1F6E0A).l
+	moveq #0x1c,d0
+	bra.s loc_1F6F00
+loc_1F6F70:
+	jsr (loc_1F6E0A).l
+	moveq #0x1d,d0
+	bra.s loc_1F6F00
+loc_1F6F7A:
+	jsr (loc_1F6E0A).l
+	moveq #0x2,d0
+loc_1F6F82:
+	jsr (loc_1F6E52).l
+	move.l (0x8,a6),d0
+	jsr (loc_1F6E5E).l
+	move.l (0xc,a6),d0
+	jsr (loc_1F6E5E).l
+	jmp (loc_1F6E40).l
+loc_1F6FA2:
+	jsr (loc_1F6E0A).l
+	moveq #0x0,d0
+	bra.s loc_1F6F82
+loc_1F6FAC:
+	jsr (loc_1F6E0A).l
+	moveq #0x1,d0
+	bra.s loc_1F6F82
+loc_1F6FB6:
+	jsr (loc_1F6E0A).l
+	moveq #0x14,d0
+	bra.s loc_1F6F82
+loc_1F6FC0:
+	jsr (loc_1F6E0A).l
+	moveq #0x5,d0
+	jsr (loc_1F6E52).l
+	move.l (0x8,a6),d0
+	jsr (loc_1F6E5E).l
+	move.l (0xc,a6),d0
+	jsr (loc_1F6E5E).l
+	asr.l #0x8,d0
+	jsr (loc_1F6E5E).l
+	jmp (loc_1F6E40).l
+loc_1F6FF0:
+	jsr (loc_1F6E0A).l
+	moveq #0x6,d0
+	bra.s loc_1F6F82
+loc_1F6FFA:
+	jsr (loc_1F6E0A).l
+	moveq #0x7,d0
+	bra.w loc_1F6F82
+loc_1F7006:
+	jsr (loc_1F6E0A).l
+	moveq #0xe,d0
+	bra.w loc_1F6F82
+loc_1F7012:
+	jsr (loc_1F6E0A).l
+	moveq #0x17,d0
+	jsr (loc_1F6E52).l
+	move.l (0x8,a6),d0
+	jsr (loc_1F6E5E).l
+	move.l (0xc,a6),d0
+	jsr (loc_1F6E5E).l
+	move.l (0x10,a6),d0
+	jsr (loc_1F6E5E).l
+	jmp (loc_1F6E40).l
+loc_1F7044:
+	jsr (loc_1F6E0A).l
+	moveq #0x1b,d0
+	bra.w loc_1F6F82
+loc_1F7050:
+	move.w sr,-(sp)
+	ori.w #0x700,sr
+	jsr (loc_1F6D7A).l
+	moveq #0x0,d0
+	move.b (0xb,sp),d0
+	lea.l (0xa01b22).l,a0
+	move.b (0x0,a0,d0.w),d0
+	jsr (loc_1F6D8E).l
+	move.w (sp)+,sr
+	rts
+loc_1F7076:
+	jsr (loc_1F6E0A).l
+	moveq #0x1a,d0
+	bra.w loc_1F6F82
+| data 0x1F7082-0x200000
 dat_1F7082:
 	.incbin "baserom.md",0x1F7082,0x410
 dat_1F7492:
