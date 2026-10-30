@@ -727,12 +727,20 @@ def roller_coaster(g):
     need(g, story_bit(g, 8, 3) and story_bit(g, 8, 0), "coaster stopped at the first brake")
     g.use(154, 20)                                     # Bolts on the Track (Wrench in hand)
     need(g, not story_bit(g, 8, 2), "track fixed")
-    quick_use(g, 18)                                   # release it: the camera pans right
-    for _ in range(100):
-        if g.w(0xFF06CA) >= 256:
+    r19 = g.hot_rect(19)                               # Brake #19 sits at world x 376..432: on screen once the camera is at x = 256
+    pt19 = ((r19[0] + r19[2]) // 2 - 256 - 8, (r19[1] + r19[3]) // 2 - g.w(0xFF06CE) + 8)
+    quick_use(g, 18)                                   # release it (verb USE stays selected); the camera pans right
+    g.set_pointer(*pt19, settle=0)                     # park the crosshair where Brake #19 will appear
+    # the hit test (and the click) works only while the car is parked: not while the stage-3 path runs (the car passes over the
+    # lever; $FF06AE shows 20 / 0 then), so only in the ~17 frames before stage 4 (stage 4 tests F08.4 at once).  Poll every frame
+    # and press B as soon as the crosshair is on Brake #19; repeat the press if it was lost.
+    for _ in range(400):
+        if story_bit(g, 8, 4):
             break
-        g.run(2)
-    quick_use(g, 19, leave=False)                      # second Brake before stage 4
+        if g.w(0xFF06AE) == 19 and not g.w(0xFF09DC) & 0x100:
+            g.press("B", 4, 1)
+        else:
+            g.run(1)
     for _ in range(300):
         if story_bit(g, 8, 0):
             break

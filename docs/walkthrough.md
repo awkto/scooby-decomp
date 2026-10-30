@@ -451,8 +451,14 @@ with Shaggy's path (about 100 frames from the room entry to stage 1, 30 more for
 me"); Brake #18 USE again releases it, the camera pans right (256 px). At stage 4 the ride ends at the Boardwalk unless **Brake #19** (F08.4) is on,
 which stops the car again (F08.0, stage 7) beside the **Shed** (#21, world x 432..472, only on screen with the camera panned): OPEN it
 (F07.7) and the Paint Brush is inside; Brake #19 USE again lets the ride finish at the Boardwalk. The driver clicks Brake #18 the moment
-the room is entered (`quick_use`: pointer already placed by the hit-test probe, no waiting for scripts), waits for F08.0, fixes the track, releases,
-waits for camera x = 256 and clicks Brake #19 (long before stage 4), waits for F08.0 and takes the brush. Every wait polls RAM.
+the room is entered (`quick_use`: hit-test probe, no waiting for scripts), waits for F08.0, fixes the track, releases the brake and then
+parks the crosshair on Brake #19's future spot. The catch is the hit test: while the pointer is "busy" (`$FF09DC` = `$444C`, the 35 frames
+after the release) `$FF06AE` is frozen at its old value, while the stage-3 path runs the car drives over the lever and the hit test
+reads 20 (Track) and then 0, and Brake #19 only reports under the crosshair from about frame 127 after the release, i.e. in a window of
+**~17 frames** before stage 4 (frame 144), which tests F08.4 on its very first tick. So the driver polls `$FF06AE` every frame and presses B as
+soon as it is 19 (retrying if F08.4 did not flip). A first version that probed and re-selected the verb after the camera had stopped
+took ~75 frames and passed on the harness but missed the window under `--hle all`; the per-frame poll is deterministic in both. Then
+it waits for F08.0 again and takes the brush.
 
 **What the chain needs** (the documented dependency graph, as played; Fxx.b = story bit):
 
@@ -542,7 +548,7 @@ cleared and the game stays at `$FF09DC` = `$E4` (action pending, verb Take selec
 thousands of frames) and further clicks are ignored. More frames never help, so it is not a timing artefact. The fix belongs to
 the vblank owner (e.g. let the HLE'd `$5C8E` ignore the beam test).
 
-**Result of the long routes (#29, after merging main with the later replacements)**: `port/tools/storytest.sh long` passes with the
+**Result of the long routes (#29, after merging main with the later replacements; `w1_part` was later replaced by `w1_full`, see below)**: `port/tools/storytest.sh long` passes with the
 plain `--hle all` (no `-vblank_main` exclusion needed any more; the Take/inventory hang above no longer occurs): `w0_full` none == all
 over 132 checkpoints (power-on to the credits, end room 0), `w1_part` none == all over 39 checkpoints (end room 7). No bisect was needed,
 so there is no divergence to report. What the long routes added for the closed loop: every probe, hit test and wait is decided from RAM
@@ -559,3 +565,12 @@ stair fence (position inside its safety margin, field unknown there, axis-wise f
 walked into the door's walk-on zone. Fix: the margin is chosen per position (largest margin whose field covers where Shaggy stands, re-chosen
 every step), after which both specs complete (`hlebisect.py` was not needed). Lesson for the driver: anything that wanders is
 timing-fragile; the zone-avoidance and per-position margin keep it deterministic enough for both specs.
+
+**Result with the complete Carnival route (#29, `w1_full`)**: `STORYTEST_HLE=all port/tools/storytest.sh long` = `w0_full` (132 checkpoints) and `w1_full`
+(110 checkpoints, power-on to the credits, end room 0): `--hle none` == `--hle all` on both; hosttest, irqtest, mousetest and the six short routes
+pass as well. One driver bug found by this and fixed: the second roller-coaster brake click (see the roller coaster paragraph) was timed by
+frames spent in the driver, which differ between the 68k code and the C replacements, so it passed on the harness and `--hle none` but
+missed its 17-frame window under `--hle all` (the ride then ends at the Boardwalk; checkpoint `need` failed). It was **not** an HLE divergence: both specs
+run the same game logic, the harness itself only passed with a margin of ~37 frames. No `hlebisect.py` run was needed. The plain port
+has no emulator-time access, so every timed step in `story_full.py` has to poll RAM per frame; `roller_coaster()` is the only step with
+a window that small.

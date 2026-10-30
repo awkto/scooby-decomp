@@ -19902,86 +19902,141 @@ poke FF06DC 2 64
 poke FF06DE 2 50
 run 8
 press B 4
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-press A 4
-run 4
 poke FF06DC 2 8C
 poke FF06DE 2 3C
-run 3
-poke FF06DC 2 8A
-poke FF06DE 2 3C
-run 3
-poke FF06DC 2 8E
-poke FF06DE 2 3C
-run 3
-poke FF06DC 2 8C
-poke FF06DE 2 38
-run 3
-poke FF06DC 2 88
-poke FF06DE 2 3C
-run 3
-poke FF06DC 2 90
-poke FF06DE 2 3C
-run 3
-poke FF06DC 2 8C
-poke FF06DE 2 40
-run 3
-poke FF06DC 2 8A
-poke FF06DE 2 38
-run 3
-poke FF06DC 2 8E
-poke FF06DE 2 38
-run 3
-poke FF06DC 2 8A
-poke FF06DE 2 40
-run 3
-poke FF06DC 2 8E
-poke FF06DE 2 40
-run 3
-poke FF06DC 2 88
-poke FF06DE 2 38
-run 3
-poke FF06DC 2 BC
-poke FF06DE 2 C2
-run 10
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
+run 1
 press B 4
-run 4
-poke FF06DC 2 8C
-poke FF06DE 2 3C
-run 8
+run 1
 press B 4
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
-run 2
+run 1
 run 2
 run 2
 run 2
@@ -20564,8 +20619,6 @@ press U 12
 press R 12
 press U 12
 press U 12
-press R 12
-press U 12
 press U 12
 press R 12
 press U 12
@@ -20584,7 +20637,7 @@ press U 12
 press R 12
 press U 20
 press R 12
-press R 12
+press U 12
 press R 12
 press R 12
 press R 12
@@ -20596,46 +20649,38 @@ press U 20
 press R 12
 press U 12
 press DL 20
-press U 12
-press R 12
-press U 12
-press U 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
 press U 12
 press R 12
 press R 20
 press U 12
-press R 12
-press DL 20
+press U 12
+press U 12
+press U 12
+press U 12
 press R 12
 press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press DL 20
+press U 12
+press R 12
 press U 20
+press R 12
+press U 12
 press R 12
 press R 12
 press R 12
@@ -20660,7 +20705,6 @@ press U 12
 press R 12
 press U 12
 press U 12
-press U 12
 press R 12
 press U 12
 press U 12
@@ -20673,11 +20717,11 @@ press U 12
 press R 12
 press U 12
 press U 12
-press R 12
-press U 12
 press U 12
 press R 12
 press U 12
+press U 12
+press R 12
 press U 12
 press R 12
 press R 20
@@ -20685,7 +20729,8 @@ press U 12
 press R 12
 press UR 20
 press R 12
-press R 12
+press U 12
+press R 20
 press R 12
 press R 12
 press R 12
@@ -20695,12 +20740,9 @@ press U 12
 press R 20
 press R 12
 press U 12
-press R 20
-press U 12
-press R 12
 press DR 20
 press U 12
-press U 12
+press R 12
 press U 12
 press U 12
 press U 12
@@ -20724,7 +20766,15 @@ press U 12
 press R 12
 press U 12
 press U 12
+press U 12
 press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
 press U 12
 press R 12
 press UL 20
@@ -20738,52 +20788,61 @@ press R 12
 press R 12
 press R 12
 press R 12
-press R 12
 press U 12
 press DL 20
 press R 12
 press U 12
 press D 20
-press U 12
-press R 12
-press U 12
-press U 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
-press U 12
-press U 12
-press R 12
 press U 12
 press R 12
 press L 20
 press U 12
-press R 12
-press UL 20
+press U 12
+press U 12
+press U 12
 press R 12
 press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press UL 20
+press U 12
+press R 12
 press D 20
+press R 12
+press R 12
 press R 12
 press R 12
 press R 12
@@ -20797,8 +20856,6 @@ press U 12
 press DL 20
 press U 12
 press R 12
-press R 20
-press U 12
 press U 12
 press U 12
 press U 12
@@ -20808,8 +20865,6 @@ press U 12
 press U 12
 press R 12
 press U 12
-press U 12
-press R 12
 press U 12
 run 10
 run 60
@@ -20858,11 +20913,6 @@ run 10
 run 10
 run 10
 run 10
-run 10
-run 10
-run 10
-run 10
-run 10
 run 30
 press C 3
 run 24
@@ -20875,22 +20925,44 @@ press L 12
 press L 12
 press L 12
 press L 12
-press UL 12
-press UL 12
-press UL 12
-press U 12
-press U 8
+press L 4
+press U 4
 press U 4
 press UL 12
-press U 12
-press U 12
-press U 8
-press UL 4
+press L 4
+press U 4
+press U 4
+press UL 12
+press L 4
+press U 4
+press U 4
+press U 4
+press UL 12
+press U 6
+press UR 6
+press U 4
 press U 4
 press UR 4
 press UL 4
-run 10
-press U 12
+press U 4
+press U 4
+press UR 4
+press UL 12
+press U 6
+press U 8
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
+press U 4
 run 10
 run 60
 run 90
@@ -20916,18 +20988,121 @@ press L 12
 press L 12
 press L 12
 press U 4
+press U 4
 press UL 12
 press UL 12
-press U 10
+press U 12
 press U 6
+press UL 12
+press U 6
+press UR 6
+press U 4
 press UL 12
 press U 6
 press U 4
 press U 4
 press UL 12
+press U 4
+press U 4
 press UL 12
+press U 4
+press U 4
 press UL 12
-press UL 12
+press U 4
+press U 4
+press U 4
+press L 4
+press UL 4
+press U 4
+press UR 4
+press U 4
+press UR 4
+press UL 4
+press UL 4
+press U 4
+press UR 4
+press U 4
+press UR 4
+press UL 4
+press UL 4
+press U 4
+press UR 4
+press U 4
+press UR 4
+press UL 4
+press UL 4
+press U 4
+press UR 4
+press U 4
+press UR 4
+press UL 4
+press UL 4
+press U 4
+press UR 4
+press U 4
+press UR 4
+press UL 4
+press UL 4
+press U 4
+press UR 4
+press UL 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
+press U 4
+press UR 4
+press U 4
+press UL 4
+press U 4
 press U 4
 run 10
 run 60
@@ -20954,7 +21129,9 @@ press R 12
 press R 12
 press R 12
 press R 8
+press U 4
 press UR 12
+press U 8
 press U 4
 run 10
 run 60
@@ -20978,12 +21155,21 @@ press R 12
 press R 12
 press R 12
 press R 12
-press R 8
+press R 6
 press U 4
 press U 4
 press UR 12
+press R 4
+press U 4
+press U 4
 press UR 12
-press UR 6
+press R 4
+press U 4
+press U 4
+press U 4
+press R 4
+press UR 4
+press U 4
 run 10
 run 60
 run 90
@@ -21033,13 +21219,14 @@ poke FF06DE 2 C2
 run 10
 press B 4
 run 4
-poke FF06DC 2 BC
-poke FF06DE 2 C3
-run 14
-press B 6
-run 4
 press C 3
 run 24
+poke FF06DC 2 DC
+poke FF06DE 2 B0
+run 8
+press B 4
+run 8
+run 8
 poke FF06DC 2 DC
 poke FF06DE 2 B0
 run 8
@@ -21056,17 +21243,17 @@ run 3
 run 3
 press C 3
 run 24
-poke FF06DC 2 96
+poke FF06DC 2 9A
 poke FF06DE 2 28
 run 8
 press B 4
 run 10
-poke FF06DC 2 96
+poke FF06DC 2 9A
 poke FF06DE 2 28
 run 8
 press B 4
 run 10
-poke FF06DC 2 96
+poke FF06DC 2 9A
 poke FF06DE 2 28
 run 8
 press B 4
@@ -21184,8 +21371,10 @@ run 12
 poke FF06DC 2 64
 poke FF06DE 2 B0
 run 8
+run 3
 press B 4
 run 6
+run 3
 run 12
 poke FF06DC 2 3C
 poke FF06DE 2 B0
