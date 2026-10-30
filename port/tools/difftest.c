@@ -30,6 +30,11 @@
  *   --with-hle            keep other enabled HLE functions active on both sides
  *   --passthrough         C side = hle_call68k_orig (self-test of the harness)
  *   --keep-going          report every failing state, not just the first
+ *   --entry               "synthetic dispatch": use states captured at ANOTHER address with
+ *                         the same calling context (e.g. another script op handler, entered by
+ *                         the same `jsr (a0)`), with the PC set to the target. Combine with
+ *                         --poke to put the VM where that dispatch would have put it
+ *                         (A5 = an op of the target's kind, A0 = handler; tools/py/script_pokes.py)
  *   -v                    print one line per state
  */
 #include "capture.h"
@@ -56,6 +61,7 @@ typedef struct {
 	sb_cmp_opts cmp;
 	uint32_t stack_window;
 	bool with_hle, passthrough, keep_going, verbose;
+	bool entry;                 /* --entry: states captured elsewhere, PC set to the target */
 	const char *out;
 	const char *pokes[1024];    /* --poke variants, each "W:ADDR=VAL,B:ADDR=VAL,..." */
 	int npokes;
@@ -348,7 +354,7 @@ static int do_run(const hle_def *target, const opts *o)
 			err_n++;
 			continue;
 		}
-		if (cs.addr != target->addr) {
+		if (cs.addr != target->addr && !o->entry) {
 			printf("%s: captured at $%06X, not $%06X\n", files[i], cs.addr, target->addr);
 			cap_free(&cs);
 			err_n++;
@@ -357,6 +363,8 @@ static int do_run(const hle_def *target, const opts *o)
 		/* reference: original 68k */
 		set_hle_for_side(target, false, o);
 		cap_apply(&cs);
+		if (o->entry)
+			gx_m68k_set_pc(target->addr);
 		if (poke) apply_poke(poke);
 		uint32_t sp0 = gx_m68k_dar()[15];
 		uint32_t entry[16];
@@ -383,6 +391,8 @@ static int do_run(const hle_def *target, const opts *o)
 		/* C replacement */
 		set_hle_for_side(target, true, o);
 		cap_apply(&cs);
+		if (o->entry)
+			gx_m68k_set_pc(target->addr);
 		if (poke) apply_poke(poke);
 		sb_begin();
 		sb_record_begin();
@@ -493,6 +503,7 @@ int main(int argc, char **argv)
 		else if (!strcmp(a, "--passthrough")) o.passthrough = true;
 		else if (!strcmp(a, "--keep-going")) o.keep_going = true;
 		else if (!strcmp(a, "-v")) o.verbose = true;
+		else if (!strcmp(a, "--entry")) o.entry = true;
 		else if (a[0] == '-' && a[1]) usage();
 		else if (npos < 64) pos[npos++] = a;
 	}
