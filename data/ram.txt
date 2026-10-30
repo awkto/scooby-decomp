@@ -1,0 +1,120 @@
+# RAM / I/O map: addr size name   # notes.  Emitted as .equ in src/scooby.s; absolute operands that
+# fall inside a named range are written symbolically (ram_x or ram_x+off).  Names must be unique
+# assembler identifiers.  Sources: docs/formats.md, docs/sound.md, code reading ("?" = guess).
+# Sizes are the access width / extent; a multi-byte entry also names the bytes inside it as name+N.
+
+# ---- Genesis hardware
+A00000 8192 z80_ram          # Z80 RAM window (68k bus)
+A00036 1    z80_ring_wr      # sound mailbox write index (owned by the 68k)
+A01B22 1    z80_vars         # driver variables ($1B22+n, see sound_get_var)
+A01B40 64   z80_ring         # sound mailbox ring buffer
+A10001 1    io_version       # version register
+A10003 1    io_data1         # controller port 1 data
+A10005 1    io_data2         # controller port 2 data
+A10008 4    io_ctrl_both     # TMSS-style check at reset reads ctrl1/ctrl2 as a long
+A10009 1    io_ctrl1
+A1000B 1    io_ctrl2
+A1000C 2    io_ctrl3
+A11100 2    z80_busreq
+A11200 2    z80_resetreg
+C00000 4    vdp_data
+C00004 4    vdp_ctrl
+C00008 2    vdp_hv           # HV counter
+
+# ---- interrupt hooks / core engine
+FF0000 4    ram_vblank_hook  # code pointer called by VBlank (vblank_main / vblank_title_fade / vblank_light)
+FF0004 4    ram_hblank_hook  # code pointer called by HBlank (hblank_nop / hblank_verb_bar)
+FF0008 640  ram_sat_buf      # sprite attribute table, DMA'd to VRAM $D800 every frame
+FF000C 2    ram_8828_index   # byte offset into dat_008828 (used by the big tile blitters)
+FF0016 2    ram_title_fade_a # vblank_title_fade state (palette step table position?)
+FF0018 2    ram_title_fade_b
+FF001A 2    ram_title_fade_c
+FF001D 1    ram_title_scroll # title sprite tile offset base (>>3)
+FF0328 128  ram_script_stack # a5-based script/object record area? (initialised at $005D1C)
+FF0428 4    ram_rng_state    # seeded 45C3F2D1 at game_init, stepped by rng_next
+FF0484 12   ram_list_484     # six-entry list walked at $00B0F8 (a6) ?
+FF0488 2    ram_cur_index    # index used by the $0FC760 table (spritesheet/frame lookup ?)
+FF048A 2    ram_484a
+FF048C 2    ram_484c
+
+# ---- Shaggy (player) -- 16.16 fixed point, integer part is the first word
+FF04DC 4    ram_shaggy_x     # X position 16.16 (D-pad walks it directly)
+FF04E0 2    ram_shaggy_x_prev # previous integer X (copied before moving)
+FF04F4 4    ram_shaggy_y     # Y position 16.16
+FF04F8 2    ram_shaggy_y_prev
+
+# ---- level / room state (docs/formats.md)
+FF05B8 2    ram_5b8
+FF0618 2    ram_618
+FF0642 2    ram_cursor_x     # pixel coords tested by sub_0073D6 against the map (?)
+FF0646 2    ram_cursor_y
+FF0652 2    ram_view_x0
+FF0654 2    ram_view_x1
+FF0656 2    ram_view_y0
+FF0658 2    ram_view_y1
+FF068A 2    ram_ui_tile_base_a
+FF068C 2    ram_font_base    # tile base added to text characters (draw_text_plane_a)
+FF068E 4    ram_mystery_hdr  # active mystery header pointer
+FF0692 4    ram_room_data_ptr # pointer to further room data (scripts/objects)
+FF069A 4    ram_room_ptr_69a # pointer; +$20 holds viewport dims (read by $0052C0)
+FF06A6 4    ram_cur_music    # id of the "current music" ($2F at boot)
+FF06AA 2    ram_mystery_idx  # 0 = Blake's Hotel, 1 = Ha Ha Carnival
+FF06AC 2    ram_room_index   # current room number (starts at 2)
+FF06C0 2    ram_6c0
+FF06C2 2    ram_6c2
+FF06C6 2    ram_map_width    # room width in cells
+FF06C8 2    ram_map_height   # room height in cells
+FF06CA 2    ram_6ca
+FF06CE 2    ram_6ce
+FF06D2 4    ram_room_name_ptr # absolute pointer to the room name string
+FF06DC 2    ram_6dc
+FF06DE 2    ram_6de
+FF06E4 2    ram_ui_tile_base_b
+FF06E6 2    ram_ui_tile_base_c
+FF06E8 2    ram_ui_tile_base_d
+FF06EC 2    ram_6ec
+FF06F8 128  ram_pal_cur      # current CRAM image (64 words), DMA'd to CRAM each frame
+FF0778 128  ram_pal_target   # palette fade target
+FF07B8 64   ram_room_pal23   # room palettes 2-3 copy (32 words)
+FF07F8 2    ram_hscroll_a    # = -camera x (plane A)
+FF07FA 2    ram_hscroll_b
+FF07FC 2    ram_vscroll
+FF0800 2    ram_hscroll_verb # verb-bar plane hscroll, set by hblank_verb_bar
+FF0802 2    ram_ui_tile_base_e
+FF0878 4    ram_script_cb    # script callback (script_run / script_run_frame)
+FF08AE 2    ram_08ae
+FF08B8 2    ram_ui_tile_base_f
+FF08BC 2    ram_08bc
+
+# ---- input / flags
+FF09DC 1    ram_vblank_flags # bit0 = wait_vblank handshake (set by main loop, cleared by VBlank); other bits = deferred VBlank jobs
+FF09DE 2    ram_09de
+FF09E0 1    ram_pad1         # pad 1 raw, ACTIVE LOW: bit7 S, 6 A, 5 C, 4 B, 3 R, 2 L, 1 D, 0 U (0 = pressed)
+FF09E1 1    ram_pad2         # pad 2 raw, same layout
+FF09E2 2    ram_pad_last     # copy of ram_pad1/2 taken at the start of the previous pad_read
+FF09E4 2    ram_pad_ref      # reference copy for change detection (written elsewhere)
+FF09E6 1    ram_pad1_edge    # pad 1 bits that changed vs ram_pad_ref, OR-accumulated by pad_read (consumer clears)
+FF09E7 1    ram_pad2_edge
+FF09E8 1    ram_09e8
+FF09E9 1    ram_09e9
+FF09EA 1    ram_09ea
+FF09EB 1    ram_09eb
+FF09ED 1    ram_09ed         # bit3: RLE decompressor side effect
+FF0AB5 1    ram_0ab5
+FF0AC9 1    ram_script_flags # bit0 = stop running script
+FF0ACA 1    ram_script_flags2
+
+# ---- buffers
+FF1200 2048 ram_objects      # object/sprite record table (records walked from $FF1200, +6 = state word)
+FF2A00 1024 ram_game_state   # initial game-state block copied from the mystery header
+FF3000 4096 ram_lzss_ring    # LZSS 4 KiB ring buffer / RLE output; sprite tile stream; room-tile size at +0
+FF3800 2048 ram_buf_3800     # sprite tile stream buffer
+FF4000 12288 ram_decomp_buf  # LZSS/RLE output buffer (room tiles etc.)
+FF4800 2048 ram_buf_4800     # DMA'd every few frames to VRAM $A300-$AA7F
+FF5000 4096 ram_buf_5000
+FF6000 4096 ram_buf_6000
+FF7000 7168 ram_planeb_tmp   # decompressed plane B names
+FF8C00 7168 ram_planea_tmp   # decompressed plane A names
+FFA800 7168 ram_planeb_names
+FFC400 7168 ram_planea_names
+FFE000 4096 ram_zone_map     # per-cell zone/walk ids

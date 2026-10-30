@@ -37,7 +37,12 @@ z80disasm:
 disasm:
 	$(PY) tools/py/disasm.py
 
+# Regenerate src/scooby.s + data/{functions,callgraph,xrefs}.txt (run after data/exec_starts.txt,
+# data/symbols.txt or data/ram.txt change), then check every executed insn is in exactly one function.
+functions: disasm
+	$(PY) tools/py/symtab.py
+
 clean:
 	rm -rf build
 
-.PHONY: all disasm clean z80check z80disasm
+.PHONY: all disasm functions clean z80check z80disasm

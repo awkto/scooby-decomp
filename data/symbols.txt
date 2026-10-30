@@ -1,0 +1,187 @@
+# ROM symbols: addr name   # note.  Overrides the generated sub_/loc_/dat_ names in src/scooby.s,
+# data/functions.txt, data/callgraph.txt.  Names must be valid assembler identifiers and unique.
+# Sources: docs/formats.md, docs/sound.md, data/indirect.txt, and reading the code.  "?" = guess.
+
+# ---- boot / interrupts
+0008AA HBlank            # vector 28: movem; jsr ([ram_hblank_hook])
+0008BC VBlank            # vector 30: movem; jsr ([ram_vblank_hook])
+00A65C vblank_main       # in-game VBlank handler (VDP regs, DMA of SAT/palette/scroll, then frame work)
+00A38C vblank_title_fade # VBlank handler of the title/fade screens (steps CRAM from dat_00A4E8)
+00A4A4 vblank_light      # minimal VBlank: pad read, frame/timer counters, clears ram_vblank_flags bit0
+01006A hblank_nop        # HBlank hook: rts (default)
+01006C hblank_verb_bar   # HBlank hook: busy-waits to line 167 then switches planes for the verb bar
+
+# ---- VDP / palette / graphics helpers (docs/formats.md)
+00992C vdp_copy_to_vram  # d0=VRAM addr, a0=src, d1=word count
+009964 vdp_write_word    # d0=VRAM addr, d1=value
+0099F6 vdp_dma_vram      # a0=src, d0=VRAM dest, d1=words; splits at 128 KiB boundaries, calls vdp_dma_setup
+009A3C vdp_dma_setup     # programs DMA length/source regs (bus request around it)
+009B10 vdp_dma_cram      # CRAM DMA, same args as vdp_dma_vram
+009BE4 vdp_fill_vram     # d0=addr, d1=count, d2=value
+009C1E vdp_fill_cram
+009C58 vdp_clear_vram    # d0=addr, d1=count
+009C5E vdp_clear_cram
+009C64 rle_decompress    # PackBits-style RLE (docs/formats.md)
+0097AA lzss_decompress   # a0=stream, a1=4 KiB ring buffer ($FF3000)
+009DE0 palette_read_cram # reads 64 CRAM words into ram_pal_cur
+009E7E palette_fade      # 8-step fade of ram_pal_cur toward the 128-byte CRAM image at a0
+009F72 draw_text_plane_a # a0=cstring; writes tile (char + ram_font_base) into plane A at $C000
+
+# ---- timing / sound wrappers / input
+009742 wait_vblanks      # d0+1 VBlanks
+00974C wait_vblank       # set ram_vblank_flags bit0, spin until the VBlank handler clears it
+009762 sound_play        # d0.l = sound id -> sound_cmd_play
+009776 sound_stop        # d0.l = sound id ($FF = all)
+00978A z80_bus_request_keep # wrapper preserving d0/a0
+00979A z80_bus_release_keep
+009D34 pad_read          # reads both pads (3-button) -> ram_pad1/ram_pad2 (active low), accumulates changed bits in ram_pad1_edge/2
+0022D6 rng_next          # 32-bit LCG-ish step on ram_rng_state, returns d0 = (d0 * hi16) >> 16
+00A248 game_init         # waits VDP status, seeds ram_rng_state, resets game vars (falls into game_reset)
+00A27A game_reset
+00A236 strlen            # a0 = cstring -> d0
+005B56 strcpy            # copies bytes (a0)+ -> (a1)+ until NUL (loop re-enters itself)
+
+# ---- script interpreter (register a5 = script pc, a6 = script end)
+002354 script_op_table   # 34 code pointers, indexed by the word at (a5)
+002EB4 script_subop_table # 62 code pointers, dispatched at $002EAC
+0023DC script_run        # run ops until a5>=a6 or ram_script_flags bit0 (d0=0 passed to each op)
+002406 script_run_frame  # like script_run but d0=1 (interactive); honours ram_script_flags2
+002320 script_run_nested # saves/restores ram_script_cb around script_run
+
+# ---- screens
+00940C sound_test        # Sound Test screen ($940C-$96F0)
+
+# ---- 68k sound stub (docs/sound.md)
+1F6D7A z80_bus_request
+1F6D8E z80_bus_release
+1F6D98 z80_load_driver
+1F6DDE z80_reset
+1F6EA8 sound_init
+1F6E0A sound_queue_begin
+1F6E40 sound_queue_end
+1F6E52 sound_queue_put_ff_cmd
+1F6E5E sound_queue_put_byte
+1F6E6C sound_queue_arg8
+1F6E82 sound_queue_arg24
+1F6EF8 sound_cmd_play
+1F6F16 sound_cmd_stop
+1F6F20 sound_cmd_tempo
+1F6F2A sound_cmd_pause
+1F6F3E sound_cmd_unpause
+1F6F52 sound_cmd_stop_all
+1F7050 sound_get_var
+
+
+# ---- ROM data (docs/formats.md, docs/sound.md)
+0085F8 title_sprite_sat    # title screen sprite attribute template (sprites DMA'd from RAM SAT)
+010136 title_rle_table     # table of RLE streams for title sprites -> $FF3800/$FF5000
+017064 title_bats_frames   # 28 RLE frame pointers (plane A bats animation)
+031AF2 mystery_headers     # 2 longs: Blake's Hotel $0FCA0C, Ha Ha Carnival $0FCA40
+032480 shared_palettes     # CRAM palettes 0-1 (32 words)
+030916 ui_font_lzss        # UI / verb-bar font (LZSS)
+030016 verb_bar_names      # 6 rows x 61 words (stride 64)
+1BB94A z80_driver_blob     # $1886 bytes copied to Z80 RAM
+1BD1D0 snd_data_table0     # FM patch records
+1BE31F snd_data_table1
+1BE496 snd_index_table     # word table indexed by sound id
+1C70C5 snd_pcm_data        # sample data for the DAC feeder
+1F7082 sound_test_names    # 87 NUL-separated names
+1F7492 sound_test_ids      # one byte per slot
+
+# ---- script handlers by table slot (generated from the two tables; rename when understood)
+00250C script_op_00
+00246A script_op_01
+0025AC script_op_02
+002732 script_op_03
+00274A script_op_04
+0028A0 script_op_05
+002B5A script_op_06
+002BF8 script_op_07
+002C56 script_op_08
+002D5E script_op_09
+002DC0 script_op_0A
+002DF2 script_op_0B
+002E9E script_op_0C
+0048B6 script_op_0D
+0049BA script_op_0E
+004C20 script_op_0F
+004D80 script_op_10
+004F0E script_op_11
+004F50 script_op_12
+002446 script_op_13
+002E7E script_op_14
+0048D8 script_op_15
+002AD0 script_op_16
+004FBE script_op_17
+004EE4 script_op_18
+002B0E script_op_19
+002626 script_op_1A
+# 0049BA also script table slot 1B (same handler as 0E)
+00255E script_op_1C
+002510 script_op_1D
+00268E script_op_1E
+004F70 script_op_1F
+0048F8 script_op_20
+004944 script_op_21
+002FAC script_subop_00
+00453E script_subop_01
+004548 script_subop_02
+00454E script_subop_03
+004568 script_subop_04
+0045A4 script_subop_05
+00481A script_subop_06
+0044BA script_subop_07
+004534 script_subop_08
+004496 script_subop_09
+0044A8 script_subop_0A
+002FFC script_subop_0B
+# 0045A4 also script table slot 0C (same handler as 05)
+004482 script_subop_0D
+00448C script_subop_0E
+0043C0 script_subop_0F
+004428 script_subop_10
+0043AC script_subop_11
+0043B6 script_subop_12
+004374 script_subop_13
+004390 script_subop_14
+00432C script_subop_15
+00436A script_subop_16
+0042A2 script_subop_17
+0042E0 script_subop_18
+004322 script_subop_19
+004274 script_subop_1A
+004298 script_subop_1B
+004862 script_subop_1C
+00482E script_subop_1D
+0041B6 script_subop_1E
+0041A2 script_subop_1F
+0041AC script_subop_20
+00415A script_subop_21
+004120 script_subop_22
+00410C script_subop_23
+004116 script_subop_24
+0040FC script_subop_25
+0040E0 script_subop_26
+003F58 script_subop_27
+003F4E script_subop_28
+003F3A script_subop_29
+003F44 script_subop_2A
+003ED2 script_subop_2B
+003F16 script_subop_2C
+003EBE script_subop_2D
+003EC8 script_subop_2E
+003E96 script_subop_2F
+003EAA script_subop_30
+003EB4 script_subop_31
+003142 script_subop_32
+00312E script_subop_33
+003138 script_subop_34
+00301E script_subop_35
+003014 script_subop_36
+0030A6 script_subop_37
+002FD6 script_subop_38
+002FE0 script_subop_39
+002FC2 script_subop_3A
+002FCC script_subop_3B
+002FAE script_subop_3C
+002FB8 script_subop_3D

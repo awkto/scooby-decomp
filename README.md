@@ -9,6 +9,7 @@ Tracking: https://github.com/awkto/scooby-decomp
 - `tools/py/disasm.py` – recursive-descent disassembler (vectors + `data/exec_starts.txt` + gap fill + indirect-jump resolution in `tools/py/indirect.py`; extra seeds in `tools/py/seeds.txt`)
 - `tools/harness/` – headless libretro harness (GPGX core built with `tools/patches/gpgx-cpuhook.patch`, `HOOK_CPU=1`)
 - `data/` – runtime coverage (executed instruction starts, ROM bytes read as data); generated `indirect.txt` (indirect jmp/jsr sites → targets) and `code_gaps.txt` (classified non-code ranges in the code area, manual notes in `gap_notes.txt`); `assets.txt` (ROM graphics map)
+- Symbols and functions: hand-edited `data/symbols.txt` (ROM labels) and `data/ram.txt` (RAM/I/O vars, emitted as `.equ`) feed `disasm.py`; it generates `data/functions.txt` (every traced insn in exactly one function), `data/callgraph.txt` and `data/xrefs.txt`. `make functions` regenerates all of it and checks coverage of `data/exec_starts.txt`. Query with `.venv/bin/python -I tools/py/xref.py ADDR|NAME` (callers of a function, readers/writers of a RAM var) or `--top`.
 - `tools/py/gfx.py` – LZSS/RLE decompressors, tile/palette dumps, room + title screen reconstruction (see `docs/formats.md`)
 - `tools/patches/gpgx-vdptrace.patch` – optional core patch for the harness `trace`/`vdp` commands
 - `docs/sound.md`, `src/z80/driver.s` – sound driver (`make z80check`)
