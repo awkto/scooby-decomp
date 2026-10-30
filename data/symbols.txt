@@ -185,3 +185,18 @@
 002FCC script_subop_3B
 002FAE script_subop_3C
 002FB8 script_subop_3D
+
+# ---- verb bar / inventory / pointer mode (#17)
+005B5E object_name_ptr      # d0 = object id -> a0 = name string (1 Shaggy, 2 Scooby, n>=3 room object n-3)
+005BDC verb_label_redraw    # d0 = colour variant (0 normal 1 selected 2 default); redraws the 4x2 label of verb ram_verb_redraw
+005B92 inventory_arrows_update # sets the page-up/down arrow frames (slots $FF0804/$FF0806)
+005CB6 inventory_upload     # DMA icon tiles to VRAM $B000 and name table rows to $AACC+n*$80
+005CF6 inventory_refresh    # build the page now and wait for VBlank to upload it
+005D1C inventory_build_page # builds icon tiles ($FF2C00) + name table ($FF0328) for the page in ram_inv_page
+005E4A pointer_update       # per-frame (from VBlank): walking / pointer mode / bar slide / cursor-to-slot mapping
+00A984 sprite_build         # builds the sprite list in ram_sat_buf, including the pointer crosshair
+0019B0 action_execute       # runs the object script for verb ram_action_verb on target ram_target_obj
+00A828 status_line_update   # builds "<Verb> <object> [with|to <object>]" at $FF08BC and prints it
+02FE3C verb_ids             # 10 words: verb ids in bar order
+02FE5E verb_names           # NUL separated verb words ("Pull ", "Take ", ...)
+02FEA0 verb_fail_msgs       # 11 pointers to default failure strings ("I can't open \x01.")

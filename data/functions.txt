@@ -14,7 +14,7 @@
 00175c    82 sub_00175C  # 21 insns
 0017ae   464 sub_0017AE  # 92 insns
 00197e    50 sub_00197E  # 15 insns
-0019b0   554 sub_0019B0  # 113 insns
+0019b0   554 action_execute  # 113 insns
 001bda    50 sub_001BDA  # 10 insns
 001c0c  1222 sub_001C0C  # 275 insns
 0020d2     8 sub_0020D2  # 2 insns
@@ -166,16 +166,16 @@
 005ad8     8 sub_005AD8  # 1 insns
 005ae0   118 sub_005AE0  # 24 insns
 005b56     8 strcpy  # 3 insns
-005b5e    52 sub_005B5E  # 17 insns
-005b92    74 sub_005B92  # 23 insns
-005bdc   126 sub_005BDC  # 36 insns
+005b5e    52 object_name_ptr  # 17 insns
+005b92    74 inventory_arrows_update  # 23 insns
+005bdc   126 verb_label_redraw  # 36 insns
 005c5a    26 sub_005C5A  # 5 insns
 005c74    26 sub_005C74  # 5 insns
 005c8e    40 sub_005C8E  # 10 insns
-005cb6    64 sub_005CB6  # 16 insns
-005cf6    38 sub_005CF6  # 7 insns
-005d1c   302 sub_005D1C  # 98 insns
-005e4a  2802 sub_005E4A  # 609 insns +006940:28 +006960:392
+005cb6    64 inventory_upload  # 16 insns
+005cf6    38 inventory_refresh  # 7 insns
+005d1c   302 inventory_build_page  # 98 insns
+005e4a  2802 pointer_update  # 609 insns +006940:28 +006960:392
 00693c     4 sub_00693C  # 1 insns
 00695c     4 sub_00695C  # 1 insns
 006ae8    64 sub_006AE8  # 15 insns
@@ -272,8 +272,8 @@
 00a65c   168 vblank_main  # 30 insns
 00a704   202 sub_00A704  # 53 insns
 00a7ce    90 sub_00A7CE  # 26 insns
-00a828   348 sub_00A828  # 76 insns
-00a984   912 sub_00A984  # 214 insns
+00a828   348 status_line_update  # 76 insns
+00a984   912 sprite_build  # 214 insns
 00ad14     2 sub_00AD14  # 1 insns
 00ad16   526 sub_00AD16  # 123 insns
 00af24   182 sub_00AF24  # 51 insns
