@@ -8,6 +8,9 @@
 /* io.c */
 void z80_bus_request(hle_ctx *ctx);    /* $1F6D7A */
 void z80_bus_release(hle_ctx *ctx);    /* $1F6D8E */
+uint8_t z80_bus_grab(void);            /* ctx-free z80_bus_request core; returns $A11100 byte */
+
+/* sound.c: see sound.h for the C API */
 void pad_read(hle_ctx *ctx);           /* $009D34 */
 
 /* vdp.c */

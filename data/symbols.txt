@@ -301,3 +301,7 @@
 009F58 draw_text_plane_a_hi # draw_text_plane_a with tile priority (font base bit 15) set
 009FA2 draw_text_wrapped    # a0=cstring, d0=row, d1=col: plane at $AA82+row*128+col*2, wraps at 30 chars; d0.w=rows used
 00A054 draw_status_line     # a0=cstring: clears plane $D000 (1024 words) then draws wrapped text, sets reg $12 and $FF080A
+
+# ---- #22 sound API glue (C in port/src/game/sound.c; docs/subsystems/sound.md)
+# C names: sound_cmd_play/stop/pause/unpause/stop_all keep their symbols; $009762 = sound_play_wrapper,
+# $009776 = sound_stop_wrapper, $1F6EA8 = sound_init_wrapper (C API: sound_driver_init), $1F6DDE = z80_reset_driver.
