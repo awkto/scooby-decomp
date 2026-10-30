@@ -559,7 +559,11 @@ HLE_FUNC(0x002626, script_op_pal_cycle, 150)
 				set_w(&ctx->d[1], (uint16_t)cc_sub(ctx, opw(ctx, 6), first, 16, true));
 				set_w(&ctx->d[0], (uint16_t)cc_add(ctx, first, first, 16));
 				ctx->a[0] = RAM_PAL_TARGET + (int16_t)ctx->d[0];
-				hle_call68k(ctx, VDP_DMA_CRAM);
+				/* the DMA itself stays 68k (tail jump to `bsr vdp_dma_cram`): a DMA started
+				 * from a nested hle_call68k in live play stalls the CPU clock (seen with
+				 * bar_show), and the sandbox can't show that */
+				hle_jump(ctx, 0x00265A);
+				return;
 			} else {
 				set_w(&ctx->d[1], slot);
 				set_w(&ctx->d[0], (uint16_t)cc_add(ctx, slot, slot, 16));
@@ -1256,7 +1260,7 @@ HLE_RANGE(0x004862, script_sys_bar_show, 40, 0x004870)
 	cc_logic8(ctx, 0x10);
 	hle_jump(ctx, 0x004870);
 }
-HLE_RANGE(0x004874, script_sys_bar_show_loop, 600, 0x004870, 0x0048B4)
+HLE_RANGE(0x004874, script_sys_bar_show_loop, 30, 0x004870, 0x00487E)
 {
 	uint8_t s = RAM8(RAM_BAR_SLIDE);
 	cc_logic8(ctx, s);
@@ -1264,26 +1268,10 @@ HLE_RANGE(0x004874, script_sys_bar_show_loop, 600, 0x004870, 0x0048B4)
 		hle_jump(ctx, 0x004870);
 		return;
 	}
-	/* 6 rows of 32 words from the save buffer $FF2C00 back to the bar plane */
-	set_w(&ctx->d[0], (uint16_t)ctx->d[4]);
-	ctx->a[0] = 0xFF2C00;
-	ctx->d[2] = 5;
-	set_w(&ctx->d[1], 0x20);
-	for (;;) {
-		hle_call68k(ctx, VDP_DMA_VRAM);
-		set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 0x80, 16));
-		uint16_t n = (uint16_t)(ctx->d[2] - 1);
-		set_w(&ctx->d[2], n);
-		if (n == 0xFFFF)
-			break;
-	}
-	set_w(&ctx->d[0], 0xF);
-	ctx->d[1] = 1;
-	set_w(&ctx->d[2], RAM16(0xFF068C) & 0x9FFF);          /* ram_font_base */
-	cc_logic16(ctx, ctx->d[2]);
-	hle_call68k(ctx, FONT_RECOLOUR);
-	bit_clr(ctx, RAM_GAME_STATE, 1);
-	hle_jump(ctx, 0x0048B4);
+	/* the 6 DMAs of the saved rows back to the bar plane, the font recolour and the
+	 * clear of $FF2A00 bit 1 stay 68k ($00487E): DMA from a nested hle_call68k stalls the
+	 * CPU clock in live play */
+	hle_jump(ctx, 0x00487E);
 }
 
 /* ------------------------------------------------------------------ move_obj */
