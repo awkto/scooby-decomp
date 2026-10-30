@@ -30,18 +30,18 @@ WORLD_TABLE = 0x031AF2
 DISPATCH_PCS = {0x0023E2: 'script_run', 0x002420: 'script_run_frame'}
 
 VERBS = {1: 'PULL', 2: 'TAKE', 3: 'OPEN', 4: 'SHUT', 5: 'USE', 6: 'GIVE', 7: 'PUSH',
-         8: 'TALK', 9: 'EAT', 10: 'LOOK', 11: 'WALK'}
+         8: 'TALK', 9: 'EAT', 10: 'LOOK', 11: 'WALK_ON'}
 
 # object record fields (ram_objects $FF1200, 26 bytes; docs/script.md)
-OBJ_FIELDS = {0: 'state', 2: 'shape', 4: 'icon', 6: 'room', 8: 'dir', 0x0A: 'timer',
+OBJ_FIELDS = {0: 'state', 2: 'hotspot', 4: 'icon', 6: 'room', 8: 'dir', 0x0A: 'timer',
               0x0C: 'var', 0x12: 'x', 0x14: 'y', 0x16: 'verb', 0x18: 'flags'}
 
 OPS = {
     0x00: 'nop', 0x01: 'case_verb', 0x02: 'talk_choice', 0x03: 'if', 0x04: 'if_else',
     0x05: 'move_obj', 0x06: 'anim_wait', 0x07: 'show_obj', 0x08: 'set', 0x09: 'set_verb',
     0x0A: 'set_icon', 0x0B: 'set_state', 0x0C: 'sys', 0x0D: 'sound', 0x0E: 'walk_spawn',
-    0x0F: 'walk_obj', 0x10: 'say', 0x11: 'goto_room', 0x12: 'set_shape', 0x13: 'on_event',
-    0x14: 'set_shape2', 0x15: 'wait', 0x16: 'freeze', 0x17: 'wait_anim', 0x18: 'goto_room_cut',
+    0x0F: 'walk_obj', 0x10: 'say', 0x11: 'goto_room', 0x12: 'set_hotspot', 0x13: 'on_event',
+    0x14: 'set_hotspot2', 0x15: 'wait', 0x16: 'freeze', 0x17: 'wait_anim', 0x18: 'goto_room_cut',
     0x19: 'unfreeze_wait', 0x1A: 'pal_cycle', 0x1B: 'walk_xy', 0x1C: 'test_moving',
     0x1D: 'test_anim_done', 0x1E: 'face', 0x1F: 'wait_stop', 0x20: 'stop_path',
     0x21: 'path',
@@ -287,7 +287,7 @@ class Dis:
             elif op == 0x10:
                 n = 8
                 attr = w2
-                bits = ['side %d' % (attr & 0xF), 'pal %d' % ((attr >> 4) & 3)]
+                bits = ['colour %d' % (attr & 0xF), 'pal %d' % ((attr >> 4) & 3)]
                 if attr & 0x1000:
                     bits.append('talkanim')
                 if attr & 0x2000:
@@ -299,7 +299,7 @@ class Dis:
                     OPS[op], w.room(w2), w4, s16(r, a + 6)))
             elif op in (0x12, 0x14):
                 n = 6
-                self.out(depth, a, 'set_shape %s = %d' % (w.who(w2), s16(r, a + 4)))
+                self.out(depth, a, 'set_hotspot %s = %d' % (w.who(w2), s16(r, a + 4)))
             elif op == 0x15:
                 n = 4
                 self.out(depth, a, 'wait %d' % w2)
