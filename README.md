@@ -29,3 +29,12 @@ Tracking: https://github.com/awkto/scooby-decomp
   TAKE LOOK OPEN PUSH EAT / GIVE TALK SHUT PULL USE.
 - Graphics: rooms are LZSS-packed tiles + 3 LZSS name/zone maps per room, indexed from two
   mystery headers at `$031AF2`; title uses an RLE (PackBits-like) format. Details in `docs/formats.md`.
+
+## Heavy work runs on remote VMs
+Remote test machines each have the toolchain, the ROM in `/opt/scooby/rom`, and GPGX built with both patches in `/opt/scooby/ext/gpgx`.
+
+    vm=$(tools/vm/lease my-task)          # take a free VM (waits if all busy)
+    tools/vm/vmrun $vm 'make && ...'      # rsync this worktree to VM:/work/<worktree> and run there
+    tools/vm/vmpull $vm runs/x/ runs/x/   # fetch results back
+    tools/vm/release $vm                  # ALWAYS release when done
+    tools/vm/status                       # who holds what
