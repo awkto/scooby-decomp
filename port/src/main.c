@@ -44,7 +44,7 @@ static void usage(const char *argv0)
 	       "  --hle SPEC              C replacements: all (default) | none | [+-]name,...\n"
 	       "  --list-hle              list C replacements and exit\n"
 	       "  --script FILE           run a harness-style script first (unthrottled)\n"
-	       "  --realtime-script       run the script at normal speed\n"
+	       "  --realtime-script       run the script (and --frames) at normal speed, with audio\n"
 	       "  --frames N              exit after N frames (after the script)\n"
 	       "  --screenshot FILE.ppm   at exit, write the last emulated frame\n"
 	       "  --window-shot FILE.ppm  at exit, write the rendered window (scaling + overlay)\n"
@@ -165,13 +165,17 @@ static bool window_shot(video_t *v, const char *path)
 	int w, h;
 	if (!v->ren || SDL_GetRendererOutputSize(v->ren, &w, &h))
 		return false;
-	uint8_t *rgb = malloc((size_t)w * h * 3);
+	uint8_t *rgb = calloc((size_t)w * h, 3);
 	/* re-render the last frame (the back buffer is undefined after present) */
 	SDL_SetRenderDrawColor(v->ren, 0, 0, 0, 255);
 	SDL_RenderClear(v->ren);
 	if (v->tex)
 		SDL_RenderCopy(v->ren, v->tex, NULL, NULL);
+	/* read the whole window, not just the letterboxed logical viewport */
+	SDL_RenderSetLogicalSize(v->ren, 0, 0);
+	SDL_RenderSetViewport(v->ren, NULL);
 	bool ok = SDL_RenderReadPixels(v->ren, NULL, SDL_PIXELFORMAT_RGB24, rgb, w * 3) == 0;
+	SDL_RenderSetLogicalSize(v->ren, v->tw, v->th);
 	FILE *f = ok ? fopen(path, "wb") : NULL;
 	if (f) {
 		fprintf(f, "P6\n%d %d\n255\n", w, h);
@@ -421,7 +425,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		bool fast = a.no_throttle || ff || (scripted && !a.realtime_script) || batch;
+		bool fast = a.no_throttle || ff || ((scripted || batch) && !a.realtime_script);
 		/* audio: queue this frame's samples, and pace on the queue length */
 		if (ran && adev && !fast) {
 			size_t n;

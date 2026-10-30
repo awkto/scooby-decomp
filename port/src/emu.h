@@ -28,7 +28,7 @@ unsigned emu_get_pad(int port);
 unsigned emu_pad_from_letters(const char *s);   /* "UDLRABCS" -> mask */
 
 void emu_run_frame(void);
-void emu_reset(void);                     /* console reset (retro_reset), frame count 0 */
+void emu_reset(void);                     /* back to the power-on state, frame count 0 */
 long emu_frame_count(void);
 
 /* last video frame, RGB565 */

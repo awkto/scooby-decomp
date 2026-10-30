@@ -26,6 +26,7 @@ static int16_t g_audio[2 * 4096];
 static size_t g_audio_frames;
 static struct retro_system_av_info g_av;
 static bool g_up;
+static void *g_boot;          /* power-on state for emu_reset */
 
 #define MAX_HOOKS 8
 static emu_hook_fn g_hooks[MAX_HOOKS];
@@ -228,6 +229,11 @@ bool emu_init(const char *rom_path, const char *workdir, char *err, size_t errle
 	}
 	retro_get_system_av_info(&g_av);
 	hle_install();
+	g_boot = malloc(emu_state_size());
+	if (!emu_state_save(g_boot, emu_state_size())) {
+		free(g_boot);
+		g_boot = NULL;
+	}
 	g_up = true;
 	return true;
 }
@@ -287,7 +293,12 @@ long emu_frame_count(void) { return g_frames; }
 
 void emu_reset(void)
 {
-	retro_reset();
+	/* restore the power-on snapshot: retro_reset() is a soft reset that keeps RAM, so runs
+	 * after it are not reproducible */
+	if (g_boot)
+		emu_state_load(g_boot, emu_state_size());
+	else
+		retro_reset();
 	g_frames = 0;
 }
 
