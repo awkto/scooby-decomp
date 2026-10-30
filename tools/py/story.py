@@ -183,7 +183,7 @@ class Game:
                     out.append(rc)
         return out
 
-    def walk_plan(self, goals, exclude=(), maxsteps=150, tol_px=0):
+    def walk_plan(self, goals, exclude=(), maxsteps=150, tol_px=0, stop_dist=0):
         """steer Shaggy into one of the world-pixel rectangles `goals` along the game's own walkable area (walkplan.py), staying
         out of other exits.  Returns True on arrival, False if the room changed or no route was found."""
         import walkplan
@@ -252,6 +252,8 @@ class Game:
                 return False
             if any(g[0] <= x < g[2] and g[1] <= y < g[3] for g in goals):
                 return True
+            if stop_dist and 0 <= x < pl.W and 0 <= y < pl.H and 0 <= d[y * pl.W + x] <= stop_dist:
+                return True                          # close enough (approach only: do not step on an exit)
             path = pl.path(d, (x, y), 16)
             if not path:
                 return False
@@ -626,6 +628,8 @@ Game.ensure_visible = ensure_visible
 def hot_rect(self, tid, r=None):
     """live hotspot rectangle (world pixels) of a non-actor object: record +2 (changed by set_hotspot) -> overlay table"""
     import hotspots
+    if tid < 3:
+        return None
     r = r or self.ram()
     if self.b(0xFF1200 + 26 * (tid - 3) + 0x18, r) & 2:          # actors have no hotspot rectangle (the hit area is the sprite)
         return None
@@ -677,17 +681,37 @@ def probe_rect(self, tid, rect, addr=0xFF06AE):
 def probe_actor(self, tid, addr=0xFF06AE):
     """crosshair point on an actor (Bellhop, Uncle Blake, the Clown...): the hit area is a box around its sprite; probe the
     neighbourhood of the position kept in its object record (+$12/+$14 = world x/y of the feet)"""
+    if tid in (1, 2):                                # wait until the follower has stopped moving (hit box = sprite)
+        last = None
+        for _ in range(80):                          # Scooby trails Shaggy: wait until he is on screen and standing still
+            r = self.ram()
+            cur = (self.w(0xFF04DC + 4 * (tid - 1), r), self.w(0xFF04F4 + 4 * (tid - 1), r))
+            sx = cur[0] - self.w(0xFF06CA, r)
+            if cur == last and 8 <= sx <= 240:
+                break
+            last = cur
+            self.run(15)
     r = self.ram()
-    rec = self.objects(r)[tid - 3]
     cx, cy = self.w(0xFF06CA, r), self.w(0xFF06CE, r)
-    ax, ay = rec[9] - cx, rec[10] - cy + 16
+    if tid in (1, 2):                                # Shaggy / Scooby: position arrays $FF04DC.. (x) and $FF04F4.. (y), 16.16
+        ax, ay = self.w(0xFF04DC + 4 * (tid - 1), r) - cx, self.w(0xFF04F4 + 4 * (tid - 1), r) - cy + 16
+    else:
+        rec = self.objects(r)[tid - 3]
+        ax, ay = rec[9] - cx, rec[10] - cy + 16
     pts = sorted(((x, y) for y in range(ay - 44, ay + 12, 4) for x in range(ax - 24, ax + 25, 4) if 0 <= x < 248 and 16 <= y < 164),
                  key=lambda p: (p[0] - ax) ** 2 + (p[1] - ay + 16) ** 2)
+    if os.environ.get("STORY_DEBUG"):
+        print(f"  probe_actor tid={tid} at ({ax},{ay}) {len(pts)} window points, 09DE={self.w(0xFF09DE):#x}")
     if not pts:
         return None
     self.enter_pointer()
     for lo in range(0, len(pts), 12):
         if self.probe_batch(tid, pts[lo:lo + 12], addr):
+            return self._probe_hit
+    # the actor moved (or its record is stale): sweep the whole room view
+    allp = [(x, y) for y in range(16, 164, 6) for x in range(0, 248, 6)]
+    for lo in range(0, len(allp), 24):
+        if self.probe_batch(tid, allp[lo:lo + 24], addr):
             return self._probe_hit
     return None
 
@@ -703,9 +727,19 @@ def locate(self, tid, rounds=4):
     for _ in range(rounds):
         rect = self.hot_rect(tid)
         if rect is None:
+            if tid > 2:                              # an actor on a part of the room that is not on screen: walk towards it first
+                r = self.ram()
+                rec = self.objects(r)[tid - 3]
+                sx = rec[9] - self.w(0xFF06CA, r)
+                if rec[3] == self.w(0xFF06AC, r) and not (16 <= sx <= 236):
+                    self.leave_pointer()
+                    self.walk_to(rec[9], rec[10], tol=24)
+                    self.run(20)
             pt = self.probe_actor(tid)
             if pt:
                 return pt
+            if tid > 2 and self.w(0xFF06AC) == room0 and _ < rounds - 1:
+                continue
             break
         pt = self.probe_rect(tid, rect)
         if pt:
@@ -713,7 +747,10 @@ def locate(self, tid, rounds=4):
         if self.w(0xFF06AC) != room0:
             return None
         self.leave_pointer()
-        self.walk_to((rect[0] + rect[2]) // 2, (rect[1] + rect[3]) // 2 - 8, tol=6)
+        try:
+            self.walk_plan([rect], stop_dist=7)      # bring it on screen without stepping onto it (it may be an exit)
+        except Exception:
+            self.walk_to((rect[0] + rect[2]) // 2, (rect[1] + rect[3]) // 2 - 8, tol=6)
     self.ensure_visible(tid)
     if self.w(0xFF06AC) != room0:
         return None
@@ -739,11 +776,18 @@ def go_to(self, tid, dy=-16, tries=3, verbose=True):
     rect = self.hot_rect(tid)
     if rect is not None:
         room0 = self.w(0xFF06AC)
-        for _ in range(2):
+        for attempt in range(2):
             ok = self.walk_plan([rect], exclude=(tid,))
             self.run(10)
             if self.w(0xFF06AC) != room0 or self.w(0xFF06AE) == tid:
                 return self.w(0xFF06AC) != room0 or self.w(0xFF06AE) == tid
+            if not ok:
+                # the model finds no way (exits just outside the collision fence are reached by the game's wall-slide, which the
+                # planner does not model): fall back to the greedy axis-wise walker with sidesteps
+                self.walk_to_greedy((rect[0] + rect[2]) // 2, (rect[1] + rect[3]) // 2, tol=4)
+                self.run(10)
+                if self.w(0xFF06AC) != room0 or self.w(0xFF06AE) == tid:
+                    return True
     pt = self.locate(tid)
     if pt is None:
         return False
@@ -910,7 +954,10 @@ def use_inv(self, item1, item2, verb="Use", wait=30):
         self.select_verb(verb)
         self.press("C", 3, 24)
         self.pick_item(item1)
-        self.run(8)
+        for _ in range(12):
+            if self.w(0xFF09DE) & 1:
+                break
+            self.run(3)
         if self.w(0xFF09DE) & 1:                     # two-object mode started
             break
         self.press("C", 3, 24) if self.b(0xFF09DC) & 0x10 else None
@@ -979,18 +1026,40 @@ def use(self, item, tid, verb="Use", wait=30, restore=False, dbg=False):
             self.select_verb(verb)
             self.press("C", 3, 24)                   # inventory view
             self.pick_item(item, res)
+            for _ in range(12):                      # the main loop sets the waiting flag a few frames after the click
+                if self.w(0xFF09DE) & 1:
+                    break
+                self.run(3)
             res["wait2"] = self.w(0xFF09DE) & 1
+            if os.environ.get("STORY_DEBUG"):
+                print("  use: after item click 09DE", hex(self.w(0xFF09DE)), "attempt", attempt)
             if res["wait2"]:                         # two-object mode started: now waiting for the target
                 break
             self.press("C", 3, 24) if self.b(0xFF09DC) & 0x10 else None
             self.run(30)
         self.press("C", 3, 24)                       # back to the verb view
+        if os.environ.get("STORY_DEBUG"):
+            print("  use: after C 09DE", hex(self.w(0xFF09DE)))
+        cur = pt
+        if tid <= 2 or self.hot_rect(tid) is None:       # actors: find the sprite hit point in second-target mode right away
+            p2 = self.probe_actor(tid, 0xFF06B6)
+            if p2:
+                cur = p2
         for attempt in range(3):
-            self.set_pointer(*pt)
+            self.set_pointer(*cur)
             for _ in range(8):
                 if self.w(0xFF06B6) == tid:
                     break
                 self.run(3)
+            if self.w(0xFF06B6) != tid:                  # the second-target hit test: probe it in its own mode
+                rc = self.hot_rect(tid)
+                p2 = self.probe_rect(tid, rc, 0xFF06B6) if rc else self.probe_actor(tid, 0xFF06B6)
+                if os.environ.get("STORY_DEBUG"):
+                    print("  use: second target probe", cur, "->", p2, "09DE", hex(self.w(0xFF09DE)), "verbview", self.b(0xFF09DC) & 0x10)
+                if p2:
+                    cur = p2
+                    self.set_pointer(*cur)
+                    self.run(8)
             res["tgt2"] = self.w(0xFF06B6)
             self.press("B", 4, 10)
             if not (self.w(0xFF09DE) & 1):           # the click was consumed
@@ -1034,8 +1103,8 @@ def use_on(self, tid1, tid2, verb="Use", wait=30):
             self.run(3)
         if not self.w(0xFF09DE) & 1:
             continue
-        rc = self.hot_rect(tid2)
-        p2 = self.probe_rect(tid2, rc, 0xFF06B6) if rc else None
+        rc = self.hot_rect(tid2) if tid2 > 2 else None
+        p2 = self.probe_rect(tid2, rc, 0xFF06B6) if rc else self.probe_actor(tid2, 0xFF06B6)
         if p2 is None:
             print(f"!! {self.name(tid2)} ({tid2}) not found as second object")
             self.leave_pointer()
@@ -1051,13 +1120,13 @@ def use_on(self, tid1, tid2, verb="Use", wait=30):
                 done = True
                 break
         break
-    if not done:
-        print(f"!! {verb} {self.name(tid1)} on {self.name(tid2)}: the second click was not consumed")
     self.settle()
     self.run(wait)
     r = self.ram()
     out = dict(story=story_diff(s0, self.story(r)), inv=(i0, self.inventory(r)) if self.inventory(r) != i0 else None,
                room=(room0, self.w(0xFF06AC, r)) if self.w(0xFF06AC, r) != room0 else None)
+    if not done and not (out["story"] or out["inv"] or out["room"]):
+        print(f"!! {verb} {self.name(tid1)} on {self.name(tid2)}: no effect (second click not consumed?)")
     print(f"{verb} {self.name(tid1)} on {self.name(tid2)}:", out["story"] or "", out["inv"] or "", out["room"] or "")
     return out
 

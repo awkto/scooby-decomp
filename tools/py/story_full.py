@@ -339,6 +339,7 @@ def ending(g):
         if g.w(0xFF06AC) == 0:
             break
     need(g, g.w(0xFF06AC) == 0, "ending: game restarted after the credits")
+    g.checkpoint("ending: credits done, back at the Sega logo")
 
 
 HOTEL = [hotel_1, hotel_2, hotel_3, hotel_4, hotel_5, hotel_6, hotel_7, hotel_8, hotel_9, hotel_10, hotel_11, hotel_12]
@@ -346,4 +347,196 @@ HOTEL = [hotel_1, hotel_2, hotel_3, hotel_4, hotel_5, hotel_6, hotel_7, hotel_8,
 
 def hotel_all(g):
     for f in HOTEL:
+        f(g)
+
+
+def crane_game(g):
+    """Crane Game minigame (room 31, script op minigame_throw $3F58): the claw (x $FF04E8, 100..148, D-pad L/R) drops on A/B and
+    descends 2 px per frame to y=$4A; it catches the Water Pistol iff, at the bottom, the pistol's path offset ($FF0610) lies
+    in $F8..$114 (claw x != $94) or $5C..$78 (claw at x=$94).  The offset advances ~1.66 per frame and wraps at ~$140.
+    Closed loop: read the offset every frame and press B when the predicted offset at the bottom is inside the window."""
+    for _ in range(2400):
+        g.run(1)
+        p = g.w(0xFF0610)
+        frames = max(0, (0x4A - g.w(0xFF0500)) // 2)
+        end = (p + 1.66 * frames) % 0x140
+        if 0xFC <= end <= 0x110:
+            g.press("B", 3, 0)
+            break
+    g.run(300)
+    g.settle()
+
+
+def bumper_tug(g, max_frames=6000):
+    """Bumper Car duel (script op minigame_tug $3142): top-down arena, Shaggy's car (x/y $FF04DC/$FF04F4, heading = actor anim
+    0..7 clockwise from north) against the Clown's (x/y $FF04E4/$FF04FC).  D-pad L/R turn, A/B gas (speed meter $FF0A90 0..7); each
+    side has a 63-point meter ($FF0A98 ours, $FF0A9A theirs); the first below zero loses.  Naive closed loop: steer at the
+    opponent, hold the gas."""
+    import math
+    for _ in range(300):                             # intro: wait for the arena (room 6) with both meters full
+        if g.w(0xFF06AC) == 6 and g.w(0xFF0A98) == 0x3F and g.w(0xFF0A9A) == 0x3F:
+            break
+        g.run(10)
+    for i in range(max_frames // 3):
+        r = g.ram()
+        mine, theirs = g.w(0xFF0A98, r), g.w(0xFF0A9A, r)
+        if mine >= 0x8000 or theirs >= 0x8000:
+            break
+        sx, sy = g.w(0xFF04DC, r), g.w(0xFF04F4, r)
+        ox, oy = g.w(0xFF04E4, r), g.w(0xFF04FC, r)
+        h = g.w(0xFF0488, r) & 7
+        ang = math.degrees(math.atan2(ox - sx, -(oy - sy))) % 360        # 0 = north, clockwise
+        hd = int(((ang + 22.5) % 360) // 45)
+        d = (hd - h) % 8
+        btn = "A"
+        if 1 <= d <= 3:
+            btn += "R"
+        elif 5 <= d <= 7:
+            btn += "L"
+        g.press(btn, 3, 0)
+    return g.w(0xFF0A98), g.w(0xFF0A9A)
+
+
+def start_bumper(g):
+    """click USE on the Bumper Car (room 5) without waiting for the script: the duel needs input from its first frame"""
+    g.leave_pointer()
+    pt = g.locate(11)
+    g.select_verb("Use")
+    g.set_pointer(*pt)
+    for _ in range(15):
+        if g.w(0xFF06AE) == 11:
+            break
+        g.run(4)
+    g.press("B", 4, 4)
+
+
+# ---------------------------------------------------------------- Ha Ha Carnival
+def carnival_1(g):
+    """Front Lot -> Boardwalk: Taffy (the taffy machine); Hammer Game: pull the pole instead of playing (the 'cheat': the Orbit
+    cutscene sends the Magnet to the Ferris wheel, the attendant hands over the hammer)."""
+    g.boot(1)
+    g.run(60)
+    g.settle()
+    need(g, g.exit_via(91) and in_room(g, 24), "front lot -> boardwalk")
+    calm(g)
+    g.act("Take", 101)                 # Taffy
+    need(g, has(g, 102), "taffy")
+    for t in (104, 92):
+        need(g, g.exit_via(t), f"exit {t}")
+        calm(g, 120)
+    need(g, in_room(g, 16), "hammer game")
+    g.act("Pull", 151)                 # the pole: Orbit scene, the Magnet ends up on the Ferris wheel
+    g.run(200)
+    g.settle(maxframes=9000, quiet=90)
+    need(g, story_bit(g, 1, 1) and in_room(g, 16), "pole pulled (Magnet on the Ferris wheel)")
+
+
+def carnival_2(g):
+    """Back Lot: the Balloons carry Scooby up to the Ferris wheel for the Magnet; Diving Bell: Valve down, Magnet on the Treasure
+    chest -> Tokens, Valve up."""
+    for t in (149, 91, 107):
+        need(g, g.exit_via(t), f"exit {t}")
+        calm(g)
+    need(g, in_room(g, 13), "back lot")
+    g.run(240)                         # Scooby catches up
+    g.use_on(116, 2)                   # Balloons with Scooby
+    g.run(300)
+    g.settle(maxframes=9000, quiet=90)
+    need(g, has(g, 147), "magnet")
+    need(g, g.exit_via(125) and in_room(g, 20), "back lot -> diving bell")
+    calm(g)
+    g.act("Use", 137)                  # Valve: dive
+    g.run(300)
+    g.settle(maxframes=6000, quiet=60)
+    need(g, in_room(g, 18), "diving bell (under water)")
+    g.use(147, 138)                    # Magnet on the Treasure
+    g.run(200)
+    g.settle(maxframes=6000, quiet=60)
+    need(g, has(g, 139), "tokens")
+    g.act("Use", 140)                  # Valve: back up
+    g.run(300)
+    g.settle(maxframes=6000, quiet=60)
+    need(g, in_room(g, 20), "surface")
+
+
+def carnival_3(g):
+    """Game Tent: Tokens in the Crane Game (claw minigame: timing from the pistol's path offset), Water Pistol -> the Kid (Front Lot)
+    for the Tickets -> Dart Attendant: three Tickets, three throws -> Teddy Bear."""
+    for t in (132, 124, 104, 90):
+        need(g, g.exit_via(t), f"exit {t}")
+        calm(g)
+    need(g, in_room(g, 19), "game tent")
+    g.use(139, 62)                     # Tokens in the Crane Game
+    g.run(120)
+    need(g, in_room(g, 31), "crane game")
+    crane_game(g)
+    need(g, in_room(g, 19), "back in the tent")
+    g.act("Take", 63)                  # Water Pistol
+    need(g, has(g, 63), "water pistol")
+    need(g, g.exit_via(65) and in_room(g, 12), "tent -> front lot")
+    calm(g)
+    g.use(63, 85, verb="Give")         # to the Kid for his Tickets
+    g.run(120)
+    g.settle()
+    need(g, has(g, 64), "tickets")
+    need(g, g.exit_via(90) and in_room(g, 19), "front lot -> tent")
+    calm(g)
+    g.use(64, 53, verb="Give")         # Tickets to the Dart Attendant
+    g.run(100)
+    g.settle()
+    for i in range(3):
+        g.act("Use", 55)               # Darts
+        g.run(60)
+        g.settle()
+        if i < 2:
+            g.use(64, 53, verb="Give")
+            g.run(60)
+            g.settle()
+    need(g, has(g, 54), "teddy bear")
+
+
+def carnival_4(g):
+    """Back Lot: Teddy Bear to the Balancing Bear -> Ball."""
+    for t in (65, 91, 107):
+        need(g, g.exit_via(t), f"exit {t}")
+        calm(g)
+    need(g, in_room(g, 13), "back lot")
+    g.use(54, 122, verb="Give")        # Teddy Bear to the Balancing Bear
+    g.run(200)
+    g.settle(maxframes=6000)
+    g.act("Take", 121)                 # Ball
+    need(g, has(g, 121), "ball")
+
+
+def carnival_5(g):
+    """Boardwalk -> Fun House (steer down at the prompt) -> Bumper Cars: Taffy on the Engine, Switch on, win the car duel
+    against the Clown, take the Dart."""
+    for t in (124, 105):
+        need(g, g.exit_via(t), f"exit {t}")
+        g.run(90)
+    need(g, in_room(g, 23), "fun house")
+    g.run(200)
+    g.press("D", 40, 0)                # the prompt (script op wait_dpad_choice): D = the bumper cars
+    g.run(300)
+    g.settle(maxframes=3000, quiet=60)
+    need(g, in_room(g, 5), "bumper cars")
+    g.use(102, 9)                      # Taffy on the Engine (it has to be off): drive belt
+    calm(g, 100)
+    g.act("Use", 8)                    # Switch on
+    calm(g, 60)
+    need(g, story_bit(g, 7, 0) and story_bit(g, 7, 1), "engine on with the taffy belt")
+    start_bumper(g)
+    bumper_tug(g)
+    g.run(200)
+    g.settle(maxframes=6000)
+    need(g, in_room(g, 7) and story_bit(g, 0, 7), "won the duel (Dart on the floor)")
+    g.act("Take", 12)                  # Dart
+    need(g, has(g, 12), "dart")
+
+
+CARNIVAL = [carnival_1, carnival_2, carnival_3, carnival_4, carnival_5]
+
+
+def carnival_all(g):
+    for f in CARNIVAL:
         f(g)
