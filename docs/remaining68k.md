@@ -16,20 +16,20 @@ Routes (each with `--hle all`; instructions are summed over all of them):
 
 | gate | routes / profiles | frames | top level | nested | total | of which idle wait spin |
 |---|---|---:|---:|---:|---:|---:|
-| intro_w0 | 1 | 17,120 | 70,689,349 | 7,021,336 | 77,710,685 | 64,229,158 |
-| intro_w1 | 1 | 17,144 | 57,388,722 | 7,377,530 | 64,766,252 | 50,134,218 |
-| menus | 1 | 24,990 | 88,831,264 | 155,909,224 | 244,740,488 | 86,062,095 |
-| mouse | 7 | 18,924 | 32,307,584 | 8,145,767 | 40,453,351 | 24,130,268 |
-| sound | 3 | 16,700 | 44,515,564 | 109,280,136 | 153,795,700 | 43,856,458 |
-| story | 6 | 59,439 | 144,901,970 | 128,201,101 | 273,103,071 | 124,237,656 |
-| extra_boot_screens | 1 | 1,900 | 13,169,817 | 1,963,143 | 15,132,960 | 13,143,042 |
-| extra_capture | 1 | 22,708 | 80,483,321 | 133,525,193 | 214,008,514 | 77,830,616 |
-| extra_inventory_play | 1 | 1,686 | 12,582,496 | 51,418 | 12,633,914 | 12,566,162 |
-| extra_lobby | 1 | 2,698 | 14,999,180 | 4,215,541 | 19,214,721 | 14,666,778 |
-| extra_password_screen | 1 | 2,586 | 14,879,151 | 9,073,951 | 23,953,102 | 14,730,902 |
-| extra_pointer_play | 1 | 13,695 | 43,122,241 | 126,447,661 | 169,569,902 | 42,980,996 |
-| extra_script_talk | 1 | 5,848 | 23,098,788 | 4,896,137 | 27,994,925 | 19,337,894 |
-| extra_verbs | 1 | 35,405 | 45,115,233 | 12,442,611 | 57,557,844 | 31,252,914 |
+| intro_w0 | 1 | 17,120 | 60,078,817 | 1,727,548 | 61,806,365 | 54,560,210 |
+| intro_w1 | 1 | 17,144 | 49,981,506 | 1,507,039 | 51,488,545 | 44,602,114 |
+| menus | 1 | 24,990 | 88,514,745 | 186,949 | 88,701,694 | 86,295,835 |
+| mouse | 7 | 18,924 | 25,170,103 | 1,722,822 | 26,892,925 | 19,828,542 |
+| sound | 3 | 16,700 | 44,347,836 | 43,132 | 44,390,968 | 43,756,568 |
+| story | 6 | 59,145 | 134,554,861 | 3,428,372 | 137,983,233 | 122,224,710 |
+| extra_boot_screens | 1 | 1,900 | 13,134,635 | 32 | 13,134,667 | 13,107,948 |
+| extra_capture | 1 | 22,708 | 79,308,694 | 410,068 | 79,718,762 | 76,979,088 |
+| extra_inventory_play | 1 | 1,686 | 12,543,762 | 0 | 12,543,762 | 12,527,428 |
+| extra_lobby | 1 | 2,698 | 14,930,789 | 30,731 | 14,961,520 | 14,632,418 |
+| extra_password_screen | 1 | 2,586 | 14,860,966 | 128 | 14,861,094 | 14,712,648 |
+| extra_pointer_play | 1 | 13,695 | 43,371,370 | 1,840 | 43,373,210 | 43,230,124 |
+| extra_script_talk | 1 | 5,848 | 22,220,510 | 393,281 | 22,613,791 | 18,192,672 |
+| extra_verbs | 1 | 35,405 | 35,751,894 | 3,338,146 | 39,090,040 | 25,989,302 |
 
 `extra_*` are other recorded routes (lobby, boot, verbs, inventory, pointer, ...) that are not part of the #24 route set; they are in the function table but not in the headline numbers below.
 
@@ -37,23 +37,23 @@ Routes (each with `--hle all`; instructions are summed over all of them):
 
 | | instructions | share of work |
 |---|---:|---:|
-| top level (excluding idle spin) | 45,984,600 | 10.0 % |
-| nested in C functions | 415,935,094 | 90.0 % |
-| **work total** | **461,919,694** | |
-| idle wait spin (excluded) | 392,649,853 | |
+| top level (excluding idle spin) | 31,379,889 | 78.5 % |
+| nested in C functions | 8,615,862 | 21.5 % |
+| **work total** | **39,995,751** | |
+| idle wait spin (excluded) | 371,267,979 | |
 
 **Share of the original's executed instructions that is still interpreted.** The same gates also ran with `--hle none` (pure 68k); the ratio is `all / none`, both without the idle spin:
 
 | gate | none (instructions) | all (instructions) | still interpreted | all: top / nested |
 |---|---:|---:|---:|---|
-| intro_w0 | 127,166,108 | 13,481,527 | 10.60 % | 6,460,191 / 7,021,336 |
-| intro_w1 | 140,506,942 | 14,632,034 | 10.41 % | 7,254,504 / 7,377,530 |
-| menus | 205,350,674 | 158,678,393 | 77.27 % | 2,769,169 / 155,909,224 |
-| sound | 152,803,810 | 109,939,242 | 71.95 % | 659,106 / 109,280,136 |
-| story | 528,672,110 | 148,865,415 | 28.16 % | 20,664,314 / 128,201,101 |
-| **all gates above** | 1,154,499,644 | 445,596,611 | **38.60 %** | |
+| intro_w0 | 127,166,108 | 7,246,155 | 5.70 % | 5,518,607 / 1,727,548 |
+| intro_w1 | 140,506,942 | 6,886,431 | 4.90 % | 5,379,392 / 1,507,039 |
+| menus | 205,350,674 | 2,405,859 | 1.17 % | 2,218,910 / 186,949 |
+| sound | 152,803,810 | 634,400 | 0.42 % | 591,268 / 43,132 |
+| story | 528,672,110 | 15,758,523 | 2.98 % | 12,330,151 / 3,428,372 |
+| **all gates above** | 1,154,499,644 | 32,931,368 | **2.85 %** | |
 
-The two scaled-bitmap blit routines `sub_00E40C` / `sub_00F272` (title bats and menu pictures, called every frame of the menu screens; pure computation) are 88.0 % of those 445,596,611 interpreted instructions. Without them the remainder is **4.62 %** of the original's instructions.
+The two scaled-bitmap blit routines `sub_00E40C` / `sub_00F272` (title bats and menu pictures, called every frame of the menu screens; pure computation) are 0.0 % of those 32,931,368 interpreted instructions. Without them the remainder is **2.85 %** of the original's instructions.
 
 Caveats: the `none` and `all` runs of a gate execute the same inputs, but a C function costs about zero emulated time, so closed-loop routes (story) and the main loop (which runs as often as time allows) do a different amount of main-loop work. `mouse` is left out of the ratio because its `none` side includes the Lobby set-up run. Treat the ratio as an order of magnitude, the table in section 3 as the ranking.
 
@@ -63,12 +63,12 @@ Every function that executes interpreted is put in one class (rules in `classify
 
 | kind | functions | top | nested | % of work (idle excluded) | what to do |
 |---|---:|---:|---:|---:|---|
-| idle wait spin (not work) | 2 | 619,159,157 | 0 | idle | section 5.1 |
-| no C yet, no hardware / waits / stack tricks: ordinary decompilation | 20 | 1,428,095 | 695,827,729 | 89.91 % | port it, difftest, done |
-| no C yet, blocks / pushes / reads HV or SR | 7 | 4,235,172 | 590 | 0.55 % | needs the waiting model first (5.1) |
-| partly C: what stays 68k between its ranges | 59 | 35,089,702 | 0 | 4.52 % | disappears with the waiting model (5.1) |
-| by design: HV-counter readers | 4 | 23,847,404 | 12,722,430 | 4.72 % | sections 5.2 / 5.3 |
-| by design: interrupt vector trampolines | 2 | 2,325,150 | 0 | 0.30 % | section 5.4 |
+| idle wait spin (not work) | 2 | 590,639,607 | 0 | idle | section 5.1 |
+| no C yet, no hardware / waits / stack tricks: ordinary decompilation | 15 | 1,420,201 | 95,666 | 2.49 % | port it, difftest, done |
+| no C yet, blocks / pushes / reads HV or SR | 7 | 4,240,044 | 550 | 6.96 % | needs the waiting model first (5.1) |
+| partly C: what stays 68k between its ranges | 59 | 16,577,103 | 0 | 27.21 % | disappears with the waiting model (5.1) |
+| by design: HV-counter readers | 4 | 23,572,653 | 12,693,872 | 59.53 % | sections 5.2 / 5.3 |
+| by design: interrupt vector trampolines | 2 | 2,320,880 | 0 | 3.81 % | section 5.4 |
 
 ## 3. Remaining functions, ranked by executed instructions
 
@@ -76,114 +76,109 @@ Over the #24 route set plus extras (all routes with `--hle all`). *Top* / *neste
 
 | # | function | addr | top | nested | % | cum % | body | owner | status | why it is still 68k | called from (nested) |
 |--:|---|---|---:|---:|---:|---:|---|---|---|---|---|
-| 1 | `wait_vblank` | $00974C | 619,079,953 |  | idle |  | 4/4 | mainloop | stays 68k by design: wait primitive | blocks until VBlank; the spin is pure idle time |  |
-| 2 | `sub_00E40C` | $00E40C |  | 475,914,490 | 61.37 | 61.4 | 1185/1416 | menus | no C | software scaled-bitmap blit into the tile buffer (depth masks), title bats zoom / menu pictures; pure computation | menu_select_draw (251,204,447), password_screen_frame (124,717,594), sound_test_frame (73,850,301) |
-| 3 | `sub_00F272` | $00F272 |  | 202,494,969 | 26.11 | 87.5 | 650/780 | menus | no C | same blit, plane-A variant; pure computation | menu_select_draw (108,713,348), password_screen_frame (53,972,338), sound_test_frame (31,958,912) |
-| 4 | `hblank_verb_bar` | $01006C | 23,847,212 |  | 3.08 | 90.6 | 32/32 | mainloop | stays 68k by design: HV-counter reader | HBlank verb-bar split: raster wait + plane/scroll register switch at line 167; reads the HV counter (beam position / RNG) |  |
-| 5 | `run_object_events` | $00AFDA | 13,550,699 |  | 1.75 | 92.3 | 18/47 | script | partly C (3 entries) | the object walk of the event scan; scan/run calls stay 68k |  |
-| 6 | `actor_dma` | $00AF24 |  | 12,362,463 | 1.59 | 93.9 | 47/51 | vdp | stays 68k by design: HV-counter reader | reads the HV counter (beam position / RNG) | vblank_main (12,362,463) |
-| 7 | `script_run` | $0023DC | 10,266,664 |  | 1.32 | 95.2 | 2/12 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 8 | `meters_draw` | $00A704 |  | 8,737,419 | 1.13 | 96.4 | 53/53 |  | no C | HUD status meters (draw into VRAM) | vblank_main (8,737,419) |
-| 9 | `camera_update` | $00FA78 |  | 5,752,677 | 0.74 | 97.1 | 81/90 | walking | no C | camera -> scroll registers, column/row refresh requests | vblank_main (5,752,677) |
-| 10 | `sub_0017AE` | $0017AE | 3,943,577 |  | 0.51 | 97.6 | 92/92 |  | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
-| 11 | `script_op_04_if_else` | $00274A | 3,704,739 |  | 0.48 | 98.1 | 16/20 | script | partly C (1 entries) | range (condition; the nested run stays 68k) |  |
-| 12 | `palette_cycle` | $00A7CE |  | 2,835,400 | 0.37 | 98.4 | 26/26 |  | no C | palette cycling (5 ranges) | vblank_main (2,835,400) |
-| 13 | `sub_001C0C` | $001C0C | 2,047,894 |  | 0.26 | 98.7 | 34/275 | script | partly C (14 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 14 | `Reset` | $000200 | 1,247,040 |  | 0.16 | 98.9 | 49/735 | mainloop | partly C (32 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 15 | `text_wait` | $00A18C | 1,242,413 |  | 0.16 | 99.0 | 14/31 | text | partly C (3 entries) | C (ranges; the VBlank/actor/pad spins stay 68k) |  |
-| 16 | `VBlank` | $0008BC | 1,162,890 |  | 0.15 | 99.2 | 5/5 | mainloop | stays 68k by design: vector trampoline | interrupt vector trampoline |  |
-| 17 | `HBlank` | $0008AA | 1,162,260 |  | 0.15 | 99.3 | 5/5 | mainloop | stays 68k by design: vector trampoline | interrupt vector trampoline |  |
-| 18 | `menu_choose` | $008D36 | 1,133,250 |  | 0.15 | 99.5 | 6/12 | menus | partly C (1 entries) | is not ported yet (title screen, sprite tile uploads `$00B358`/`$00B404`, menus `$008D36`, |  |
-| 19 | `sub_00175C` | $00175C | 1,063,644 |  | 0.14 | 99.6 | 21/21 |  | no C | pure computation: no waits, stack tricks or hardware |  |
-| 20 | `menu_select` | $008D6A | 715,739 |  | 0.09 | 99.7 | 4/96 | menus | partly C (6 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 21 | `hud_dma` | $005C8E |  | 359,967 | 0.05 | 99.8 | 10/10 | vdp | stays 68k by design: HV-counter reader | reads the HV counter (beam position / RNG) | vblank_main (359,967) |
-| 22 | `mystery_menu` | $008FCA | 323,742 |  | 0.04 | 99.8 | 5/155 | menu_password | partly C (7 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 23 | `script_run_frame` | $002406 | 260,598 |  | 0.03 | 99.8 | 2/17 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 24 | `sub_005C5A` | $005C5A | 186,521 |  | 0.02 | 99.9 | 5/5 | verbs | no C | pure computation: no waits, stack tricks or hardware |  |
-| 25 | `menu_open` | $00851E | 185,000 |  | 0.02 | 99.9 | 12/45 | menus | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, rte / jmp, calls other 68k routines |  |
-| 26 | `sub_0016C4` | $0016C4 | 139,205 |  | 0.02 | 99.9 | 33/33 |  | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
-| 27 | `mystery_intro` | $0013BA | 132,338 |  | 0.02 | 99.9 | 149/150 | room | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
-| 28 | `sub_0047AC` | $0047AC | 48,825 | 41,850 | 0.01 | 99.9 | 28/28 | room | no C | `$005D1C`, `$005CB6`, `$0047AC` and the scroll helpers `$00FC3A`... are still 68k. | room_load (41,850) |
-| 29 | `script_op_15_wait` | $0048D8 | 88,414 |  | 0.01 | 99.9 | 2/7 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 30 | `inventory_refresh` | $005CF6 | 86,121 |  | 0.01 | 99.9 | 7/7 | verbs | no C | pure computation: no waits, stack tricks or hardware |  |
-| 31 | `wait_vblanks` | $009742 | 79,204 |  | idle |  | 3/3 | mainloop | stays 68k by design: wait primitive | blocks until VBlank; the spin is pure idle time |  |
-| 32 | `sound_test` | $00940C | 67,072 |  | 0.01 | 100.0 | 5/165 | soundtest | partly C (6 entries) | not ported (UI, other subsystem) |  |
-| 33 | `script_op_0B_set_state` | $002DF2 | 65,509 |  | 0.01 | 100.0 | 4/32 | script | partly C (1 entries) | residue between C ranges |  |
-| 34 | `shaggy_walk_to` | $005002 | 42,727 |  | 0.01 | 100.0 | 5/146 | walkto | partly C (4 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 35 | `inventory_arrows_update` | $005B92 | 42,415 |  | 0.01 | 100.0 | 23/23 | room | no C | pure computation: no waits, stack tricks or hardware |  |
-| 36 | `script_op_17_wait_anim` | $004FBE | 34,426 |  | 0.00 | 100.0 | 2/19 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 37 | `script_subop_1D_bar_hide` | $00482E | 28,252 |  | 0.00 | 100.0 | 5/10 | script | partly C (3 entries) | C (ranges; the wait-for-idle spin $4836 stays 68k) |  |
-| 38 | `script_subop_1C_bar_show` | $004862 | 26,201 |  | 0.00 | 100.0 | 15/19 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 39 | `script_subop_05_fullscreen_picture` | $0045A4 | 17,958 |  | 0.00 | 100.0 | 108/109 | script | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
-| 40 | `sub_00FC3A` | $00FC3A |  | 16,308 | 0.00 | 100.0 | 60/85 | room | no C | `$005D1C`, `$005CB6`, `$0047AC` and the scroll helpers `$00FC3A`... are still 68k. | vblank_main (10,628), room_load (5,672), room_draw_view (8) |
-| 41 | `actor_walk_to` | $004B24 | 15,777 |  | 0.00 | 100.0 | 5/66 | script_walk | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 42 | `sub_00FD5E` | $00FD5E |  | 14,694 | 0.00 | 100.0 | 57/82 | room | no C | pure computation: no waits, stack tricks or hardware | vblank_main (9,037), room_load (5,480), room_draw_view (177) |
-| 43 | `rng_next` | $0022D6 | 192 | 13,392 | 0.00 | 100.0 | 8/8 |  | no C | pure computation: no waits, stack tricks or hardware | vblank_title_fade (10,448), main_loop_pass (2,944) |
-| 44 | `script_op_06_anim_wait` | $002B5A | 7,642 |  | 0.00 | 100.0 | 3/36 | script | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 45 | `scooby_walk_wait` | $00566A | 7,273 |  | 0.00 | 100.0 | 4/14 | walkto | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 46 | `script_subop_0F_camera_pan_right` | $0043C0 | 4,283 |  | 0.00 | 100.0 | 2/20 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 47 | `script_subop_10_camera_pan_left` | $004428 | 4,031 |  | 0.00 | 100.0 | 2/15 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 48 | `sub_00FF68` | $00FF68 |  | 3,821 | 0.00 | 100.0 | 77/78 | room | no C | pure computation: no waits, stack tricks or hardware | room_load (3,814), room_draw_view (7) |
-| 49 | `script_op_1F_wait_stop` | $004F70 | 3,027 |  | 0.00 | 100.0 | 2/21 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 50 | `palette_read_cram` | $009DE0 | 2,520 |  | 0.00 | 100.0 | 3/39 | palette | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 51 | `palette_fade` | $009E7E | 2,508 |  | 0.00 | 100.0 | 4/47 | palette | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 52 | `inventory_upload` | $005CB6 |  | 2,449 | 0.00 | 100.0 | 16/16 | room | no C | `$11`/`$18`. Callees that stay in 68k: `$005D1C` / `$005CB6` (inventory icon and verb bar VRAM | room_load (1,984), vblank_main (465) |
-| 53 | `script_op_10_say` | $004D80 | 1,995 |  | 0.00 | 100.0 | 7/79 | script_ops | partly C (16 entries) | C (ranges); the pose waits ($004DDE, $004DEE) and the pose-back part ($004E82..$004EDA) stay 68k: no route plays them,... |  |
-| 54 | `title_screen` | $008196 | 1,919 |  | 0.00 | 100.0 | 4/176 | menus | partly C (6 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 55 | `rooms_browser` | $0088D8 | 1,449 |  | 0.00 | 100.0 | 3/129 | menu_debug | partly C (4 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 56 | `room_load` | $002138 | 1,122 |  | 0.00 | 100.0 | 18/18 | room | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
-| 57 | `action_execute` | $0019B0 | 1,101 |  | 0.00 | 100.0 | 13/113 | script | partly C (6 entries) | C (6 ranges; pushes, script calls and `sub_00A130` text stay 68k) |  |
-| 58 | `script_op_1E_face` | $00268E | 1,049 |  | 0.00 | 100.0 | 3/38 | script_ops | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 59 | `room_fade_in` | $00219A | 972 |  | 0.00 | 100.0 | 18/18 | room | no C: blocks / stack / interrupt state | stack push/pop, calls other 68k routines |  |
-| 60 | `objects_browser` | $008AB4 | 890 |  | 0.00 | 100.0 | 3/112 | menu_debug | partly C (4 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 61 | `text_show` | $00A130 | 634 |  | 0.00 | 100.0 | 4/13 | text | partly C (4 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 62 | `sub_001BDA` | $001BDA |  | 590 | 0.00 | 100.0 | 10/10 |  | no C: blocks / stack / interrupt state | stack push/pop, calls other 68k routines | action_execute_run_case (580), action_execute_verb_pass (10) |
-| 63 | `scooby_walk_start` | $005AE0 | 580 |  | 0.00 | 100.0 | 2/24 | walkto | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 64 | `script_op_0C_sys` | $002E9E | 480 |  | 0.00 | 100.0 | 2/7 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 65 | `run_load_script` | $00221A | 384 |  | 0.00 | 100.0 | 6/21 | script | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 66 | `script_op_05_move_obj` | $0028A0 | 383 |  | 0.00 | 100.0 | 9/139 | script | partly C (3 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 67 | `run_arrival_script` | $002278 | 324 |  | 0.00 | 100.0 | 6/21 | script | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 68 | `script_run_nested` | $002320 | 312 |  | 0.00 | 100.0 | 2/9 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 69 | `sub_005C74` | $005C74 | 295 |  | 0.00 | 100.0 | 5/5 | verbs | no C | pure computation: no waits, stack tricks or hardware |  |
-| 70 | `sub_00FE74` | $00FE74 |  | 260 | 0.00 | 100.0 | 4/75 | room | no C | pure computation: no waits, stack tricks or hardware | room_load (256), room_draw_view (4) |
-| 71 | `game_init` | $00A248 | 192 |  | 0.00 | 100.0 | 8/8 | mainloop | stays 68k by design: HV-counter reader | reads the HV counter (beam position / RNG) |  |
-| 72 | `script_op_0E_walk_spawn` | $0049BA | 154 |  | 0.00 | 100.0 | 7/95 | script_walk | partly C (6 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 73 | `script_op_19_unfreeze_wait` | $002B0E | 106 |  | 0.00 | 100.0 | 2/20 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 74 | `script_op_18_goto_room_cut` | $004EE4 | 88 |  | 0.00 | 100.0 | 2/9 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 75 | `scooby_walk_to` | $0056B0 | 85 |  | 0.00 | 100.0 | 1/104 | walkto | partly C (1 entries) | residue between C ranges |  |
-| 76 | `mystery_load` | $007F66 | 68 |  | 0.00 | 100.0 | 4/45 | room | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 77 | `script_subop_03_fade_out` | $00454E | 56 |  | 0.00 | 100.0 | 2/5 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 78 | `menu_start_game` | $008CD6 | 52 |  | 0.00 | 100.0 | 2/15 | menus | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 79 | `script_subop_02_room_fade_in` | $004548 | 44 |  | 0.00 | 100.0 | 2/2 | script | no C | pure computation: no waits, stack tricks or hardware |  |
-| 80 | `actors_init` | $00801A | 34 |  | 0.00 | 100.0 | 2/57 | sprite | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 81 | `password_check` | $009298 | 28 |  | 0.00 | 100.0 | 6/62 | menu_password | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 82 | `sub_004D7A` | $004D7A | 23 |  | 0.00 | 100.0 | 1/2 |  | no C | pure computation: no waits, stack tricks or hardware |  |
-| 83 | `script_op_0F_walk_obj` | $004C20 | 23 |  | 0.00 | 100.0 | 1/85 | script_walk | partly C (2 entries) | C (2nd pass); the Scooby tail $4D48 has no states (not registered) |  |
-| 84 | `script_op_11_goto_room` | $004F0E | 18 |  | 0.00 | 100.0 | 3/13 | script | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 85 | `soft_reset` | $008F9A | 15 |  | 0.00 | 100.0 | 5/6 | menus | partly C (1 entries) | QUIT MYSTERY confirmation, then the reset (the tail `movea.l (0),sp / jmp (4)` stays 68k: the SP changes) |  |
-| 86 | `room_reload` | $002196 | 15 |  | 0.00 | 100.0 | 1/1 | room | no C | Callers of the loader (not ported, other subsystems): `$002138` `room_enter`, `$002196` `room_change`, |  |
-| 87 | `debug_objects` | $008C40 | 11 |  | 0.00 | 100.0 | 11/39 | menu_debug | partly C (3 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 88 | `quit_confirm` | $008F8A | 6 |  | 0.00 | 100.0 | 1/4 | menus | partly C (2 entries) | QUIT MYSTERY confirmation, then the reset (the tail `movea.l (0),sp / jmp (4)` stays 68k: the SP changes) |  |
-| 89 | `menu_load_screen` | $0096F4 | 4 |  | 0.00 | 100.0 | 2/8 | menu_debug | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 90 | `password_cancel` | $00927A | 3 |  | 0.00 | 100.0 | 3/5 | menu_password | partly C (1 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
-| 91 | `script_subop_06_bar_show_if_hidden` | $00481A | 3 |  | 0.00 | 100.0 | 3/5 | script_ops | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 92 | `script_op_0A_set_icon` | $002DC0 | 3 |  | 0.00 | 100.0 | 3/12 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 93 | `script_op_07_show_obj` | $002BF8 | 3 |  | 0.00 | 100.0 | 2/26 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
-| 94 | `debug_rooms` | $0088A2 | 2 |  | 0.00 | 100.0 | 2/12 | menu_debug | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 1 | `wait_vblank` | $00974C | 590,560,307 |  | idle |  | 4/4 | mainloop | stays 68k by design: wait primitive | blocks until VBlank; the spin is pure idle time |  |
+| 2 | `hblank_verb_bar` | $01006C | 23,572,461 |  | 38.69 | 38.7 | 32/32 | mainloop | stays 68k by design: HV-counter reader | HBlank verb-bar split: raster wait + plane/scroll register switch at line 167; reads the HV counter (beam position / RNG) |  |
+| 3 | `actor_dma` | $00AF24 |  | 12,335,279 | 20.25 | 58.9 | 47/51 | vdp | stays 68k by design: HV-counter reader | reads the HV counter (beam position / RNG) | vblank_main (12,335,279) |
+| 4 | `run_object_events` | $00AFDA | 4,010,263 |  | 6.58 | 65.5 | 12/47 | script | partly C (4 entries) | the object walk of the event scan; scan/run calls stay 68k |  |
+| 5 | `sub_0017AE` | $0017AE | 3,948,227 |  | 6.48 | 72.0 | 92/92 |  | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
+| 6 | `script_run` | $0023DC | 3,645,097 |  | 5.98 | 78.0 | 2/12 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 7 | `sub_001C0C` | $001C0C | 2,541,853 |  | 4.17 | 82.2 | 34/275 | script | partly C (14 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 8 | `script_op_04_if_else` | $00274A | 1,737,268 |  | 2.85 | 85.0 | 16/20 | script | partly C (1 entries) | range (condition; the nested run stays 68k) |  |
+| 9 | `menu_choose` | $008D36 | 1,179,214 |  | 1.94 | 86.9 | 6/12 | menus | partly C (1 entries) | is not ported yet (title screen, sprite tile uploads `$00B358`/`$00B404`, menus `$008D36`, |  |
+| 10 | `VBlank` | $0008BC | 1,160,750 |  | 1.91 | 88.9 | 5/5 | mainloop | stays 68k by design: vector trampoline | interrupt vector trampoline |  |
+| 11 | `HBlank` | $0008AA | 1,160,130 |  | 1.90 | 90.8 | 5/5 | mainloop | stays 68k by design: vector trampoline | interrupt vector trampoline |  |
+| 12 | `text_wait` | $00A18C | 1,147,023 |  | 1.88 | 92.6 | 14/31 | text | partly C (3 entries) | C (ranges; the VBlank/actor/pad spins stay 68k) |  |
+| 13 | `sub_00175C` | $00175C | 1,064,904 |  | 1.75 | 94.4 | 21/21 |  | no C | pure computation: no waits, stack tricks or hardware |  |
+| 14 | `menu_select` | $008D6A | 733,361 |  | 1.20 | 95.6 | 4/96 | menus | partly C (6 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 15 | `Reset` | $000200 | 401,204 |  | 0.66 | 96.3 | 49/735 | mainloop | partly C (32 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 16 | `hud_dma` | $005C8E |  | 358,593 | 0.59 | 96.8 | 10/10 | vdp | stays 68k by design: HV-counter reader | reads the HV counter (beam position / RNG) | vblank_main (358,593) |
+| 17 | `mystery_menu` | $008FCA | 324,082 |  | 0.53 | 97.4 | 5/155 | menu_password | partly C (7 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 18 | `script_run_frame` | $002406 | 260,384 |  | 0.43 | 97.8 | 2/17 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 19 | `menu_open` | $00851E | 195,326 |  | 0.32 | 98.1 | 12/45 | menus | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, rte / jmp, calls other 68k routines |  |
+| 20 | `sub_005C5A` | $005C5A | 179,407 |  | 0.29 | 98.4 | 5/5 | verbs | no C | pure computation: no waits, stack tricks or hardware |  |
+| 21 | `sub_0016C4` | $0016C4 | 139,376 |  | 0.23 | 98.6 | 33/33 |  | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
+| 22 | `mystery_intro` | $0013BA | 132,447 |  | 0.22 | 98.9 | 149/150 | room | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
+| 23 | `sub_0047AC` | $0047AC | 48,825 | 41,850 | 0.15 | 99.0 | 28/28 | room | no C | `$005D1C`, `$005CB6`, `$0047AC` and the scroll helpers `$00FC3A`... are still 68k. | room_load (41,850) |
+| 24 | `script_op_15_wait` | $0048D8 | 87,996 |  | 0.14 | 99.2 | 2/7 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 25 | `inventory_refresh` | $005CF6 | 82,601 |  | 0.14 | 99.3 | 7/7 | verbs | no C | pure computation: no waits, stack tricks or hardware |  |
+| 26 | `wait_vblanks` | $009742 | 79,300 |  | idle |  | 3/3 | mainloop | stays 68k by design: wait primitive | blocks until VBlank; the spin is pure idle time |  |
+| 27 | `sound_test` | $00940C | 67,768 |  | 0.11 | 99.4 | 5/165 | soundtest | partly C (6 entries) | not ported (UI, other subsystem) |  |
+| 28 | `script_op_0B_set_state` | $002DF2 | 62,319 |  | 0.10 | 99.5 | 4/32 | script | partly C (1 entries) | residue between C ranges |  |
+| 29 | `inventory_arrows_update` | $005B92 | 43,889 |  | 0.07 | 99.6 | 23/23 | room | no C | pure computation: no waits, stack tricks or hardware |  |
+| 30 | `shaggy_walk_to` | $005002 | 39,173 |  | 0.06 | 99.6 | 5/146 | walkto | partly C (4 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 31 | `script_op_17_wait_anim` | $004FBE | 33,944 |  | 0.06 | 99.7 | 2/19 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 32 | `script_subop_1D_bar_hide` | $00482E | 28,036 |  | 0.05 | 99.7 | 5/10 | script | partly C (3 entries) | C (ranges; the wait-for-idle spin $4836 stays 68k) |  |
+| 33 | `script_subop_1C_bar_show` | $004862 | 26,175 |  | 0.04 | 99.8 | 15/19 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 34 | `sub_00FC3A` | $00FC3A |  | 17,928 | 0.03 | 99.8 | 60/85 | room | no C | `$005D1C`, `$005CB6`, `$0047AC` and the scroll helpers `$00FC3A`... are still 68k. | camera_update (11,888), room_load (6,032), room_draw_view (8) |
+| 35 | `script_subop_05_fullscreen_picture` | $0045A4 | 17,828 |  | 0.03 | 99.8 | 108/109 | script | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
+| 36 | `sub_00FD5E` | $00FD5E |  | 15,938 | 0.03 | 99.9 | 57/82 | room | no C | pure computation: no waits, stack tricks or hardware | camera_update (10,099), room_load (5,662), room_draw_view (177) |
+| 37 | `actor_walk_to` | $004B24 | 15,535 |  | 0.03 | 99.9 | 5/66 | script_walk | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 38 | `rng_next` | $0022D6 | 192 | 13,336 | 0.02 | 99.9 | 8/8 |  | no C | pure computation: no waits, stack tricks or hardware | vblank_title_fade (10,448), main_loop_pass (2,888) |
+| 39 | `scooby_walk_wait` | $00566A | 6,877 |  | 0.01 | 99.9 | 4/14 | walkto | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 40 | `script_op_06_anim_wait` | $002B5A | 5,852 |  | 0.01 | 99.9 | 3/36 | script | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 41 | `script_subop_0F_camera_pan_right` | $0043C0 | 4,203 |  | 0.01 | 99.9 | 2/20 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 42 | `script_subop_10_camera_pan_left` | $004428 | 4,024 |  | 0.01 | 100.0 | 2/15 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 43 | `sub_00FF68` | $00FF68 |  | 3,835 | 0.01 | 100.0 | 77/78 | room | no C | pure computation: no waits, stack tricks or hardware | room_load (3,828), room_draw_view (7) |
+| 44 | `script_op_1F_wait_stop` | $004F70 | 2,829 |  | 0.00 | 100.0 | 2/21 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 45 | `palette_read_cram` | $009DE0 | 2,540 |  | 0.00 | 100.0 | 3/39 | palette | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 46 | `palette_fade` | $009E7E | 2,530 |  | 0.00 | 100.0 | 4/47 | palette | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 47 | `inventory_upload` | $005CB6 |  | 2,511 | 0.00 | 100.0 | 16/16 | room | no C | `$11`/`$18`. Callees that stay in 68k: `$005D1C` / `$005CB6` (inventory icon and verb bar VRAM | room_load (2,046), vblank_main (465) |
+| 48 | `script_op_10_say` | $004D80 | 2,068 |  | 0.00 | 100.0 | 7/79 | script_ops | partly C (16 entries) | C (ranges); the pose waits ($004DDE, $004DEE) and the pose-back part ($004E82..$004EDA) stay 68k: no route plays them,... |  |
+| 49 | `title_screen` | $008196 | 1,947 |  | 0.00 | 100.0 | 4/176 | menus | partly C (6 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 50 | `rooms_browser` | $0088D8 | 1,449 |  | 0.00 | 100.0 | 3/129 | menu_debug | partly C (4 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 51 | `room_load` | $002138 | 1,158 |  | 0.00 | 100.0 | 18/18 | room | no C: blocks / stack / interrupt state | stack push/pop, writes SR (interrupt mask), calls other 68k routines |  |
+| 52 | `action_execute` | $0019B0 | 1,065 |  | 0.00 | 100.0 | 13/113 | script | partly C (6 entries) | C (6 ranges; pushes, script calls and `sub_00A130` text stay 68k) |  |
+| 53 | `room_fade_in` | $00219A | 1,008 |  | 0.00 | 100.0 | 18/18 | room | no C: blocks / stack / interrupt state | stack push/pop, calls other 68k routines |  |
+| 54 | `script_op_1E_face` | $00268E | 959 |  | 0.00 | 100.0 | 3/38 | script_ops | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 55 | `objects_browser` | $008AB4 | 890 |  | 0.00 | 100.0 | 3/112 | menu_debug | partly C (4 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 56 | `text_show` | $00A130 | 598 |  | 0.00 | 100.0 | 4/13 | text | partly C (4 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 57 | `scooby_walk_start` | $005AE0 | 584 |  | 0.00 | 100.0 | 2/24 | walkto | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 58 | `sub_001BDA` | $001BDA |  | 550 | 0.00 | 100.0 | 10/10 |  | no C: blocks / stack / interrupt state | stack push/pop, calls other 68k routines | action_execute_run_case (540), action_execute_verb_pass (10) |
+| 59 | `script_op_0C_sys` | $002E9E | 480 |  | 0.00 | 100.0 | 2/7 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 60 | `script_op_05_move_obj` | $0028A0 | 397 |  | 0.00 | 100.0 | 9/139 | script | partly C (3 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 61 | `run_load_script` | $00221A | 396 |  | 0.00 | 100.0 | 6/21 | script | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 62 | `run_arrival_script` | $002278 | 336 |  | 0.00 | 100.0 | 6/21 | script | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 63 | `sub_005C74` | $005C74 | 305 |  | 0.00 | 100.0 | 5/5 | verbs | no C | pure computation: no waits, stack tricks or hardware |  |
+| 64 | `script_run_nested` | $002320 | 302 |  | 0.00 | 100.0 | 2/9 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 65 | `sub_00FE74` | $00FE74 |  | 268 | 0.00 | 100.0 | 4/75 | room | no C | pure computation: no waits, stack tricks or hardware | room_load (264), room_draw_view (4) |
+| 66 | `game_init` | $00A248 | 192 |  | 0.00 | 100.0 | 8/8 | mainloop | stays 68k by design: HV-counter reader | reads the HV counter (beam position / RNG) |  |
+| 67 | `script_op_0E_walk_spawn` | $0049BA | 156 |  | 0.00 | 100.0 | 7/95 | script_walk | partly C (6 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 68 | `script_op_19_unfreeze_wait` | $002B0E | 106 |  | 0.00 | 100.0 | 2/20 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 69 | `script_op_18_goto_room_cut` | $004EE4 | 88 |  | 0.00 | 100.0 | 2/9 | script | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 70 | `scooby_walk_to` | $0056B0 | 76 |  | 0.00 | 100.0 | 1/104 | walkto | partly C (1 entries) | residue between C ranges |  |
+| 71 | `mystery_load` | $007F66 | 68 |  | 0.00 | 100.0 | 4/45 | room | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 72 | `script_subop_03_fade_out` | $00454E | 56 |  | 0.00 | 100.0 | 2/5 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 73 | `menu_start_game` | $008CD6 | 52 |  | 0.00 | 100.0 | 2/15 | menus | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 74 | `script_subop_02_room_fade_in` | $004548 | 44 |  | 0.00 | 100.0 | 2/2 | script | no C | pure computation: no waits, stack tricks or hardware |  |
+| 75 | `actors_init` | $00801A | 34 |  | 0.00 | 100.0 | 2/57 | sprite | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 76 | `password_check` | $009298 | 28 |  | 0.00 | 100.0 | 6/62 | menu_password | partly C (2 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 77 | `script_op_11_goto_room` | $004F0E | 24 |  | 0.00 | 100.0 | 3/13 | script | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 78 | `sub_004D7A` | $004D7A | 17 |  | 0.00 | 100.0 | 1/2 |  | no C | pure computation: no waits, stack tricks or hardware |  |
+| 79 | `script_op_0F_walk_obj` | $004C20 | 17 |  | 0.00 | 100.0 | 1/85 | script_walk | partly C (2 entries) | C (2nd pass); the Scooby tail $4D48 has no states (not registered) |  |
+| 80 | `room_reload` | $002196 | 17 |  | 0.00 | 100.0 | 1/1 | room | no C | Callers of the loader (not ported, other subsystems): `$002138` `room_enter`, `$002196` `room_change`, |  |
+| 81 | `soft_reset` | $008F9A | 15 |  | 0.00 | 100.0 | 5/6 | menus | partly C (1 entries) | QUIT MYSTERY confirmation, then the reset (the tail `movea.l (0),sp / jmp (4)` stays 68k: the SP changes) |  |
+| 82 | `debug_objects` | $008C40 | 11 |  | 0.00 | 100.0 | 11/39 | menu_debug | partly C (3 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 83 | `quit_confirm` | $008F8A | 7 |  | 0.00 | 100.0 | 1/4 | menus | partly C (2 entries) | QUIT MYSTERY confirmation, then the reset (the tail `movea.l (0),sp / jmp (4)` stays 68k: the SP changes) |  |
+| 84 | `menu_load_screen` | $0096F4 | 4 |  | 0.00 | 100.0 | 2/8 | menu_debug | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 85 | `password_cancel` | $00927A | 3 |  | 0.00 | 100.0 | 3/5 | menu_password | partly C (1 entries) | what stays 68k between its C ranges: stack push/pop, calls other 68k routines |  |
+| 86 | `script_subop_06_bar_show_if_hidden` | $00481A | 3 |  | 0.00 | 100.0 | 3/5 | script_ops | partly C (1 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 87 | `script_op_0A_set_icon` | $002DC0 | 3 |  | 0.00 | 100.0 | 3/12 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 88 | `script_op_07_show_obj` | $002BF8 | 3 |  | 0.00 | 100.0 | 2/26 | script_ops | partly C (2 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
+| 89 | `debug_rooms` | $0088A2 | 2 |  | 0.00 | 100.0 | 2/12 | menu_debug | partly C (3 entries) | what stays 68k between its C ranges: calls other 68k routines |  |
 
-(94 functions execute interpreted in at least one route.)
+(89 functions execute interpreted in at least one route.)
 
 ## 4. Static view: functions with no C at all
 
-`data/functions.txt` has **323** functions. **228** have a C replacement (entry or range: 384 HLE entries registered), **95** have none.
+`data/functions.txt` has **323** functions. **233** have a C replacement (entry or range: 390 HLE entries registered), **90** have none.
 
-| of the 95 functions with no C | count |
+| of the 90 functions with no C | count |
 |---|---:|
-| execute interpreted on the #24/extra routes | 35 |
+| execute interpreted on the #24/extra routes | 30 |
 | never execute on these routes, but did in the merged harness coverage (`data/exec_starts.txt`: password warps, crawler, random play) | 19 |
 | never execute on any route or in the merged coverage (**coverage gaps**) | 41 |
 
-Code size of the 'no C' functions: 16396 bytes; of the gaps: 4046 bytes.
+Code size of the 'no C' functions: 9914 bytes; of the gaps: 4046 bytes.
 
 ### 4a. Never executed anywhere (coverage gaps)
 
@@ -269,14 +264,14 @@ Measured on the routes above (`--hle all`):
 
 | item | addr | top | nested | % of work |
 |---|---|---:|---:|---:|
-| `wait_vblank` | $00974C | 619,079,953 | 0 | idle |
-| `wait_vblanks` | $009742 | 79,204 | 0 | idle |
-| `hud_dma` | $005C8E | 0 | 359,967 | 0.05 |
-| `actor_dma` | $00AF24 | 0 | 12,362,463 | 1.59 |
+| `wait_vblank` | $00974C | 590,560,307 | 0 | idle |
+| `wait_vblanks` | $009742 | 79,300 | 0 | idle |
+| `hud_dma` | $005C8E | 0 | 358,593 | 0.59 |
+| `actor_dma` | $00AF24 | 0 | 12,335,279 | 20.25 |
 | `game_init` | $00A248 | 192 | 0 | 0.00 |
-| `hblank_verb_bar` | $01006C | 23,847,212 | 0 | 3.08 |
-| `VBlank` | $0008BC | 1,162,890 | 0 | 0.15 |
-| `HBlank` | $0008AA | 1,162,260 | 0 | 0.15 |
+| `hblank_verb_bar` | $01006C | 23,572,461 | 0 | 38.69 |
+| `VBlank` | $0008BC | 1,160,750 | 0 | 1.91 |
+| `HBlank` | $0008AA | 1,160,130 | 0 | 1.90 |
 
 
 ### 5.1 Wait primitives (`wait_vblank` `$974C`, `wait_vblanks` `$9742`, spins on flags and countdowns)
