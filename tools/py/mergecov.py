@@ -52,6 +52,9 @@ def find_covs(args):
 
 def write_text(cov, ex_hdr, rd_hdr):
     n = len(cov)
+    # address 0 is an artifact: the core reports an execute at $000000 when a savestate is loaded into a
+    # running session (tools/py/session.py `load`); real code starts at the reset target $000200.
+    cov[0] &= ~1
     with open(EXEC, "w") as f:
         for h in ex_hdr:
             f.write(h + "\n")

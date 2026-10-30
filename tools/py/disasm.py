@@ -532,7 +532,12 @@ def main():
           f"  indirect sites: {len(sites)} ({n_res} resolved, {n_part} partial, {n_unres} unresolved)")
     viol = sorted(a for a, i in insns.items() if any(dataread[a:a + i.size]))
     if viol:
-        print(f"warning: {len(viol)} traced instructions overlap ROM data reads:",
+        # Not a mis-trace: every one of these has its exec bit set (the CPU really ran it) AND some 68k access read
+        # the same bytes as data.  They are all in the script-interpreter code ($259e script_op_1C,
+        # $272c script_op_1E, $286c..$287e the compare ladder of the condition evaluator sub_002796), i.e. the code is correct as disassembled
+        # and the extra data reads come from the interpreter fetching "script words" from a pointer that lies in
+        # code (out-of-range object/script offsets under all-ones or random story states).  See docs/walkthrough.md.
+        print(f"note: {len(viol)} traced instructions are also read as data (not a mis-trace; see docs/walkthrough.md):",
               " ".join(f"{a:06x}" for a in viol[:20]))
     write_gap_report(rom, md, gaps, table_ents, anchor, insns, dataread, refs_from)
     ind_sites = {a: [t for t, _ in tg] for a, (tg, _) in sites.items() if tg}

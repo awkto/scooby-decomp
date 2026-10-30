@@ -6,7 +6,7 @@
 000890  000892      2  padding* word alignment between VBlank-handler code and BusError
 000e8c  000e94      8  table*   4 words (12,81,20,30) indexed by loc_000E62; refs 000e8c; used by 000e62
 00160c  001624     24  table*   12-word lookup table (0,1,1,1,2,2,2,1,1,1,0,0) used by $15D2/$15F2; refs 00160c,001622; used by 0015d2,0015f2
-002354  0023dc    136  table*   script opcode handler table: 34 long code pointers, dispatched by $23F2/$2430 (dc.l loc_*); refs 002354; used by 0023e6,002424; 120 bytes read at runtime; 136 bytes symbolic pointer table (code)
+002354  0023dc    136  table*   script opcode handler table: 34 long code pointers, dispatched by $23F2/$2430 (dc.l loc_*); refs 002354; used by 0023e6,002424; 124 bytes read at runtime; 136 bytes symbolic pointer table (code)
 002eb4  002fac    248  table*   script sub-op handler table: 62 long code pointers, dispatched by $2EAC (dc.l loc_*); refs 002eb4; used by 002ea8; 248 bytes symbolic pointer table (code)
 003d86  003e96    272  table*   signed word lookup tables (0..7, 0..-7 ramps) indexed by $36E2/$3A6E/$3B0A/$3BF2...; refs 003d86,003d96; used by 0036e2,003a6e,003b0a,003bf2...
 0085dc  008660    132  table*   menu-action jump tables $85DC (7) / $85E8 (4) as dc.l loc_* (jmp at $85DA, table pointer passed on the stack), followed at $85F8 by 13 x 8-byte menu item records (pos/size/VRAM) read at runtime; refs 0085dc,0085e8,0085f8; used by 00839e,008564,008572,0088ca...; 132 bytes read at runtime; 28 bytes symbolic pointer table (code)

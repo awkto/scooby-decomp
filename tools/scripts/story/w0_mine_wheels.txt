@@ -1,0 +1,1165 @@
+# Blake's Hotel (warp to The Mine): take the three wheels
+# end state: myst=0 room=6 inv=[] story=010000000000007e303a00400282ff010000000000000000000000000a
+# expected {'room': 6}: OK
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 60
+press D 3
+run 10
+press S 4
+run 200
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press R 5
+run 5
+press A 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press U 5
+run 5
+press U 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 5
+press D 5
+run 5
+press D 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press L 5
+run 5
+press A 5
+run 10
+run 400
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 200
+run 90
+press A 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 C
+poke FF06DE 2 58
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B3
+run 14
+press B 6
+run 4
+poke FF06DC 2 A0
+poke FF06DE 2 38
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press L 20
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press UL 20
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press R 20
+press U 12
+press U 12
+press D 20
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 20
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press U 12
+press U 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press UL 20
+press U 12
+press R 20
+press U 12
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 20
+press U 12
+press U 20
+press U 12
+press U 20
+press U 12
+press U 20
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 20
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press U 20
+press U 12
+press R 20
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press UR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press UL 20
+press U 12
+press U 20
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press L 20
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press UL 20
+press U 12
+press R 12
+press U 12
+press U 12
+press D 20
+press U 12
+press U 12
+press UR 20
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 20
+press U 12
+press U 12
+press UL 20
+press U 12
+press UL 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press R 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press L 20
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press UR 20
+press U 12
+press D 20
+press U 12
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press D 20
+press U 12
+press U 12
+press U 12
+press L 20
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press U 20
+press U 12
+press UL 20
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press L 20
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press L 20
+press U 12
+press U 12
+press R 12
+press U 12
+press R 12
+press U 12
+press R 20
+press U 12
+press U 20
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press R 20
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press UR 20
+press U 12
+press UR 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press L 12
+press U 12
+press UL 20
+press U 12
+press U 20
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press L 20
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 12
+press U 12
+press U 12
+press R 20
+press U 12
+press DL 20
+press U 12
+press U 12
+press U 20
+press U 12
+press DR 20
+press U 12
+press U 12
+press U 12
+press L 12
+press U 12
+press U 12
+press UR 20
+press U 12
+press L 12
+press U 12
+press R 20
+press U 12
+press U 12
+press L 12
+press U 12
+press L 12
+press U 12
+press DL 20
+press U 12
+press U 12
+press A 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 9B
+poke FF06DE 2 48
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 44
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 DD
+poke FF06DE 2 50
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 BC
+poke FF06DE 2 C2
+run 10
+press B 4
+run 4
+press C 3
+run 24
+poke FF06DC 2 3C
+poke FF06DE 2 B0
+run 8
+press B 4
+run 6
+press C 3
+run 24
+poke FF06DC 2 DD
+poke FF06DE 2 50
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 44
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 C4
+poke FF06DE 2 50
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30

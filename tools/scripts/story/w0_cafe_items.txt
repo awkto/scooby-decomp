@@ -1,0 +1,173 @@
+# Blake's Hotel: Lobby -> Cafe, collect Oil, Can Opener, Battery (natural start)
+# end state: myst=0 room=13 inv=[134, 124, 132] story=0100004006000000203a014002827f0103000000000000000000000000
+# expected {'room': 13, 'inv': [134, 124, 132]}: OK
+run 1500
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+press S 4
+run 150
+run 120
+press D 12
+press D 12
+press D 12
+press D 12
+press D 12
+press D 12
+press D 12
+press D 12
+press D 12
+press D 12
+press R 12
+press D 12
+press R 12
+press D 12
+press D 12
+press R 12
+press R 12
+press D 12
+press D 12
+press D 12
+press R 12
+press D 12
+press R 12
+press D 12
+run 10
+run 60
+run 60
+press D 30
+run 30
+press L 20
+run 30
+press A 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 B8
+poke FF06DE 2 78
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 6C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 6C
+poke FF06DE 2 B3
+run 14
+press B 6
+run 4
+poke FF06DC 2 DC
+poke FF06DE 2 6C
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 E0
+poke FF06DE 2 68
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 94
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 90
+poke FF06DE 2 50
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 6C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 90
+poke FF06DE 2 50
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 10
+run 10
+run 30
+press A 4
+run 4
+poke FF06DC 2 1C
+poke FF06DE 2 B2
+run 10
+press B 4
+run 4
+poke FF06DC 2 98
+poke FF06DE 2 4C
+run 8
+press B 4
+run 10
+run 10
+run 10
+run 10
+run 30
