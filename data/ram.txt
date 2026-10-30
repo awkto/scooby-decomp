@@ -118,3 +118,11 @@ FF8C00 7168 ram_planea_tmp   # decompressed plane A names
 FFA800 7168 ram_planeb_names
 FFC400 7168 ram_planea_names
 FFE000 4096 ram_zone_map     # per-cell zone/walk ids
+
+# ---- room / scene loader (issue #18; docs/subsystems/room.md)
+FF0696 4    ram_room_entry_tbl  # -> 8 x {x,y} entry points (cells) behind the zone map
+FF069E 2    ram_room_entry_ofs  # entry point number * 4, set by the room-change scripts
+FF06A0 2    ram_room_spawn_cnt  # number of valid spawn longs at ram_room_ptr_69a (0-8)
+FF06AE 2    ram_hotspot_id      # object index + 3 under Shaggy ($0012CC), 0 = none
+FF06F4 2    ram_obj_last        # index of the last object in ram_objects (count - 1)
+FF0688 2    ram_spawn_timer     # counts down 100 frames between spawn-point events

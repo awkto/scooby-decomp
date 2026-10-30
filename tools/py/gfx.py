@@ -239,8 +239,11 @@ UI_PALETTES = 0x032480      # 32 words -> CRAM palettes 0-1 (shared UI/sprite pa
 
 class World:
     """Mystery ('world') header, 0x34+ bytes of absolute longs."""
-    FIELDS = ['state_start', 'state_end', 'rooms', 'tiles_base', 'maps_base', 'palettes',
-              'f18', 'f1c', 'names_base', 'f24', 'f28', 'f2c', 'start_room']
+    FIELDS = ['state_start', 'objects', 'rooms', 'tiles_base', 'maps_base', 'palettes',
+              'item_icons', 'overlay_base', 'names_base', 'overlay_ptrs', 'object_tbl',
+              'scripts_base', 'start_room']
+    # older name
+    state_end = property(lambda self: self.objects)
 
     def __init__(self, idx):
         r = rom()
@@ -283,6 +286,24 @@ class Room:
 
     def tiles(self):
         return lzss_decompress(rom(), self.tiles_addr)[0]
+
+    def post_zone(self):
+        """Tables that follow the zone map (docs/formats.md, "After the zone map").
+        Returns a dict: row_tbl (map_h signed words), entries (8 (x, y) tile pairs), spawns
+        (list of (w0, w1) up to the -1 terminator), waypoints (2 (x, y) pairs) and addresses."""
+        r = rom()
+        a = self.after_maps
+        rows = [struct.unpack_from('>h', r, a + 2 * i)[0] for i in range(self.map_h)]
+        e = a + 2 * self.map_h
+        entries = [(u16(r, e + 4 * i), u16(r, e + 4 * i + 2)) for i in range(8)]
+        sp = e + 0x20
+        spawns = []
+        while len(spawns) < 8 and u32(r, sp + 4 * len(spawns)) != 0xFFFFFFFF:
+            spawns.append((u16(r, sp + 4 * len(spawns)), u16(r, sp + 4 * len(spawns) + 2)))
+        wp = sp + 0x20
+        waypoints = [(u16(r, wp), u16(r, wp + 2)), (u16(r, wp + 4), u16(r, wp + 6))]
+        return dict(row_tbl=rows, entries=entries, spawns=spawns, waypoints=waypoints,
+                    addr=a, entries_addr=e, spawns_addr=sp, waypoints_addr=wp, end=wp + 8)
 
     def maps(self):
         """(plane B names, plane A names, walk/zone map); each map_w x map_h words."""
@@ -525,6 +546,80 @@ def asset_list():
 # CLI
 
 
+def cstr(b, off):
+    return b[off:b.index(b'\0', off)].decode('latin-1')
+
+
+def dump_world(world, only_room=None, out=sys.stdout):
+    """Human-readable dump of every room record, object and table of one mystery."""
+    r = rom()
+    w = World(world) if isinstance(world, int) else world
+
+    def P(*a):
+        print(*a, file=out)
+
+    P(f'=== world {w.idx}: header ${w.addr:06X}, {w.nrooms} rooms (numbers 2..{w.nrooms + 1})')
+    for n in w.FIELDS:
+        P(f'  {n:13} ${getattr(w, n):06X}')
+    st = w.start_room
+    P(f'  start: room {u16(r, st)}, music ${u16(r, st + 2):04X}, script len {u16(r, st + 4)} @ ${st + 6:06X}')
+    # --- objects
+    a = w.objects
+    objs = []
+    while a < w.rooms:
+        o = dict(addr=a, w0=u16(r, a), type=u16(r, a + 2), w4=u16(r, a + 4), room=u16(r, a + 6),
+                 w8=u16(r, a + 8), w16=u16(r, a + 10), flags=r[a + 12], pos=None)
+        a += 14
+        if o['flags'] & 2:
+            o['pos'] = (u16(r, a), u16(r, a + 2))
+            a += 4
+        objs.append(o)
+    P(f'--- objects: {len(objs)} records ${w.objects:06X}-${a:06X} (RAM $FF1200 + 0x1A*i)')
+    P('  idx  ovl   type  w4   room  w8   w16  flags pos(x,y)     script  name')
+    for i, o in enumerate(objs):
+        so, no = u32(r, w.object_tbl + 8 * i), u32(r, w.object_tbl + 8 * i + 4)
+        nm = cstr(r, w.names_base + no)
+        pos = '%d,%d' % o['pos'] if o['pos'] else '-'
+        P(f"  {i:3d}  {o['w0']:04X}  {o['type']:04X}  {o['w4']:04X} {o['room']:04X}  {o['w8']:04X} "
+          f"{o['w16']:04X}  {o['flags']:02X}    {pos:11} {so:06X}  {nm!r}")
+    # --- tile overlays / hotspot rectangles (the pointer table ends where the object table starts)
+    offs = [u32(r, w.overlay_ptrs + 4 * i) for i in range((w.object_tbl - w.overlay_ptrs) // 4)]
+    P(f'--- tile overlays: pointer table ${w.overlay_ptrs:06X}, base ${w.overlay_base:06X}, {len(offs)} entries'
+      ' (id = index + 1; record: x y w h dx dy plane(0=B,else A), then w*h name words; also the hotspot rectangle of objects whose type = id)')
+    for i, off in enumerate(offs):
+        o = w.overlay_base + off
+        h = [u16(r, o + 2 * k) for k in range(7)]
+        P(f'  #{i + 1:3d} ${o:06X}  at ({h[0]},{h[1]}) {h[2]}x{h[3]} cells  adj ({h[4]},{h[5]})  '
+          f"plane {'A' if h[6] else 'B'}")
+    # --- rooms
+    for n in range(2, 2 + w.nrooms):
+        if only_room is not None and n != only_room:
+            continue
+        rm = w.room(n)
+        pz = rm.post_zone()
+        P(f'--- room {n}: {rm.name!r}   entry ${rm.entry:06X}')
+        P(f'  name ${w.names_base + rm.name_off:06X} (+{rm.name_off:X})   tiles ${rm.tiles_addr - 4:06X} (+{rm.tiles_off:X})'
+          f'   map pack ${w.maps_base + rm.maps_off:06X} (+{rm.maps_off:X})   palette ${rm.pal_addr - 0x40:06X}')
+
+        def sc(off):
+            b = w.scripts_base + off
+            return f'${b:06X} (+{off:X}: header words ${u16(r, b):04X} ${u16(r, b + 2):04X})'
+        P(f'  enter script     {sc(rm.f0c)}')
+        P(f'  exit/leave script {sc(rm.f10)}')
+        P(f'  map {rm.map_w} x {rm.map_h} cells ({rm.map_w * 8} x {rm.map_h * 8} px)'
+          f'   tiles {len(rm.tiles()) // 32}   post-zone data ${pz["addr"]:06X}-${pz["end"]:06X}')
+        P('  row table (word per map row, - = $FFFF): ' +
+          ' '.join('-' if v < 0 else str(v) for v in pz['row_tbl']))
+        P('  entry points (tile x,y; index = $FF069E/4): ' +
+          ' '.join(f'{i}:({x},{y})' for i, (x, y) in enumerate(pz['entries']) if (x, y) != (0, 0) or i == 0))
+        sp = ' '.join(f'({w0 & 0xFFF},{w1} k={w0 >> 14} f={(w0 >> 12) & 3})' for w0, w1 in pz['spawns'])
+        P(f'  spawn points ({len(pz["spawns"])}; x,y tiles, k = bits 15:14, f = bits 13:12): {sp or "-"}')
+        P('  waypoints (tile x,y): ' + ' '.join(f'({x},{y})' for x, y in pz['waypoints']))
+        here = [i for i, o in enumerate(objs) if o['room'] == n]
+        if here:
+            P('  objects here: ' + ', '.join(str(i) for i in here))
+
+
 def parse_int(s):
     return int(s, 0) if not s.startswith('$') else int(s[1:], 16)
 
@@ -550,6 +645,9 @@ def main(argv=None):
     p.add_argument('--plane', default='0xc000'); p.add_argument('--w', type=int, default=64)
     p.add_argument('--h', type=int, default=32)
     sub.add_parser('assets', help='print the asset map (data/assets.txt)')
+    p = sub.add_parser('roomdump', help='dump every room record, object and table in readable form')
+    p.add_argument('--world', type=int, choices=[0, 1], help='default: both')
+    p.add_argument('--room', type=int)
     p = sub.add_parser('screen'); p.add_argument('name', choices=sorted(SCREENS)); p.add_argument('out')
     p.add_argument('--frame', type=int, help='title: plane-A animation frame 0..27 (default 27)')
     p.add_argument('--scale', type=int, default=1)
@@ -594,6 +692,9 @@ def main(argv=None):
         vram = open(args.vram, 'rb').read()
         cram = open(args.cram, 'rb').read()
         write_png(args.out, render_vram(vram, cram, parse_int(args.plane), args.w, args.h))
+    elif args.cmd == 'roomdump':
+        for wi in ([args.world] if args.world is not None else [0, 1]):
+            dump_world(wi, args.room)
     elif args.cmd == 'assets':
         print('# ROM asset map generated by `tools/py/gfx.py assets` (start end kind description;')
         print('# hex, end exclusive). Kinds: tiles-lzss/tiles-rle/tiles-raw (4bpp tiles),')

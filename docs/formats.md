@@ -94,27 +94,36 @@ These are standard Mega Drive formats:
 
 ## Rooms
 
+Everything in this section is dumped in readable form by `tools/py/gfx.py roomdump [--world N] [--room N]`
+(every header field, all objects, the hotspot/overlay table, and for each room its record, scripts,
+row table, entry points, spawn points and waypoints). The loader is decompiled in
+`port/src/game/room.c`; see also `docs/subsystems/room.md`.
+
 ### Mystery ("world") headers
 
 `$031AF2` holds 2 longs: the header pointers for mystery 0 (`$0FCA0C`, Blake's Hotel) and
 mystery 1 (`$0FCA40`, Ha Ha Carnival). The index is in `$FF06AA`. The active header pointer
-is kept in `$FF068E`. Every header field is an absolute long:
+is kept in `$FF068E`. Every header field is an absolute long (names as in `gfx.py World`):
 
-| off | name in gfx.py | meaning |
+| off | name | meaning |
 |---|---|---|
-| +00 | state_start | initial game-state block, copied to `$FF2A00` up to +04 (`loc_007F22`) |
-| +04 | state_end | |
+| +00 | state_start | initial game-state block (copied to `$FF2A00` until +04 by `game_state_init` `$007F22`; RAM is zeroed for 256 bytes first) |
+| +04 | objects | **object init records** (see "Objects"): from here to +08. Also the end of the state block |
 | +08 | rooms | room table, 0x14 bytes per room, indexed by (room − 2) |
-| +0C | tiles_base | base for the room-entry tile offsets |
+| +0C | tiles_base | base for the room-entry tile offsets (the room table ends here) |
 | +10 | maps_base | base for the room-entry map-pack offsets |
 | +14 | palettes | per-room palettes, 128 bytes per room, indexed by (room − 2) |
-| +18, +1C | ? | not yet decoded |
-| +20 | names_base | base for the room-name string offsets (e.g. `"The Lobby"`) |
-| +24..+2C | ? | |
-| +30 | start_room | pointer to a word: the initial `$FF06AC` |
+| +18 | item_icons | 0x182-byte records indexed by `object.word(+4) − 1`; read by `$005D1C` for the objects in the inventory (icon tiles; layout not decoded) |
+| +1C | overlay_base | base for the offsets in the overlay pointer table (+24) |
+| +20 | names_base | base for string offsets: room names, object names, dialogue |
+| +24 | overlay_ptrs | table of u32 offsets (+ overlay_base) to **tile overlay records**; 211 entries in mystery 0 (see "Overlays and hotspots") |
+| +28 | object_tbl | 8-byte record per object, in object order: `u32 script_off` (+ scripts_base), `u32 name_off` (+ names_base) |
+| +2C | scripts_base | base of all script data (bytecode of the script interpreter at `$0020xx`) |
+| +30 | start_room | pointer to `{u16 room, u16 music, u16 script_len, script...}`: initial room (→ `$FF06AC`), music id (→ `$FF06A6`) and the intro script run by `$0013BA` |
 
 The number of rooms is `(tiles_base − rooms) / 0x14`: 21 rooms in mystery 0, 30 in mystery 1.
-Room numbers (as stored in `$FF06AC`) start at 2.
+Room numbers (as stored in `$FF06AC`) start at 2; **room 1 means "inventory"** and room 0 "nowhere" in
+an object's room field.
 
 ### Room entry (0x14 bytes)
 
@@ -123,49 +132,137 @@ Room numbers (as stored in `$FF06AC`) start at 2.
 | +00 | name offset (+ header `names_base`); the loader stores the absolute pointer in `$FF06D2` |
 | +04 | tile offset (+ `tiles_base`): `u32 packed_len` followed by an LZSS stream; output goes to VRAM `$0000` |
 | +08 | map-pack offset (+ `maps_base`) |
-| +0C, +10 | not yet decoded (small increasing offsets, probably object/script tables) |
+| +0C | offset (+ `scripts_base`) of the **load script**: run at the end of the room load (`$00221A`) while the screen is still dark, before the palette fade |
+| +10 | offset (+ `scripts_base`) of the **arrival script**: run by `$002278` after the fade-in |
+
+Both scripts start with two words `{u16 len, u16 ?}`; the script interpreter (`script_run_frame`)
+gets `a5` = data after the 2 words and `a6 = a5 + len`, i.e. a data section of `len` bytes
+followed by the opcode stream (many rooms have an almost empty script, e.g. the Lobby's two are 4 bytes apart). Script opcodes `$11` (`script_op_11`) and `$18`
+(`script_op_18`) change room: they store `room`, `ram_5b8` and the entry point number × 4 (`$FF069E`),
+then call the room change (`$002196` / `$002138`).
 
 ### Map pack
 
 ```
 u16 width, u16 height      (cells, e.g. Lobby 64 x 19; copied to $FF06C6/$FF06C8)
-u32 len1, LZSS[len1]       plane B names  (width*height words) -> RAM $FF7000 -> $FFA800
-u32 len2, LZSS[len2]       plane A names                      -> RAM $FF8C00 -> $FFC400
-u32 len3, LZSS[len3]       per-cell word map, not graphics; in the Lobby it outlines the
-                           floor (values 1-6, 30, 57), probably walk/zone ids -> RAM $FFE000
-u32 len4 ...               further room data (pointer kept in $FF0692; scripts/objects, not decoded)
+u32 len1, LZSS[len1]       plane B names  (width*height words) -> RAM $FF7000, copied to $FFA800
+u32 len2, LZSS[len2]       plane A names                      -> RAM $FF8C00, copied to $FFC400
+u32 len3, LZSS[len3]       zone map (see below)               -> RAM $FFE000
+...                        post-zone data (see below), pointer kept in $FF0692
 ```
+
+The copies at `$FFA800`/`$FFC400` are pristine; `$FF7000`/`$FF8C00` are the working copies that
+overlays modify and that the scroller reads. (`room_load` copies a constant 0x1800 words for plane A, not
+the unpacked length; plane B uses the real length. Harmless: the area is overwritten later.)
 
 In the Lobby, plane B words use palette 2 with priority clear, and plane A words use palette 3
 with priority set. Across all 51 rooms, both planes mix palettes 0-3 and both priorities, and
-plane A is empty in 10 rooms. `gfx.py` therefore composites in VDP order: B low, A low, B high,
-A high.
+plane A is empty in 10 rooms. `gfx.py` therefore composites in VDP order: B low, A low, B high, A high.
+
+**Zone map** (width × height words, one per 8×8 cell, `$FFE000`): bit 15 is a flag (the actor mover at `$007396`
+tests the sign to set a bit in `$FF0ABB`); bits 0-14 are an index. Index 0 = no collision. Otherwise
+`dat_02AF8E[index]` (`$02AF8E`, one word per index) holds `bits 0-10 = collision-mask tile number`,
+`bit 11 = do NOT mirror x`, `bit 12 = mirror y`; the mask tiles are 4bpp tiles in the shared table
+`dat_02B0BA` (32 bytes each). The pixel (x & 7, y & 7) of the cell is looked up in the (flipped) mask: a non-zero
+nibble means solid. So walkability is pixel-exact: `$0073D6` (probe at the cursor `$FF0642/$FF0646`) and
+`$007476` (probe at `$FF064A/$FF064E`) return the masked nibble in D5 (Z = free).
+
+### After the zone map
+
+`room_load` leaves `$FF0692` pointing at the first byte after the third LZSS stream. What follows (all
+words big-endian, coordinates in 8×8 cells):
+
+| offset | size | meaning |
+|---|---|---|
+| +0 | `height` words | per-map-row table: `$FFFF` = none, otherwise a small value (e.g. Basement rows 0/2 = 9, Lobby rows 0/7/18 = 12/8/0). Read by the actor path code at `$007168`, which finds the nearest marked row above and below an actor. Exact meaning (walk limit / depth line?) not pinned down |
+| +2h | 8 × `{u16 x, u16 y}` = 0x20 bytes | **entry points** (`$FF0696`): where Shaggy appears. Scripts select one with `$FF069E` = number × 4 (`room_load` writes x×8, y×8 to `$FF04DC`/`$FF04F4`, y−1 to the previous-y word). Unused slots are 0,0. Camera: x − 16, y − 10 cells, clamped to the map (32 × 19 cell window) |
+| +2h+0x20 | up to 8 × `{u16 w0, u16 y}`, terminated by `$FFFFFFFF` | **spawn points** (`$FF069A`; count in `$FF06A0`). `w0 & $FFF` = x, `y` = y (cells); `w0 >> 14` and `(w0 >> 12) & 3` select two small values (facing / type). The main loop (`$000DEA`) picks one at random every 100 frames (`$FF0688`) and starts something there through `$0056B0` (a roaming enemy/event; not confirmed) |
+| +2h+0x40 | 2 × `{u16 x, u16 y}` | **waypoints** (`$FF069A + 0x20`). Used by the click-to-walk code (`$005002`...`$00532A`): when the straight line to the target is blocked, the path goes through waypoint 0 or 1. All zero when the room has none. Rooms with a diagonal stair/ramp have them (Basement (23,8) and (33,14)) |
+
+The next room's map pack follows immediately after the waypoints (its first word is that room's width).
+
+### Objects
+
+The hotspots, items, characters and scenery pieces of a mystery are one flat table of **objects**
+(181 in mystery 0). The ROM init records between header +04 and +08 are expanded by
+`object_table_init` (`$007F66`) into 0x1A-byte RAM records at `$FF1200 + 0x1A*i`; `$FF06F4` holds the last
+index. ROM record (14 bytes, 18 when flag `$0200` is set):
+
+| ROM off | RAM off | meaning |
+|---|---|---|
+| +00 | +00 (word) | **overlay id** currently shown for the object: 0 = nothing, else the index+1 into the overlay table. bit 15 = restore the original tiles, bit 14 = clear this field afterwards (`$007C04`) |
+| +02 | +02 (word) | **type id**. For scenery/hotspots (flag bit1 clear) it is the overlay-record index+1 whose rectangle is the hotspot. For actors (bit1 set) it selects a sprite definition in the 36-entry table `$032670` (sizes in `$0325E0`) |
+| +04 | +04 (word) | inventory icon record + 1 (header +18; 0 = none; non-zero only for takeable items: Goblet `$27`, Crumpled Note `$22`, ...) |
+| +06 | +06 (word) | **room** the object is in (0 = nowhere/not yet, 1 = inventory, ≥ 2 = room number). Scripts move objects by writing this |
+| +08 | +08 (word) | class (0..3; people 0, scenery 1-2, ...) — meaning not decoded |
+| +0A | +16 (word) | `$0A0A` normally; `$050A`/`$030A` for doors and similar — not decoded |
+| +0C | +18 (byte) | flags: bit0 = in the current room (set by `room_load`), bit1 = **actor** (has a position, drawn as a sprite), bit2 = timer expired / script pending (the main loop runs the object's script `object_tbl[i].script_off`), bit3 = ? (actors only) |
+| +0D | +19 (byte) | replaced with `$FF`; later holds the actor slot (0..3) |
+| +0E (only if bit1) | +12/+14 (words) | initial x, y in pixels |
+| – | +0A (word) | countdown timer, −1 = off; `$007C04` decrements it each frame; the frame it passes 0 it sets flag bit2 (and keeps it set until the script ran) |
+
+Objects 0 and 1 (blank names) are probably Shaggy and Scooby; 2.. are the characters, then items and hotspots in
+room order (see the dump). Names come from `object_tbl[i].name_off + names_base` (`'Door'`, `'Stairs'`, `'Mailbox'`...).
+Player slots: the position arrays at `$FF04DC` (x) and `$FF04F4` (y) hold 6 longs — slot 0 = Shaggy,
+slot 1 = Scooby (the existing name `ram_shaggy_x_prev` at `$FF04E0` is actually Scooby's x, which `room_load`
+sets to Shaggy's), slots 2..5 = the actors of the room.
+
+### Overlays and hotspots
+
+Overlay record (`hdr+0x24` pointer table, offsets from `hdr+0x1C`; 211 in mystery 0):
+
+```
+u16 x, y, w, h        rectangle in map cells
+u16 dx, dy            pixel anchor used by scripts (added to the position they set)
+u16 plane             0 = plane B ($E000), non-zero = plane A ($C000)
+u16 names[w*h]        replacement nametable words
+```
+
+`$007D54` draws an overlay into the working plane copy and into VRAM (patching only the visible part of the
+64-wide plane); with the `$FF09EB` bit0 set it DMAs rows instead. With id bit 15 set it copies the *pristine* names
+back (restoring the background). Used for doors that open, items that disappear, lit fireplaces...
+
+The same rectangle is the **hotspot**: `$0012CC` runs after every walk step; for every non-actor
+object with `room == current room` and `type != 0` it tests whether Shaggy's cell `(x>>3, y>>3)` lies in
+the rectangle of overlay `type`; the last hit becomes the current target id (`$FF06AE` = object index + 3), which makes
+the verb bar show the object's name.
 
 ### Palettes
 
 * CRAM palettes 0-1 come from `$032480` (32 words). They are shared by all rooms and hold
-  the UI, Shaggy and Scooby colours.
-* CRAM palettes 2-3 are `palettes + (room−2)*128 + 0x40` (32 words), copied to `$FF07B8`.
+  the UI, Shaggy and Scooby colours. `room_load` stages them in the fade target `$FF0778`.
+* CRAM palettes 2-3 are `palettes + (room−2)*128 + 0x40` (32 words), copied to `$FF07B8`
+  (= `$FF0778 + 0x40`, so together they form the 64-word target image).
 * The first 0x40 bytes of each 128-byte per-room block are not used by the load path traced
   here. They may be alternative palettes for lights off or a fade.
 
-### Room loader (code around `$0075B0`-`$007860`)
+### Room loader sequencing
 
-The loader runs these steps in order:
+`script_op_11/18` (or the title code) → `$002196` change room → `$002138` → **`room_load` `$00758A`**:
 
-1. Decompress the tiles to `$FF4000`, then write them to VRAM `$0000`. The size is stored in
-   `$FF3000` (minimum 0x400).
-2. Decompress the UI/verb-bar font `$030916` and append it after the room tiles. Then add the
-   raw UI tiles `$031AFA` (4 tiles), `$031B7A` (12 tiles) and `$031CFA` (8 tiles), plus one
-   solid tile filled with `$1111`. The UI tile base indices are kept in `$FF0802`, `$FF06E4`,
-   `$FF06E6`, `$FF06E8`, `$FF08B8` and `$FF068A`.
-3. Fill the window plane `$D000` (0x400 words) with the blank UI tile.
-4. Write the verb-bar names `$030016` (6 rows × 61 words, ROM stride 64 words) to VRAM `$AA80`,
-   adding the tile base `$FF0802` to each word.
-5. Decompress the three map chunks as described in "Map pack" above.
-6. Stream the camera-visible columns, plus a one-column margin on each side, into the 64×32
-   planes with `loc_009964`. Map row 0 goes to plane row 2, which is screen line 16.
-   Plane A is `$C000`, plane B is `$E000`, and VRAM column = map column mod 64.
+1. `$002138` first does `sr = $2700`, `pad1 = $FF`, clears VBlank flag bit 3. Interrupts stay off for the whole
+   of `room_load`, so no frame is rendered while VRAM is being rebuilt. All VRAM writes are CPU writes through the
+   data port; **no DMA is used by the loader** (DMA is used later by the per-frame sprite/SAT/palette code).
+2. `room_load`: clear VRAM (64 KiB); reset camera and scroll; stage the shared palettes in `$FF0778`;
+   flag objects in this room; copy the room's palettes 2-3 to `$FF07B8`.
+3. Decompress the tiles (LZSS) to `$FF4000`, write them to VRAM `$0000` (size at `$FF3000`, minimum 0x400). Right after
+   them (`VRAM = size`) `font_tiles_load` `$007A2A` writes the 94 text-font tiles (`$030F12`, recoloured: glyph colour 15,
+   background colour 1, base word kept in `$FF068C`, UI tile base in `$FF0802`). Then the UI font (LZSS `$030916`), the raw
+   UI tile blocks `$031AFA` (0x40 words), `$031B7A` (0xC0 words), `$031CFA` (0x80 words) and a solid tile of `$1111`.
+   The tile-base words go to `$FF06E4/E6/E8`, `$FF08B8`, `$FF068A`. (The address after the 0xC0-word block advances by only 0xC0 bytes, so
+   the next block overwrites its second half; the game lives with it.)
+4. Window plane `$D000` filled with the blank UI tile; verb bar names `$030016` (6 rows × 61 words + 3 pad words)
+   written to `$AA80` with the tile base added.
+5. `$005D1C` / `$005CB6` (portrait and inventory VRAM areas, DMA'd), and `$0047AC` (verb-bar text) when the game state bit 1 or `$FF09DE` bit 2 is set.
+6. Map pack: decompress plane A, plane B (copy to the pristine buffers), zone map; read the post-zone tables.
+7. Place Shaggy (unless `$FF09DE` bit 3), compute the camera, `room_draw_view` `$007950` writes the 32 × 19
+   window to both planes (CPU writes, 2 × 608 words) and calls the scroll helpers `$00FC3A/$00FD5E/$00FE74/$00FF68`; then
+   `room_setup_actors` `$007A8C` initialises the actor slots (see room.c).
+8. Back in `$002138`: flags set, interrupts on, `$005B92`, `$00B0B8` (uploads the sprite tiles of the actors via
+   the buffers `$FF3000`/`$FF3800`, one burst per frame until `$FF0AB6` clears), then the **load script** (`$00221A`).
+9. `$00219A` (the second half of `$002196`): `palette_fade` fades CRAM from black to `$FF0778`
+   over 8 steps (the VBlank handler DMAs `$FF06F8` to CRAM every frame), then the **arrival script** (`$002278`).
+
 
 ### Room screen layout at runtime (Lobby, H32 = 256×224)
 

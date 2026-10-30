@@ -9,7 +9,7 @@
 0008aa    18 HBlank  # 5 insns
 0008bc    18 VBlank  # 5 insns
 000bc8    44 sub_000BC8  # 11 insns
-0013ba   594 sub_0013BA  # 150 insns +001624:160
+0013ba   594 mystery_intro  # 150 insns +001624:160
 0016c4   152 sub_0016C4  # 33 insns
 00175c    82 sub_00175C  # 21 insns
 0017ae   464 sub_0017AE  # 92 insns
@@ -19,11 +19,11 @@
 001c0c  1222 sub_001C0C  # 275 insns
 0020d2     8 sub_0020D2  # 2 insns
 0020da    94 sub_0020DA  # 22 insns
-002138    94 sub_002138  # 18 insns
-002196     4 sub_002196  # 1 insns
-00219a   128 sub_00219A  # 18 insns
-00221a    94 sub_00221A  # 21 insns
-002278    94 sub_002278  # 21 insns
+002138    94 room_enter  # 18 insns
+002196     4 room_change  # 1 insns
+00219a   128 room_fade_in  # 18 insns
+00221a    94 run_load_script  # 21 insns
+002278    94 run_arrival_script  # 21 insns
 0022d6    28 rng_next  # 8 insns
 0022f2    46 sub_0022F2  # 13 insns
 002320    52 script_run_nested  # 9 insns
@@ -182,17 +182,17 @@
 006b28   256 sub_006B28  # 60 insns
 006c28   252 sub_006C28  # 42 insns
 006d24  1714 sub_006D24  # 370 insns
-0073d6   160 sub_0073D6  # 45 insns
-007476   148 sub_007476  # 41 insns
-00750a   128 sub_00750A  # 32 insns
-00758a   966 sub_00758A  # 245 insns
-007950   218 sub_007950  # 62 insns
-007a2a    98 sub_007A2A  # 35 insns
-007a8c   376 sub_007A8C  # 82 insns
-007c04   126 sub_007C04  # 30 insns
-007d54   462 sub_007D54  # 200 insns +007c82:210
-007f22    68 sub_007F22  # 17 insns
-007f66   180 sub_007F66  # 45 insns
+0073d6   160 zone_probe_cursor  # 45 insns
+007476   148 zone_probe_point  # 41 insns
+00750a   128 pad_direction  # 32 insns
+00758a   966 room_load  # 245 insns
+007950   218 room_draw_view  # 62 insns
+007a2a    98 font_tiles_load  # 35 insns
+007a8c   376 room_setup_actors  # 82 insns
+007c04   126 objects_update  # 30 insns
+007d54   462 overlay_apply  # 200 insns +007c82:210
+007f22    68 game_state_init  # 17 insns
+007f66   180 object_table_init  # 45 insns
 00801a   380 sub_00801A  # 57 insns
 008196   904 sub_008196  # 176 insns
 00851e   190 sub_00851E  # 45 insns
