@@ -8,11 +8,20 @@
 # handler, D0 for sub-ops), up to 40 ops x 25 states per state directory.
 #   KIND = op | sub, CODE = hex op / sub-op number.
 # Example: script_dt_entry.sh 00448C script_sys_09e8_1_on:sub:0D script_op_path:op:21
+# EXTRAS="POKE;POKE...": also run every variant with each of these RAM/register pokes added
+# (to reach both sides of a test the source states never take).
 src=$1; shift
 for spec in "$@"; do
 	f=${spec%%:*}; rest=${spec#*:}; kind=${rest%%:*}; code=${rest#*:}
 	if [ "$kind" = sub ]; then mode=--sub; else mode=--dispatch; fi
 	pk=$(.venv/bin/python -I tools/py/script_pokes.py $mode "$code" 40 | tr '\n' ' ')
+	# EXTRAS="B:FF09E0=0xFB;B:FF09E0=0xF7": every variant once more with each extra poke
+	if [ -n "$EXTRAS" ]; then
+		base=$pk; pk=$base
+		for x in $(echo "$EXTRAS" | tr ';' ' '); do
+			pk="$pk $(echo "$base" | sed "s/--poke \([^ ]*\)/--poke \1,$x/g")"
+		done
+	fi
 	[ -n "$pk" ] || { echo "TOTAL $f: no $kind $code in the script data"; continue; }
 	ok=0; all=0
 	for d in runs/states/${src}_*; do

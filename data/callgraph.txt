@@ -12,19 +12,19 @@
 0016c4 sub_0016C4 -> sub_00175C
 00175c sub_00175C -> -
 0017ae sub_0017AE -> vdp_dma_vram
-00197e sub_00197E -> -
+00197e sprite_frame_hotspot -> -
 0019b0 action_execute -> sub_001BDA sub_001C0C script_run_nested script_run script_run_frame strcpy text_show
 001bda sub_001BDA -> verb_label_redraw
-001c0c sub_001C0C -> sub_0020DA sub_0022F2 script_run_nested script_run_frame inventory_arrows_update inventory_refresh font_tiles_load wait_vblank vram_read_word vdp_dma_vram draw_text_wrapped draw_status_line text_show text_wait actor_animate
+001c0c sub_001C0C -> talk_gesture talk_bar_blank script_run_nested script_run_frame inventory_arrows_update inventory_refresh font_tiles_load wait_vblank vram_read_word vdp_dma_vram draw_text_wrapped draw_status_line text_show text_wait actor_animate
 0020d2 sub_0020D2 -> -
-0020da sub_0020DA -> rng_next
+0020da talk_gesture -> rng_next
 002138 room_load -> run_load_script inventory_arrows_update sub_00758A wait_vblank actor_animate
 002196 room_reload -> room_load
 00219a room_fade_in -> run_arrival_script wait_vblank palette_fade status_line_update
 00221a run_load_script -> script_run_frame
 002278 run_arrival_script -> script_run_frame
 0022d6 rng_next -> -
-0022f2 sub_0022F2 -> vdp_write_word
+0022f2 talk_bar_blank -> vdp_write_word
 002320 script_run_nested -> script_run
 0023dc script_run -> script_op_13_on_event* script_op_01_case_verb* script_op_00_nop* script_op_1D_test_anim_done* script_op_1C_test_moving* script_op_02_talk_choice* script_op_1A_pal_cycle* script_op_1E_face* script_op_03_if* script_op_04_if_else* script_op_05_move_obj* script_op_16_freeze* script_op_19_unfreeze_wait* script_op_06_anim_wait* script_op_07_show_obj* script_op_08_set* script_op_09_set_verb* script_op_0A_set_icon* script_op_0B_set_state* script_op_14_set_hotspot2* script_op_0C_sys* script_op_0D_sound* script_op_15_wait* script_op_20_stop_path* script_op_21_path* script_op_0E_walk_spawn* script_op_0F_walk_obj* script_op_10_say* script_op_18_goto_room_cut* script_op_11_goto_room* script_op_12_set_hotspot* script_op_1F_wait_stop* script_op_17_wait_anim*
 002406 script_run_frame -> script_op_13_on_event* script_op_01_case_verb* script_op_00_nop* script_op_1D_test_anim_done* script_op_1C_test_moving* script_op_02_talk_choice* script_op_1A_pal_cycle* script_op_1E_face* script_op_03_if* script_op_04_if_else* script_op_05_move_obj* script_op_16_freeze* script_op_19_unfreeze_wait* script_op_06_anim_wait* script_op_07_show_obj* script_op_08_set* script_op_09_set_verb* script_op_0A_set_icon* script_op_0B_set_state* script_op_14_set_hotspot2* script_op_0C_sys* script_op_0D_sound* script_op_15_wait* script_op_20_stop_path* script_op_21_path* script_op_0E_walk_spawn* script_op_0F_walk_obj* script_op_10_say* script_op_18_goto_room_cut* script_op_11_goto_room* script_op_12_set_hotspot* script_op_1F_wait_stop* script_op_17_wait_anim*
@@ -128,9 +128,9 @@
 0048d8 script_op_15_wait -> actor_animate
 0048f8 script_op_20_stop_path -> -
 004944 script_op_21_path -> -
-0049ba script_op_0E_walk_spawn -> sub_004B24 shaggy_walk_to sub_00566A actor_animate
-004b24 sub_004B24 -> actor_animate
-004c20 script_op_0F_walk_obj -> sub_00197E sub_004B24 sub_004D78^ sub_004D7A^ shaggy_walk_to scooby_walk_direct
+0049ba script_op_0E_walk_spawn -> actor_walk_to shaggy_walk_to scooby_walk_wait actor_animate
+004b24 actor_walk_to -> actor_animate
+004c20 script_op_0F_walk_obj -> sprite_frame_hotspot actor_walk_to sub_004D78^ sub_004D7A^ shaggy_walk_to scooby_walk_direct
 004c4e sub_004C4E -> sub_004D78^
 004d78 sub_004D78 -> -
 004d7a sub_004D7A -> -
@@ -140,30 +140,30 @@
 004f50 script_op_12_set_hotspot -> -
 004f70 script_op_1F_wait_stop -> actor_animate
 004fbe script_op_17_wait_anim -> actor_animate
-005002 shaggy_walk_to -> sub_00519C sub_0051E4 sub_00522E sub_005276 sub_0052C0 sub_0052F4 shaggy_waypoints_reachable shaggy_line_clear shaggy_dir_to actor_animate
-00519c sub_00519C -> shaggy_set_dir
-0051e4 sub_0051E4 -> shaggy_set_dir
-00522e sub_00522E -> shaggy_set_dir
-005276 sub_005276 -> shaggy_set_dir
-0052c0 sub_0052C0 -> walk_line_clear^
-0052f4 sub_0052F4 -> walk_line_clear^
+005002 shaggy_walk_to -> shaggy_leg0_from_wp0 shaggy_leg0_from_wp1 shaggy_leg1_from_wp0 shaggy_leg1_from_wp1 waypoint0_line_clear waypoint1_line_clear shaggy_waypoints_reachable shaggy_line_clear shaggy_dir_to actor_animate
+00519c shaggy_leg0_from_wp0 -> shaggy_set_dir
+0051e4 shaggy_leg0_from_wp1 -> shaggy_set_dir
+00522e shaggy_leg1_from_wp0 -> shaggy_set_dir
+005276 shaggy_leg1_from_wp1 -> shaggy_set_dir
+0052c0 waypoint0_line_clear -> walk_line_clear^
+0052f4 waypoint1_line_clear -> walk_line_clear^
 00532a shaggy_waypoints_reachable -> shaggy_line_clear
 005364 shaggy_line_clear -> -
 005378 walk_line_clear -> walk_blocked_line_probe
 00547a shaggy_dir_to -> -
 00548e shaggy_set_dir -> -
-00566a sub_00566A -> scooby_walk_to actor_animate
-0056b0 scooby_walk_to -> sub_0052C0 sub_0052F4 sub_005852 sub_00589A sub_0058E4 sub_00592C scooby_waypoints_reachable scooby_line_clear scooby_walk_direct^ scooby_walk_start^
-005852 sub_005852 -> scooby_set_dir
-00589a sub_00589A -> scooby_set_dir
-0058e4 sub_0058E4 -> scooby_set_dir
-00592c sub_00592C -> scooby_set_dir
+00566a scooby_walk_wait -> scooby_walk_to actor_animate
+0056b0 scooby_walk_to -> waypoint0_line_clear waypoint1_line_clear scooby_leg0_from_wp0 scooby_leg0_from_wp1 scooby_leg1_from_wp0 scooby_leg1_from_wp1 scooby_waypoints_reachable scooby_line_clear scooby_walk_direct^ scooby_walk_start^
+005852 scooby_leg0_from_wp0 -> scooby_set_dir
+00589a scooby_leg0_from_wp1 -> scooby_set_dir
+0058e4 scooby_leg1_from_wp0 -> scooby_set_dir
+00592c scooby_leg1_from_wp1 -> scooby_set_dir
 005976 scooby_waypoints_reachable -> scooby_line_clear
 0059b0 scooby_line_clear -> walk_line_clear^
-0059c8 sub_0059C8 -> -
+0059c8 scooby_dir_to -> -
 0059dc scooby_set_dir -> -
 005ad8 scooby_walk_direct -> -
-005ae0 scooby_walk_start -> sub_0059C8 actor_animate
+005ae0 scooby_walk_start -> scooby_dir_to actor_animate
 005b56 strcpy -> -
 005b5e object_name_ptr -> -
 005b92 inventory_arrows_update -> sub_005C5A sub_005C74
@@ -262,7 +262,7 @@
 00a054 draw_status_line -> vdp_reg_set vdp_write_word str_length
 00a130 text_show -> draw_status_line text_clear text_wait
 00a172 text_clear -> draw_status_line
-00a18c text_wait -> sub_0020DA wait_vblank run_object_events actor_animate
+00a18c text_wait -> talk_gesture wait_vblank run_object_events actor_animate
 00a236 str_length -> -
 00a248 game_init -> rng_next
 00a27a game_reset -> -

@@ -380,3 +380,462 @@ HLE_FUNC(0x0040E0, script_sys_test_shaggy_path, 60)
 		cc_logic16(ctx, 1);
 	}
 }
+
+/* ------------------------------------------------------------------ $10 say: the rest */
+/* text.c (#20) ports op $10 say as ranges that stop at every stack push/pop and leave
+ * Shaggy's pose waits in 68k. With stack-delta exits (HLE_EXIT_SP) the remaining pieces
+ * are C too: the pushes/pops of D7 ($004D84/$004EDC), of the old facing ($004DBE/$004E80)
+ * and of the font base ($004E1C/$004E5C), and the pose animation waits. Pose = bit 13 of
+ * the op's word 2: Shaggy turns to facing bits 14-15 (turn animation from the table at
+ * $0FC740), stands while the line is shown, and turns back afterwards. */
+#define SAY_POSE_TABLE 0x0FC740
+HLE_RANGE(0x004D84, script_op_say_push_d7, 8, HLE_EXIT_SP(0x004D86, -2))
+{
+	push16(ctx, (uint16_t)D(7));
+	cc_logic16(ctx, D(7));
+	hle_jump(ctx, 0x004D86);
+}
+HLE_RANGE(0x004DBE, script_op_say_push_facing, 8, HLE_EXIT_SP(0x004DC0, -2))
+{
+	push16(ctx, (uint16_t)D(1));                       /* the old facing */
+	cc_logic16(ctx, D(1));
+	hle_jump(ctx, 0x004DC0);
+}
+/* after `bsr actor_animate`: first until the turn animation started (done bit cleared),
+ * then until it is done; then the stand pose and the box (text_clear, as text.c's
+ * say_begin does on the path without a pose) */
+HLE_RANGE(0x004DDE, script_op_say_pose_started, 30, 0x004DDA, 0x004DEA)
+{
+	hle_jump(ctx, bit_test(ctx, RAM_ACTORS_ANIMDONE, 0) ? 0x004DDA : 0x004DEA);
+}
+HLE_RANGE(0x004DEE, script_op_say_pose_done, 60, 0x004DEA, 0x004E1C)
+{
+	if (!bit_test(ctx, RAM_ACTORS_ANIMDONE, 0)) {
+		hle_jump(ctx, 0x004DEA);
+		return;
+	}
+	set_w(&D(0), RAM16(RAM_SHAGGY_FACING));
+	set_w(&D(0), cc_add(ctx, D(0), 4, 16));
+	RAM16(RAM_ACTOR_ANIM) = (uint16_t)D(0);
+	cc_logic16(ctx, D(0));
+	bit_set(ctx, RAM_ACTOR_START, 0);
+	int keep = ctx->cycles;
+	text_clear(ctx);                                   /* $004E12 bsr text_clear */
+	ctx->cycles += keep;
+	set_w(&D(2), RAM16(0xFF068C));                     /* the font base, pushed next */
+	cc_logic16(ctx, D(2));
+	hle_jump(ctx, 0x004E1C);
+}
+HLE_RANGE(0x004E1C, script_op_say_push_font, 8, HLE_EXIT_SP(0x004E1E, -2))
+{
+	push16(ctx, (uint16_t)D(2));
+	cc_logic16(ctx, D(2));
+	hle_jump(ctx, 0x004E1E);
+}
+HLE_RANGE(0x004E5C, script_op_say_pop_font, 8, HLE_EXIT_SP(0x004E5E, 2))
+{
+	set_w(&D(2), pop16(ctx));
+	cc_logic16(ctx, D(2));
+	hle_jump(ctx, 0x004E5E);
+}
+/* $004E80: pop the old facing, turn back to it */
+HLE_RANGE(0x004E80, script_op_say_pose_back, 106, HLE_EXIT_SP(0x004EA4, 2))
+{
+	set_w(&D(0), pop16(ctx));
+	RAM16(RAM_SHAGGY_FACING) = (uint16_t)D(0);
+	set_w(&D(0), cc_add(ctx, D(0), D(0), 16));
+	set_w(&D(1), lslw(ctx, D(1), 3));
+	set_w(&D(0), cc_add(ctx, D(0), D(1), 16));
+	A(0) = SAY_POSE_TABLE;
+	uint16_t anim = ROM16(SAY_POSE_TABLE + (int16_t)D(0));
+	RAM16(RAM_ACTOR_ANIM) = anim;
+	cc_logic16(ctx, anim);
+	bit_set(ctx, RAM_ACTOR_START, 0);
+	hle_jump(ctx, 0x004EA4);
+}
+HLE_RANGE(0x004EA8, script_op_say_back_started, 30, 0x004EA4, 0x004EB4)
+{
+	hle_jump(ctx, bit_test(ctx, RAM_ACTORS_ANIMDONE, 0) ? 0x004EA4 : 0x004EB4);
+}
+/* pop D7 and skip the 8-byte op */
+static void say_finish(hle_ctx *ctx)
+{
+	set_w(&D(7), pop16(ctx));
+	cc_logic16(ctx, D(7));
+	A(5) += 8;
+	hle_jump(ctx, 0x004EE2);
+}
+HLE_RANGE(0x004EB8, script_op_say_back_done, 30, 0x004EB4, HLE_EXIT_SP(0x004EE2, 2))
+{
+	if (!bit_test(ctx, RAM_ACTORS_ANIMDONE, 0)) {
+		hle_jump(ctx, 0x004EB4);
+		return;
+	}
+	set_w(&D(0), RAM16(RAM_SHAGGY_FACING));
+	set_w(&D(0), cc_add(ctx, D(0), 4, 16));
+	RAM16(RAM_ACTOR_ANIM) = (uint16_t)D(0);
+	cc_logic16(ctx, D(0));
+	bit_set(ctx, RAM_ACTOR_START, 0);
+	say_finish(ctx);
+}
+HLE_RANGE(0x004EDC, script_op_say_done, 20, HLE_EXIT_SP(0x004EE2, 2)) { say_finish(ctx); }
+
+/* ------------------------------------------------------------------ blocking sub-ops */
+/* Sub-ops that wait: ranges in front of each blocking call (actor_animate $00B0B8,
+ * wait_vblank, palette_read_cram, bar_show...), the pieces after the calls finish them.
+ * The VBlank spins (`tst.b (ram) / bne self`) stay 68k (docs/porting.md). */
+#define RAM_09DC_FLAGS     0xFF09DC
+#define RAM_ACTORS_ACTIVE  0xFF0AB4
+#define RAM_ACTORS_LOOPED  0xFF0ABD
+#define RAM_SHAGGY_X       0xFF04DC
+#define RAM_SHAGGY_Y       0xFF04F4
+#define RAM_PAN_STEP       0xFF08B4   /* word: camera pan speed (+-2, +-8 fast) */
+#define RAM_PAN_END        0xFF08B6   /* word: camera x where the pan stops */
+#define RAM_CAMERA_X       0xFF06CA
+#define RAM_MAP_WIDTH      0xFF06C6
+#define SOUND_PLAY         0x009762
+
+/* rng_next ($0022D6) with D0 = range: D1 = new state, D0 = (range * low word) >> 16 */
+static void rng_call(hle_ctx *ctx, uint16_t range)
+{
+	uint32_t s = RAM32(0xFF0428);
+	s = ~((s << 1) | (s >> 31));
+	RAM32_W(0xFF0428, s);
+	D(1) = s;
+	uint32_t p = (uint32_t)range * (s & 0xFFFF);
+	D(0) = p >> 16;
+	cc_set(ctx, CC_X | CC_N | CC_Z | CC_V | CC_C, ((p >> 15) & 1 ? CC_X | CC_C : 0) | (D(0) ? 0 : CC_Z));
+}
+
+/* $004374 sub $13 sfx_random_a / $004390 sub $14 sfx_random_b: a random exclamation,
+ * sound $25 or $27 (Scooby) / $28 or $2A (Shaggy) - rng range 2 never gives the middle
+ * one; tail jump to sound_play */
+static void sfx_random(hle_ctx *ctx, uint16_t first)
+{
+	rng_call(ctx, 2);
+	cc_logic16(ctx, D(0));
+	if ((uint16_t)D(0)) {
+		set_w(&D(0), cc_add(ctx, D(0), first + 1, 16));
+	} else {
+		D(0) = first;
+		cc_logic32(ctx, first);
+	}
+	hle_call68k(ctx, SOUND_PLAY);                      /* bra sound_play */
+}
+HLE_FUNC(0x004374, script_sys_sfx_random_a, 120) { sfx_random(ctx, 0x25); }
+HLE_FUNC(0x004390, script_sys_sfx_random_b, 120) { sfx_random(ctx, 0x28); }
+
+/* $00454E sub $03 fade_out: fade to black (palette_read_cram, blocking) with the frame work
+ * of vblank_main paused; VBLANK_FLAGS is saved on the stack around it */
+HLE_RANGE(0x00454E, script_sys_fade_out, 40, HLE_EXIT_SP(0x00455C, -2))
+{
+	A(7) -= 2;
+	bus_w8(A(7), RAM8(RAM_09DC_FLAGS));               /* move.b (vblank_flags),-(sp) */
+	cc_logic8(ctx, RAM8(RAM_09DC_FLAGS));
+	bit_clr(ctx, RAM_09DC_FLAGS, 6);
+	hle_jump(ctx, 0x00455C);
+}
+HLE_RANGE(0x004560, script_sys_fade_out_done, 24, HLE_EXIT_SP(0x004566, 2))
+{
+	uint8_t v = bus_r8(A(7));
+	A(7) += 2;
+	RAM8(RAM_09DC_FLAGS) = v;
+	cc_logic8(ctx, v);
+	hle_jump(ctx, 0x004566);
+}
+
+/* $0043C0 sub $0F camera_pan_right / $004428 sub $10 camera_pan_left: lock the camera
+ * ($FF09E8 bit 1), then let VBlank scroll it (2 px per frame, 8 with $FF09E9 bit 4) to the
+ * room's right edge (map width - 32 cells) / to x = 0, one actor frame at a time until
+ * $FF09E9 bit 5 is cleared. Nothing to do if the camera is already there. */
+#define PAN_R_FRAME 0x004418
+#define PAN_R_RTS   0x004426
+#define PAN_L_FRAME 0x004470
+#define PAN_L_RTS   0x004480
+HLE_RANGE(0x0043C0, script_sys_camera_pan_right, 190, PAN_R_FRAME, PAN_R_RTS)
+{
+	bit_set(ctx, 0xFF09E8, 1);
+	bit_clr(ctx, 0xFF06CB, 0);
+	set_w(&D(0), RAM16(RAM_CAMERA_X));
+	set_w(&D(0), cc_add(ctx, D(0), 8, 16));
+	set_w(&D(0), D(0) & 0xFFF8);
+	set_w(&D(1), RAM16(RAM_MAP_WIDTH));
+	set_w(&D(1), cc_sub(ctx, D(1), 32, 16, true));
+	set_w(&D(1), lslw(ctx, D(1), 3));
+	cc_sub(ctx, D(0), D(1), 16, false);                /* cmp.w d1,d0 */
+	if ((int16_t)D(0) >= (int16_t)D(1)) {
+		hle_jump(ctx, PAN_R_RTS);
+		return;
+	}
+	RAM16(RAM_PAN_STEP) = 2;
+	if (bit_test(ctx, 0xFF09E9, 4))
+		RAM16(RAM_PAN_STEP) = 8;
+	RAM16(RAM_PAN_END) = (uint16_t)D(1);
+	cc_logic16(ctx, D(1));
+	bit_set(ctx, 0xFF09E9, 5);
+	hle_jump(ctx, PAN_R_FRAME);
+}
+HLE_RANGE(0x00441C, script_sys_camera_pan_right_wait, 30, PAN_R_FRAME, PAN_R_RTS)
+{
+	hle_jump(ctx, bit_test(ctx, 0xFF09E9, 5) ? PAN_R_FRAME : PAN_R_RTS);
+}
+HLE_RANGE(0x004428, script_sys_camera_pan_left, 120, PAN_L_FRAME, PAN_L_RTS)
+{
+	bit_set(ctx, 0xFF09E8, 1);
+	bit_clr(ctx, 0xFF06CB, 0);
+	set_w(&D(0), RAM16(RAM_CAMERA_X));
+	set_w(&D(0), D(0) & 0xFFFE);
+	cc_logic16(ctx, D(0));
+	if (!(uint16_t)D(0)) {
+		hle_jump(ctx, PAN_L_RTS);
+		return;
+	}
+	RAM16(RAM_PAN_END) = 0;
+	RAM16(RAM_PAN_STEP) = 0xFFFE;
+	cc_logic16(ctx, 0xFFFE);
+	if (bit_test(ctx, 0xFF09E9, 4)) {
+		RAM16(RAM_PAN_STEP) = 0xFFF8;
+		cc_logic16(ctx, 0xFFF8);
+	}
+	bit_set(ctx, 0xFF09E9, 5);
+	hle_jump(ctx, PAN_L_FRAME);
+}
+HLE_RANGE(0x004474, script_sys_camera_pan_left_wait, 30, PAN_L_FRAME, PAN_L_RTS)
+{
+	hle_jump(ctx, bit_test(ctx, 0xFF09E9, 5) ? PAN_L_FRAME : PAN_L_RTS);
+}
+
+/* $00481A sub $06 bar_show_if_hidden: bar_show ($004862, blocking) if $FF2A00 bit 1 says
+ * the bar was hidden */
+HLE_RANGE(0x00481A, script_sys_bar_show_if_hidden, 30, 0x004826, 0x004828)
+{
+	hle_jump(ctx, bit_test(ctx, 0xFF2A00, 1) ? 0x004828 : 0x004826);
+}
+
+/* $0042A2 sub $17 overlay_a_on / $0042E0 sub $18 overlay_b_on: upload the overlay sprite
+ * tiles (vram_write_words to VRAM $FF00) and switch the sprite overlay effect on
+ * ($FF08A4 sprite attributes, $FF08A6 table $0323BE, $FF09E8 bits 4/5) */
+HLE_FUNC(0x0042A2, script_sys_overlay_a_on, 200)
+{
+	RAM16(0xFF08A4) = 0x07F8;
+	set_w(&D(0), 0xFF00);
+	set_w(&D(1), 0x0080);
+	A(0) = 0x0321BE;
+	hle_call68k(ctx, 0x00992C);                        /* vram_write_words */
+	RAM32_W(0xFF08A6, 0x0323BE);
+	RAM8(0xFF0ACE) = 7;
+	cc_logic8(ctx, 7);
+	bit_set(ctx, 0xFF09E8, 5);
+	bit_set(ctx, 0xFF09E8, 4);
+}
+HLE_FUNC(0x0042E0, script_sys_overlay_b_on, 200)
+{
+	RAM16(0xFF08A4) = 0x47F8;
+	set_w(&D(0), 0xFF00);
+	set_w(&D(1), 0x0040);
+	A(0) = 0x0322BE;
+	hle_call68k(ctx, 0x00992C);
+	set_w(&D(0), cc_add(ctx, D(0), 0x80, 16));
+	A(0) -= 0x80;
+	hle_call68k(ctx, 0x00992C);
+	RAM32_W(0xFF08A6, 0x0323BE);
+	cc_logic32(ctx, 0x0323BE);
+	bit_set(ctx, 0xFF09E8, 5);
+	bit_set(ctx, 0xFF09E8, 4);
+}
+
+/* $00432C sub $15 follow_mode_on: (after `bsr actor_animate` until Shaggy's animation is
+ * done) the first free actor slot 2-5 goes to $FF08B0, $FF09E8 bit 3 on, $FF0AC6 = 0, then
+ * wait_vblank. The entry is the bsr itself (68k). */
+HLE_RANGE(0x004330, script_sys_follow_mode_on, 80, 0x00432C, 0x004364)
+{
+	if (!bit_test(ctx, RAM_ACTORS_ANIMDONE, 0)) {
+		hle_jump(ctx, 0x00432C);
+		return;
+	}
+	D(0) = 2;
+	while (bit_test(ctx, RAM_ACTORS_ACTIVE, D(0))) {
+		set_w(&D(0), cc_add(ctx, D(0), 1, 16));
+		if (cmpw(ctx, D(0), 6) == 0)
+			break;
+	}
+	RAM16(0xFF08B0) = (uint16_t)D(0);
+	bit_set(ctx, 0xFF09E8, 3);
+	RAM8(0xFF0AC6) = 0;
+	cc_set(ctx, CC_N | CC_Z | CC_V | CC_C, CC_Z);     /* clr.b */
+	hle_jump(ctx, 0x004364);
+}
+
+/* $0040FC sub $25 wait_shaggy_path: actor frames until Shaggy's scripted path ended (the
+ * entry is the bsr, 68k) */
+HLE_RANGE(0x004100, script_sys_wait_shaggy_path, 30, 0x0040FC, 0x00410A)
+{
+	hle_jump(ctx, bit_test(ctx, RAM_ACTORS_ON_PATH, 0) ? 0x0040FC : 0x00410A);
+}
+
+/* $004120 sub $22 shaggy_anim_by_x: Shaggy plays animation $49 (x < 276) or $4A, actor
+ * frames until it looped */
+HLE_RANGE(0x004120, script_sys_shaggy_anim_by_x, 60, 0x004148)
+{
+	set_w(&D(1), 0x49);
+	set_w(&D(0), RAM16(RAM_SHAGGY_X));
+	if (cmpw(ctx, D(0), 0x114) >= 0)
+		set_w(&D(1), cc_add(ctx, D(1), 1, 16));
+	RAM16(RAM_ACTOR_ANIM) = (uint16_t)D(1);
+	RAM16(0xFF0618) = 0xFFFF;
+	cc_logic16(ctx, 0xFFFF);
+	bit_set(ctx, RAM_ACTOR_START, 0);
+	hle_jump(ctx, 0x004148);
+}
+HLE_RANGE(0x00414C, script_sys_shaggy_anim_by_x_wait, 30, 0x004148, 0x004158)
+{
+	hle_jump(ctx, bit_test(ctx, RAM_ACTORS_LOOPED, 0) ? 0x004158 : 0x004148);
+}
+
+/* $00415A sub $21 wait_dpad_choice: actor frames until Left / Right / Down is held (pad
+ * bits 2 / 3 / 1, active low): object 0's var = 0 / 1 / 2, $FF0AC3 bit 0 (the entry is
+ * the bsr, 68k) */
+HLE_RANGE(0x00415E, script_sys_wait_dpad_choice, 60, 0x00415A, 0x0041A0)
+{
+	int v;
+	if (!bit_test(ctx, PAD1_CUR, 2))
+		v = 0;
+	else if (!bit_test(ctx, PAD1_CUR, 3))
+		v = 1;
+	else if (!bit_test(ctx, PAD1_CUR, 1))
+		v = 2;
+	else {
+		hle_jump(ctx, 0x00415A);
+		return;
+	}
+	RAM16(RAM_OBJECTS + 0x0C) = (uint16_t)v;
+	cc_logic16(ctx, v);
+	bit_set(ctx, RAM_ACTORS_PATHONCE, 0);
+	hle_jump(ctx, 0x0041A0);
+}
+
+/* $003ED2 sub $2B shaggy_alt_sprite_on: Shaggy's other sprite set ($0B5D02) without depth
+ * scaling, animation $1E until it looped, then the script-running bit of VBLANK_FLAGS off */
+HLE_RANGE(0x003ED2, script_sys_shaggy_alt_sprite_on, 100, 0x003EFC)
+{
+	bit_set(ctx, 0xFF09E9, 4);
+	bit_clr(ctx, 0xFF0AB8, 0);
+	RAM32_W(0xFF0470, 0x0B5D02);
+	RAM16(RAM_ACTOR_ANIM) = 0x1E;
+	cc_logic16(ctx, 0x1E);
+	bit_set(ctx, RAM_ACTOR_START, 0);
+	hle_jump(ctx, 0x003EFC);
+}
+HLE_RANGE(0x003F00, script_sys_shaggy_alt_sprite_on_wait, 40, 0x003EFC, 0x003F14)
+{
+	if (!bit_test(ctx, RAM_ACTORS_LOOPED, 0)) {
+		hle_jump(ctx, 0x003EFC);
+		return;
+	}
+	bit_clr(ctx, RAM_09DC_FLAGS, 7);
+	hle_jump(ctx, 0x003F14);
+}
+
+/* $00301E sub $35 shaggy_pose_45 / $0030A6 sub $37 shaggy_pose_47: Shaggy plays animation
+ * $45 / $47 at a fixed spot ((296,64) / (88,80)); once it is done (and Scooby's path, unless
+ * Scooby is away) actor 2 gets animation 0 / 1 (4 / 5 if Scooby is away), actors 0-1 are
+ * frozen. The wait for the sprite DMA (`btst #0,($FF0AB6) / bne self`) stays 68k.
+ * Both handlers have the same layout (offsets from the entry): +$08 spin, +$12 bset,
+ * +$1A jsr (start), +$20 place, +$30 jsr (wait), +$36 test, +$78 jsr (pose), +$7E, +$86 rts */
+typedef struct { uint32_t base; uint16_t anim, x, y, pose; } shaggy_pose;
+static const shaggy_pose POSE45 = { 0x00301E, 0x45, 296, 64, 0 };
+static const shaggy_pose POSE47 __attribute__((unused)) = { 0x0030A6, 0x47, 88, 80, 1 };
+static void pose_set(hle_ctx *ctx, const shaggy_pose *p)
+{
+	RAM16(RAM_ACTOR_ANIM) = p->anim;
+	cc_logic16(ctx, p->anim);
+	hle_jump(ctx, p->base + 0x08);                     /* the spin */
+}
+static void pose_go(hle_ctx *ctx, const shaggy_pose *p)
+{
+	bit_set(ctx, RAM_ACTOR_START, 0);
+	hle_jump(ctx, p->base + 0x1A);
+}
+static void pose_place(hle_ctx *ctx, const shaggy_pose *p)
+{
+	RAM16(RAM_SHAGGY_X) = p->x;
+	RAM16(RAM_SHAGGY_Y) = p->y;
+	cc_logic16(ctx, p->y);
+	hle_jump(ctx, p->base + 0x30);
+}
+static void pose_wait(hle_ctx *ctx, const shaggy_pose *p)
+{
+	if (!bit_test(ctx, RAM_ACTORS_ANIMDONE, 0) ||
+	    (!bit_test(ctx, 0xFF09DE, 7) && bit_test(ctx, RAM_ACTORS_ON_PATH, 1))) {
+		hle_jump(ctx, p->base + 0x30);
+		return;
+	}
+	uint16_t a = bit_test(ctx, 0xFF09DE, 7) ? 4 + p->pose : p->pose;
+	RAM16(0xFF048C) = a;
+	cc_logic16(ctx, a);
+	bit_set(ctx, RAM_ACTOR_START, 2);
+	hle_jump(ctx, p->base + 0x78);
+}
+static void pose_done(hle_ctx *ctx, const shaggy_pose *p)
+{
+	RAM8(0xFF0ABF) |= 3;
+	cc_logic8(ctx, RAM8(0xFF0ABF));
+	hle_jump(ctx, p->base + 0x86);
+}
+#define POSE_RANGES(P, N)                                                                  \
+	HLE_RANGE(0x00301E + (N), script_sys_shaggy_pose_##P, 30, 0x003026 + (N))            \
+	{ pose_set(ctx, &POSE##P); }                                                          \
+	HLE_RANGE(0x003030 + (N), script_sys_shaggy_pose_##P##_go, 30, 0x003038 + (N))       \
+	{ pose_go(ctx, &POSE##P); }                                                           \
+	HLE_RANGE(0x00303E + (N), script_sys_shaggy_pose_##P##_place, 30, 0x00304E + (N))    \
+	{ pose_place(ctx, &POSE##P); }                                                        \
+	HLE_RANGE(0x003054 + (N), script_sys_shaggy_pose_##P##_wait, 60, 0x00304E + (N),    \
+	          0x003096 + (N))                                                             \
+	{ pose_wait(ctx, &POSE##P); }                                                         \
+	HLE_RANGE(0x00309C + (N), script_sys_shaggy_pose_##P##_done, 30, 0x0030A4 + (N))     \
+	{ pose_done(ctx, &POSE##P); }
+POSE_RANGES(45, 0)
+#ifdef SCRIPT_UNTESTED   /* sub $37 occurs nowhere in the script data */
+POSE_RANGES(47, 0x88)
+#endif
+
+/* $0044C2 sub $07 closeup_picture (after the 68k spin `tst.b ($FF0AB6) / bne` at $0044BA
+ * that waits for the sprite DMA): verb state bit 6; decompress the close-up tiles
+ * ($031DFA) and DMA them to the UI tile base ($FF068A & $7FF); clear plane A ($C000, $800
+ * words of tile base + 1) and draw the 11 x 11 picture map ($0320CC) at its top left. */
+HLE_RANGE(0x0044C2, script_sys_closeup_picture, 400, 0x004532)
+{
+	bit_set(ctx, 0xFF09DE, 6);
+	A(0) = 0x031DFA;
+	A(1) = 0xFF3000;
+	A(2) = 0xFF4000;
+	hle_call68k(ctx, 0x0097AA);                        /* lzss_decompress */
+	A(0) = A(2);
+	D(1) = RAM32(A(1));                                /* unpacked size */
+	set_w(&D(1), lsrw(ctx, D(1), 1));
+	set_w(&D(0), RAM16(0xFF068A));
+	set_w(&D(0), D(0) & 0x07FF);
+	set_w(&D(0), lslw(ctx, D(0), 5));
+	hle_call68k(ctx, 0x0099F6);                        /* vdp_dma_vram */
+	set_w(&D(2), RAM16(0xFF068A));
+	set_w(&D(2), cc_add(ctx, D(2), 1, 16));
+	set_w(&D(1), 0x0800);
+	set_w(&D(0), 0xC000);
+	hle_call68k(ctx, 0x009BE4);                        /* vram_fill_words: plane A */
+	A(0) = 0x0320CC;
+	set_w(&D(2), 10);
+	do {
+		set_w(&D(3), 10);
+		do {
+			set_w(&D(1), bus_r16(A(0)));
+			A(0) += 2;
+			set_w(&D(1), cc_add(ctx, D(1), RAM16(0xFF068A), 16));
+			hle_call68k(ctx, 0x009964);                /* vram_write_word */
+			set_w(&D(0), cc_add(ctx, D(0), 2, 16));
+			set_w(&D(3), D(3) - 1);
+		} while ((uint16_t)D(3) != 0xFFFF);
+		set_w(&D(0), cc_add(ctx, D(0), 0x6A, 16));
+		set_w(&D(2), D(2) - 1);
+	} while ((uint16_t)D(2) != 0xFFFF);
+	hle_jump(ctx, 0x004532);
+}

@@ -234,6 +234,16 @@ difftest options:
   route never produces (other rooms, ids, flag bits); see `port/tools/dt-room`.
 - `--passthrough`: the C side calls the original through `hle_call68k_orig`. This
   self-tests the harness and must always pass.
+- `--entry` (#19, "synthetic dispatch"): accept states captured at *another* address and
+  start the target there. Only for code entered through the same call site with the same
+  stack context, e.g. any script op handler (dispatcher `jsr (a0)`), any sub-op handler,
+  or two "after `bsr actor_animate`" pieces of sub-op handlers; combine with `--poke` to set
+  what that dispatch would have set (A5 = an op of the target's kind, A0 = the handler:
+  `tools/py/script_pokes.py --dispatch OP` / `--sub SUB`, driver
+  `tools/py/script_dt_entry.sh`). Report such results as synthetic.
+- `difftest capture-multi N TAG ADDR... --script R` captures every call (up to N) of
+  several addresses in one pass over a route, into `runs/states/<ADDR>_<TAG>/`
+  (`tools/py/script_dt_multi.sh` runs it over many routes and difftests the lot).
 - `--keep-going`, `-v`, `--max N`, `--states DIR`.
 
 `difftest check all` tests every registered function.
@@ -356,15 +366,19 @@ HLE_RANGE(0x004A4C, script_op_walk_spawn_done0, 40, HLE_EXIT_SP(0x004B1C, +2))
   (`move.b x,-(sp)` moves SP by 2 and writes the high byte: `ctx->a[7] -= 2;
   bus_w8(ctx->a[7], x)`).
 - **difftest** runs the original until it reaches an exit *at that exit's SP*, and the C
-  side must leave the same way. It compares the bytes between the exit SP and the entry SP
-  (`[exit SP, entry SP)` is live data, not scratch); only RAM below the exit SP is
-  scratch. So what the range pushed must be bit-identical, including bytes the code never
+  side must leave the same way. For ranges, RAM below the **exit** SP is scratch: with a
+  negative delta the pushed bytes `[exit SP, entry SP)` are live data and compared; with a
+  positive delta the popped bytes `[entry SP, exit SP)` are dead (later calls inside the
+  range, e.g. a `bsr` after the pop, overwrite them) and ignored. So what the range pushed must be bit-identical, including bytes the code never
   reads again: a `move.b` push leaves the low byte of the stack word as it was, and
   that is often the low byte of the last `bsr` return address. If the range calls C
   helpers that stand for `bsr`s at its own stack level before such a push, push the
   original return address around the call (walkto.c `wcall()`), and mirror `movem`
   pushes with real `push32`s.
 - `difftest -v` prints the exit and its SP delta for every state (`exit $004A48 SP-2`).
+- A delta that depends on data (`lea (sp,d0.w),sp` dropping 10 bytes per TALK level)
+  needs one exit per possible value (script.c `talk_choice_after` declares levels 0-11);
+  the layer aborts with the SP it saw if the game ever goes beyond.
 - The layer, `hle_run68k_until` (passthrough) and the sandbox all use `hle_exit_match()`,
   so `difftest --passthrough` still self-tests ranges with deltas.
 

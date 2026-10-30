@@ -1899,7 +1899,7 @@ HLE_RANGE(0x004570, script_sys_wait_button_test, 60, 0x004568, 0x004588, 0x0045A
  * count 0) with script_run, keeping A5/A6 and the block callback (pushed: 12 bytes).
  * Two ranges around the `bsr script_run` with stack-delta exits (docs/porting.md "Ranges
  * that push or pop"). */
-HLE_RANGE(0x002320, script_run_nested, 90, HLE_EXIT_SP(0x002344, -12))
+HLE_RANGE(0x002320, script_run_nested, 120, HLE_EXIT_SP(0x002344, -12))
 {
 	RAM8(RAM_SCRIPT_FLAGS) = SF_COLLECT_TALK;
 	RAM16(RAM_TALK_COUNT) = 0;
@@ -1975,7 +1975,9 @@ static void talk_bar_blank(hle_ctx *ctx)
 	do {
 		set_w(&ctx->d[2], 0x1F);
 		do {
+			int keep = ctx->cycles;                        /* (it sets its own charge) */
 			vram_write_word(ctx);
+			ctx->cycles = keep;
 			set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 2, 16));
 			set_w(&ctx->d[2], ctx->d[2] - 1);
 		} while ((uint16_t)ctx->d[2] != 0xFFFF);
@@ -1985,8 +1987,9 @@ static void talk_bar_blank(hle_ctx *ctx)
 	set_w(&ctx->d[0], 0x0F);
 	set_w(&ctx->d[1], 0x10);
 	cc_logic16(ctx, 0x10);
+	ctx->cycles += 52800;                                  /* 192 words, measured */
 }
-HLE_FUNC(0x0022F2, talk_bar_blank_fn, 20000) { talk_bar_blank(ctx); }
+HLE_FUNC(0x0022F2, talk_bar_blank_fn, 0) { talk_bar_blank(ctx); }
 
 /* $0020DA talk_gesture: unless Shaggy's idle animations are off ($FF09E9 bits 7/4), a
  * random talking gesture (animation 36 + facing*4 + 0..3; facing up counts as right and is
@@ -2016,7 +2019,7 @@ static void talk_gesture(hle_ctx *ctx)
 	cc_logic16(ctx, ctx->d[0]);
 	bit_set(ctx, RAM_ACTOR_START, 0);
 }
-HLE_FUNC(0x0020DA, talk_gesture_fn, 150) { talk_gesture(ctx); }
+HLE_FUNC(0x0020DA, talk_gesture_fn, 420) { talk_gesture(ctx); }
 
 /* movem.l Dfirst-A6 to / from a C array (the stack copy is not needed: these are popped
  * inside the same range) */
@@ -2165,7 +2168,7 @@ HLE_RANGE(0x001FC2, talk_choice_body, 800, HLE_EXIT_SP(0x001FE0, -4))
 
 /* 4: after the body: next level, back one level, or leave the TALK */
 #define TALK_LEAVE_EXITS(N) HLE_EXIT_SP(0x00207E, 20 + 10 * (N))
-HLE_RANGE(0x001FE4, talk_choice_after, 8900, HLE_EXIT_SP(0x001CC4, 10), HLE_EXIT_SP(0x001CC4, 30),
+HLE_RANGE(0x001FE4, talk_choice_after, 150, HLE_EXIT_SP(0x001CC4, 10), HLE_EXIT_SP(0x001CC4, 30),
           TALK_LEAVE_EXITS(0), TALK_LEAVE_EXITS(1), TALK_LEAVE_EXITS(2), TALK_LEAVE_EXITS(3),
           TALK_LEAVE_EXITS(4), TALK_LEAVE_EXITS(5), TALK_LEAVE_EXITS(6), TALK_LEAVE_EXITS(7),
           TALK_LEAVE_EXITS(8), TALK_LEAVE_EXITS(9), TALK_LEAVE_EXITS(10), TALK_LEAVE_EXITS(11))
