@@ -112,6 +112,12 @@ bool script_step(script *s, unsigned *pad)
 			for (int i = 8; i < 16; i++)
 				fprintf(stderr, " %08X", r[i]);
 			fprintf(stderr, "\n");
+		} else if (!strcmp(cmd, "poke") && sscanf(line, "%*s %511s %ld %511s", a1, &n, a2) == 3) {
+			/* poke ADDR W VAL: write W (1/2/4) bytes of work RAM, big-endian (harness syntax) */
+			uint32_t addr = (uint32_t)strtoul(a1 + (a1[0] == '$'), NULL, 16);
+			uint32_t val = (uint32_t)strtoul(a2 + (a2[0] == '$'), NULL, 16);
+			for (long i = 0; i < n; i++)
+				RAM8(addr + i) = (uint8_t)(val >> (8 * (n - 1 - i)));
 		} else if (!strcmp(cmd, "peek") && sscanf(line, "%*s %511s %511s", a1, a2) == 2) {
 			int w = 2;
 			sscanf(line, "%*s %*s %*s %d", &w);

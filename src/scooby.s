@@ -27,7 +27,7 @@
 	.equ ram_title_fade_c, 0xff001a
 	.equ ram_title_scroll_dir, 0xff001c
 	.equ ram_title_scroll, 0xff001d
-	.equ ram_script_stack, 0xff0328
+	.equ ram_inv_nametable, 0xff0328
 	.equ ram_rng_state, 0xff0428
 	.equ ram_list_484, 0xff0484
 	.equ ram_cur_index, 0xff0488
@@ -84,6 +84,7 @@
 	.equ ram_mystery_idx, 0xff06aa
 	.equ ram_room_index, 0xff06ac
 	.equ ram_target_obj, 0xff06ae
+	.equ ram_obj_script_hdr2, 0xff06b0
 	.equ ram_hover_prev, 0xff06b4
 	.equ ram_target2_obj, 0xff06b6
 	.equ ram_cur_verb_prev, 0xff06b8
@@ -98,6 +99,7 @@
 	.equ ram_camera_y, 0xff06ce
 	.equ ram_room_name_ptr, 0xff06d2
 	.equ ram_room_name_prev, 0xff06d6
+	.equ ram_then_talk_obj, 0xff06da
 	.equ ram_pointer_x, 0xff06dc
 	.equ ram_pointer_y, 0xff06de
 	.equ ram_pointer_dx, 0xff06e0
@@ -116,10 +118,18 @@
 	.equ ram_vscroll, 0xff07fc
 	.equ ram_hscroll_verb, 0xff0800
 	.equ ram_ui_tile_base_e, 0xff0802
+	.equ ram_talk_count, 0xff080e
 	.equ ram_title_piece_vram, 0xff0810
 	.equ ram_title_piece_w, 0xff0812
 	.equ ram_title_piece_h, 0xff0814
+	.equ ram_talk_pose, 0xff0824
+	.equ ram_talk_len, 0xff082e
+	.equ ram_talk_text, 0xff0838
+	.equ ram_talk_reply, 0xff084c
+	.equ ram_talk_body, 0xff0860
+	.equ ram_bar_saved, 0xff0876
 	.equ ram_script_cb, 0xff0878
+	.equ ram_palcyc, 0xff087c
 	.equ ram_frame_countdown, 0xff08ae
 	.equ ram_hblank_hv, 0xff08b2
 	.equ ram_ui_tile_base_f, 0xff08b8
@@ -150,6 +160,7 @@
 	.equ ram_actors_anim_done, 0xff0abc
 	.equ ram_actors_anim_looped, 0xff0abd
 	.equ ram_actors_depth_new, 0xff0abe
+	.equ ram_actors_frozen, 0xff0abf
 	.equ ram_actors_on_path, 0xff0ac0
 	.equ ram_actors_no_zone, 0xff0ac2
 	.equ ram_actors_path_once, 0xff0ac3
@@ -158,6 +169,7 @@
 	.equ ram_script_flags2, 0xff0aca
 	.equ ram_bar_slide, 0xff0acb
 	.equ ram_shaggy_turning, 0xff0acc
+	.equ ram_palcyc_on, 0xff0acd
 	.equ ram_verb_bar_window, 0xff0ad1
 	.equ ram_objects, 0xff1200
 	.equ ram_game_state, 0xff2a00
@@ -737,7 +749,7 @@ game_start:
 	bsr.w room_load
 loc_000D30:
 	bsr.w room_fade_in
-	bsr.w script_subop_1C
+	bsr.w script_subop_1C_bar_show
 main_loop:
 	jsr (run_object_events).l
 	btst.b #0x7,(ram_vblank_flags).l
@@ -829,7 +841,7 @@ loc_000E94:
 	movea.l (0x24,a1),a3
 	movea.l (0x1c,a1),a1
 	moveq #0x0,d7
-	btst.b #0x1,(0xff0abf).l
+	btst.b #0x1,(ram_actors_frozen).l
 	bne.w loc_000F72
 	btst.b #0x1,(ram_actors_active).l
 	beq.w loc_000F72
@@ -1522,7 +1534,7 @@ loc_00199C:
 	move.w (0x10,a1),d1
 	rts
 action_execute:
-	clr.w (0xff080e).l
+	clr.w (ram_talk_count).l
 	bclr.b #0x3,(ram_script_flags2).l
 	movea.l (ram_mystery_hdr).l,a0
 	movea.l (0x2c,a0),a6
@@ -1543,12 +1555,12 @@ loc_0019F8:
 	adda.l (0x0,a0,d0.w),a6
 	movea.l a6,a5
 	move.w (a5)+,d0
-	move.w (a5)+,(0xff06b0).l
+	move.w (a5)+,(ram_obj_script_hdr2).l
 	tst.w (a5)+
 	lea.l (0x0,a6,d0.w),a6
 	movem.l a5-a6,-(sp)
 	bsr.w script_run_nested
-	tst.w (0xff080e).l
+	tst.w (ram_talk_count).l
 	beq.s loc_001A22
 	bsr.w sub_001BDA
 loc_001A22:
@@ -1575,7 +1587,7 @@ loc_001A80:
 	move.b (ram_script_flags).l,-(sp)
 	bsr.w sub_001C0C
 	move.b (sp)+,(ram_script_flags).l
-	tst.w (0xff080e).l
+	tst.w (ram_talk_count).l
 	beq.s loc_001AAC
 	bset.b #0x6,(ram_script_flags).l
 loc_001AAC:
@@ -1620,9 +1632,9 @@ loc_001B46:
 	cmpi.b #0x1,(-0x1,a1)
 	bne.w loc_001B46
 	tst.b -(a1)
-	btst.b #0x0,(0xff06b0).l
+	btst.b #0x0,(ram_obj_script_hdr2).l
 	beq.w loc_001B84
-	btst.b #0x1,(0xff06b0).l
+	btst.b #0x1,(ram_obj_script_hdr2).l
 	bne.w loc_001B7A
 	lea.l (dat_02FFE0).l,a0
 	bra.w loc_001B8A
@@ -1647,7 +1659,7 @@ loc_001BB6:
 	btst.b #0x3,(ram_script_flags2).l
 	beq.s loc_001BD6
 	move.w #0x8,(ram_action_verb).l
-	move.w (0xff06da).l,(ram_target_obj).l
+	move.w (ram_then_talk_obj).l,(ram_target_obj).l
 	bra.w action_execute
 loc_001BD6:
 	rts
@@ -1666,7 +1678,7 @@ sub_001BDA:
 	rts
 sub_001C0C:
 	bsr.w script_run_nested
-	tst.w (0xff080e).l
+	tst.w (ram_talk_count).l
 	bne.w loc_001C1C
 	rts
 loc_001C1C:
@@ -1713,7 +1725,7 @@ loc_001CC4:
 	movea.l (0xff0816).l,a6
 	bsr.w script_run_nested
 	movem.l (sp)+,d0-d7/a0-a6
-	tst.w (0xff080e).l
+	tst.w (ram_talk_count).l
 	beq.w loc_00204A
 	bsr.w sub_0022F2
 	movem.l d0-d7/a0-a6,-(sp)
@@ -1731,9 +1743,9 @@ loc_001D0A:
 	beq.w loc_001D0A
 	moveq #0x0,d2
 	move.w d2,d6
-	lea.l (0xff0838).l,a2
+	lea.l (ram_talk_text).l,a2
 	lea.l (0xff081a).l,a3
-	move.w (0xff080e).l,d3
+	move.w (ram_talk_count).l,d3
 loc_001D38:
 	movea.l (a2)+,a0
 	move.w d2,d0
@@ -1800,7 +1812,7 @@ loc_001DF2:
 	beq.w loc_001E36
 	move.w d3,d0
 	addq.w #0x1,d0
-	cmp.w (0xff080e).l,d0
+	cmp.w (ram_talk_count).l,d0
 	bge.s loc_001E36
 	cmpi.w #0x5,d0
 	bge.s loc_001E36
@@ -1835,7 +1847,7 @@ loc_001E72:
 	movem.w d0-d3,-(sp)
 	bset.b d3,(0xff0874).l
 	lsl.w #0x2,d3
-	lea.l (0xff0838).l,a0
+	lea.l (ram_talk_text).l,a0
 	movea.l (0x0,a0,d3.w),a0
 	bsr.w sub_0022F2
 	movem.l d2-d7/a0-a6,-(sp)
@@ -1863,8 +1875,8 @@ loc_001E72:
 	move.w d3,d0
 	add.w d0,d0
 	lsl.w #0x2,d3
-	lea.l (0xff084c).l,a0
-	lea.l (0xff082e).l,a1
+	lea.l (ram_talk_reply).l,a0
+	lea.l (ram_talk_len).l,a1
 	move.w (-0xa,a1,d0.w),(0xff06b2).l
 	move.w (0x0,a1,d0.w),d0
 	movea.l (0x14,a0,d3.w),a5
@@ -1875,7 +1887,7 @@ loc_001E72:
 	move.b #0x0,(ram_08bc).l
 	lea.l (ram_08bc).l,a0
 	jsr (sub_00A054).l
-	move.b (0xff06b1).l,d0
+	move.b (ram_obj_script_hdr2+1).l,d0
 	move.w d0,d1
 	andi.w #0xf,d0
 	andi.w #0x30,d1
@@ -2112,7 +2124,7 @@ loc_002304:
 	rts
 script_run_nested:
 	move.b #0x4,(ram_script_flags).l
-	move.w #0x0,(0xff080e).l
+	move.w #0x0,(ram_talk_count).l
 	movem.l a5-a6,-(sp)
 	move.l (ram_script_cb).l,-(sp)
 	move.l #script_run,(ram_script_cb).l
@@ -2122,40 +2134,40 @@ script_run_nested:
 	rts
 | data 0x002354-0x0023DC
 script_op_table:
-	dc.l script_op_00
-	dc.l script_op_01
-	dc.l script_op_02
-	dc.l script_op_03
-	dc.l script_op_04
-	dc.l script_op_05
-	dc.l script_op_06
-	dc.l script_op_07
-	dc.l script_op_08
-	dc.l script_op_09
-	dc.l script_op_0A
-	dc.l script_op_0B
-	dc.l script_op_0C
-	dc.l script_op_0D
-	dc.l script_op_0E
-	dc.l script_op_0F
-	dc.l script_op_10
-	dc.l script_op_11
-	dc.l script_op_12
-	dc.l script_op_13
-	dc.l script_op_14
-	dc.l script_op_15
-	dc.l script_op_16
-	dc.l script_op_17
-	dc.l script_op_18
-	dc.l script_op_19
-	dc.l script_op_1A
-	dc.l script_op_0E
-	dc.l script_op_1C
-	dc.l script_op_1D
-	dc.l script_op_1E
-	dc.l script_op_1F
-	dc.l script_op_20
-	dc.l script_op_21
+	dc.l script_op_00_nop
+	dc.l script_op_01_case_verb
+	dc.l script_op_02_talk_choice
+	dc.l script_op_03_if
+	dc.l script_op_04_if_else
+	dc.l script_op_05_move_obj
+	dc.l script_op_06_anim_wait
+	dc.l script_op_07_show_obj
+	dc.l script_op_08_set
+	dc.l script_op_09_set_verb
+	dc.l script_op_0A_set_icon
+	dc.l script_op_0B_set_state
+	dc.l script_op_0C_sys
+	dc.l script_op_0D_sound
+	dc.l script_op_0E_walk_spawn
+	dc.l script_op_0F_walk_obj
+	dc.l script_op_10_say
+	dc.l script_op_11_goto_room
+	dc.l script_op_12_set_hotspot
+	dc.l script_op_13_on_event
+	dc.l script_op_14_set_hotspot2
+	dc.l script_op_15_wait
+	dc.l script_op_16_freeze
+	dc.l script_op_17_wait_anim
+	dc.l script_op_18_goto_room_cut
+	dc.l script_op_19_unfreeze_wait
+	dc.l script_op_1A_pal_cycle
+	dc.l script_op_0E_walk_spawn
+	dc.l script_op_1C_test_moving
+	dc.l script_op_1D_test_anim_done
+	dc.l script_op_1E_face
+	dc.l script_op_1F_wait_stop
+	dc.l script_op_20_stop_path
+	dc.l script_op_21_path
 script_run:
 	cmpa.l a5,a6
 	ble.w loc_002404
@@ -2190,7 +2202,7 @@ loc_00241A:
 	blt.w script_run_frame
 loc_002444:
 	rts
-script_op_13:
+script_op_13_on_event:
 	bne.w loc_002460
 	btst.b #0x4,(ram_script_flags).l
 	beq.w loc_002460
@@ -2200,7 +2212,7 @@ loc_002460:
 	move.w (0x2,a5),d0
 	lea.l (0x0,a5,d0.w),a5
 	rts
-script_op_01:
+script_op_01_case_verb:
 	bne.w loc_002502
 	btst.b #0x1,(ram_script_flags).l
 	beq.w loc_002502
@@ -2241,10 +2253,10 @@ loc_002502:
 	move.w (0x6,a5),d0
 	lea.l (0x0,a5,d0.w),a5
 	rts
-script_op_00:
+script_op_00_nop:
 	tst.w (a5)+
 	rts
-script_op_1D:
+script_op_1D_test_anim_done:
 	beq.w loc_002558
 	bclr.b #0x3,(ram_game_state).l
 	move.w (0x2,a5),d0
@@ -2271,7 +2283,7 @@ loc_002546:
 loc_002558:
 	lea.l (0x4,a5),a5
 	rts
-script_op_1C:
+script_op_1C_test_moving:
 	beq.w loc_0025A6
 	bclr.b #0x2,(ram_game_state).l
 	move.w (0x2,a5),d0
@@ -2298,17 +2310,17 @@ loc_002594:
 loc_0025A6:
 	lea.l (0x4,a5),a5
 	rts
-script_op_02:
+script_op_02_talk_choice:
 	bne.w loc_00261C
 	btst.b #0x2,(ram_script_flags).l
 	beq.w loc_00261C
 	movea.l (ram_mystery_hdr).l,a0
 	move.l (0x20,a0),d1
-	move.w (0xff080e).l,d0
+	move.w (ram_talk_count).l,d0
 	cmpi.w #0x5,d0
 	bge.w loc_00261C
-	lea.l (0xff0838).l,a0
-	lea.l (0xff082e).l,a1
+	lea.l (ram_talk_text).l,a0
+	lea.l (ram_talk_len).l,a1
 	move.w d0,d3
 	add.w d3,d3
 	lsl.w #0x2,d0
@@ -2323,19 +2335,19 @@ script_op_02:
 	move.w (0xc,a5),(-0xa,a1,d3.w)
 	lea.l (0xe,a5),a1
 	move.l a1,(0x28,a0,d0.w)
-	addi.w #0x1,(0xff080e).l
+	addi.w #0x1,(ram_talk_count).l
 loc_00261C:
 	move.w (0xa,a5),d0
 	lea.l (0x0,a5,d0.w),a5
 	rts
-script_op_1A:
+script_op_1A_pal_cycle:
 	beq.w loc_002688
 	move.w (0x2,a5),d0
 	cmpi.w #0x4,d0
 	bgt.w loc_002688
 	tst.w (0x8,a5)
 	bpl.w loc_002660
-	bclr.b d0,(0xff0acd).l
+	bclr.b d0,(ram_palcyc_on).l
 	move.w (0x4,a5),d0
 	move.w (0x6,a5),d1
 	sub.w d0,d1
@@ -2347,16 +2359,16 @@ script_op_1A:
 loc_002660:
 	move.w d0,d1
 	add.w d0,d0
-	lea.l (0xff087c).l,a0
+	lea.l (ram_palcyc).l,a0
 	move.w (0x4,a5),(0x0,a0,d0.w)
 	move.w (0x6,a5),(0xa,a0,d0.w)
 	move.w (0x8,a5),(0x1e,a0,d0.w)
 	move.w (0x8,a5),(0x14,a0,d0.w)
-	bset.b d1,(0xff0acd).l
+	bset.b d1,(ram_palcyc_on).l
 loc_002688:
 	lea.l (0xa,a5),a5
 	rts
-script_op_1E:
+script_op_1E_face:
 	beq.w loc_00272C
 	move.w (0x2,a5),d3
 	bclr.b #0xf,d3
@@ -2399,7 +2411,7 @@ loc_002716:
 loc_00272C:
 	lea.l (0x6,a5),a5
 	rts
-script_op_03:
+script_op_03_if:
 	bsr.w sub_002796
 	beq.w loc_002740
 	lea.l (0x10,a5),a5
@@ -2408,7 +2420,7 @@ loc_002740:
 	move.w (0x2,a5),d0
 	lea.l (0x0,a5,d0.w),a5
 	rts
-script_op_04:
+script_op_04_if_else:
 	bsr.w sub_002796
 	beq.w loc_00278C
 	movem.l a5-a6,-(sp)
@@ -2516,7 +2528,7 @@ loc_00289A:
 loc_00289C:
 	tst.w d3
 	rts
-script_op_05:
+script_op_05_move_obj:
 	beq.w loc_002ACA
 	move.w (0x2,a5),d0
 	andi.w #0x7fff,d0
@@ -2675,7 +2687,7 @@ loc_002AA6:
 loc_002ACA:
 	lea.l (0x6,a5),a5
 	rts
-script_op_16:
+script_op_16_freeze:
 	beq.w loc_002B08
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -2692,12 +2704,12 @@ loc_002AE8:
 	addq.w #0x2,d0
 loc_002AFA:
 	move.w #0x2700,sr
-	bset.b d0,(0xff0abf).l
+	bset.b d0,(ram_actors_frozen).l
 	move.w #0x2000,sr
 loc_002B08:
 	lea.l (0x4,a5),a5
 	rts
-script_op_19:
+script_op_19_unfreeze_wait:
 	beq.w loc_002B54
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -2718,11 +2730,11 @@ loc_002B3E:
 	jsr (sub_00B0B8).l
 	btst.l d0,(ram_actors_anim_looped).l
 	beq.w loc_002B3E
-	bclr.b d0,(0xff0abf).l
+	bclr.b d0,(ram_actors_frozen).l
 loc_002B54:
 	lea.l (0x4,a5),a5
 	rts
-script_op_06:
+script_op_06_anim_wait:
 	beq.w loc_002BF2
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -2766,7 +2778,7 @@ loc_002BEC:
 loc_002BF2:
 	lea.l (0x6,a5),a5
 	rts
-script_op_07:
+script_op_07_show_obj:
 	beq.w loc_002C50
 	move.w (0x2,a5),d0
 	subq.w #0x3,d0
@@ -2796,7 +2808,7 @@ loc_002C32:
 loc_002C50:
 	lea.l (0x4,a5),a5
 	rts
-script_op_08:
+script_op_08_set:
 	beq.w loc_002D58
 	move.w (0xa,a5),d0
 	btst.b #0x2,d0
@@ -2880,7 +2892,7 @@ loc_002D54:
 loc_002D58:
 	lea.l (0xc,a5),a5
 	rts
-script_op_09:
+script_op_09_set_verb:
 	beq.w loc_002DBA
 	move.w (0x2,a5),d0
 	move.w d0,d2
@@ -2908,7 +2920,7 @@ loc_002D9A:
 loc_002DBA:
 	lea.l (0x6,a5),a5
 	rts
-script_op_0A:
+script_op_0A_set_icon:
 	beq.w loc_002DEC
 	move.w (0x2,a5),d0
 	subq.w #0x3,d0
@@ -2922,7 +2934,7 @@ script_op_0A:
 loc_002DEC:
 	lea.l (0x6,a5),a5
 	rts
-script_op_0B:
+script_op_0B_set_state:
 	beq.w loc_002E78
 	move.w (0x2,a5),d0
 	andi.w #0x7fff,d0
@@ -2962,7 +2974,7 @@ loc_002E6E:
 loc_002E78:
 	lea.l (0x6,a5),a5
 	rts
-script_op_14:
+script_op_14_set_hotspot2:
 	beq.w loc_002E98
 	move.w (0x2,a5),d0
 	subq.w #0x3,d0
@@ -2972,7 +2984,7 @@ script_op_14:
 loc_002E98:
 	lea.l (0x6,a5),a5
 	rts
-script_op_0C:
+script_op_0C_sys:
 	beq.w loc_002EAE
 	move.w (0x2,a5),d0
 	lsl.w #0x2,d0
@@ -2983,102 +2995,102 @@ loc_002EAE:
 	rts
 | data 0x002EB4-0x002FAC
 script_subop_table:
-	dc.l script_subop_00
-	dc.l script_subop_01
-	dc.l script_subop_02
-	dc.l script_subop_03
-	dc.l script_subop_04
-	dc.l script_subop_05
-	dc.l script_subop_06
-	dc.l script_subop_07
-	dc.l script_subop_08
-	dc.l script_subop_09
-	dc.l script_subop_0A
-	dc.l script_subop_0B
-	dc.l script_subop_05
-	dc.l script_subop_0D
-	dc.l script_subop_0E
-	dc.l script_subop_0F
-	dc.l script_subop_10
-	dc.l script_subop_11
-	dc.l script_subop_12
-	dc.l script_subop_13
-	dc.l script_subop_14
-	dc.l script_subop_15
-	dc.l script_subop_16
-	dc.l script_subop_17
-	dc.l script_subop_18
-	dc.l script_subop_19
-	dc.l script_subop_1A
-	dc.l script_subop_1B
-	dc.l script_subop_1C
-	dc.l script_subop_1D
-	dc.l script_subop_1E
-	dc.l script_subop_1F
-	dc.l script_subop_20
-	dc.l script_subop_21
-	dc.l script_subop_22
-	dc.l script_subop_23
-	dc.l script_subop_24
-	dc.l script_subop_25
-	dc.l script_subop_26
-	dc.l script_subop_27
-	dc.l script_subop_28
-	dc.l script_subop_29
-	dc.l script_subop_2A
-	dc.l script_subop_2B
-	dc.l script_subop_2C
-	dc.l script_subop_2D
-	dc.l script_subop_2E
-	dc.l script_subop_2F
-	dc.l script_subop_30
-	dc.l script_subop_31
-	dc.l script_subop_32
-	dc.l script_subop_33
-	dc.l script_subop_34
-	dc.l script_subop_35
-	dc.l script_subop_36
-	dc.l script_subop_37
-	dc.l script_subop_38
-	dc.l script_subop_39
-	dc.l script_subop_3A
-	dc.l script_subop_3B
-	dc.l script_subop_3C
-	dc.l script_subop_3D
-script_subop_00:
+	dc.l script_subop_00_nop
+	dc.l script_subop_01_end
+	dc.l script_subop_02_room_fade_in
+	dc.l script_subop_03_fade_out
+	dc.l script_subop_04_wait_button
+	dc.l script_subop_05_fullscreen_picture
+	dc.l script_subop_06_bar_show_if_hidden
+	dc.l script_subop_07_closeup_picture
+	dc.l script_subop_08_closeup_off
+	dc.l script_subop_09_scooby_away
+	dc.l script_subop_0A_scooby_back
+	dc.l script_subop_0B_scooby_pose_on
+	dc.l script_subop_05_fullscreen_picture
+	dc.l script_subop_0D_flag09e8_1_on
+	dc.l script_subop_0E_flag09e8_1_off
+	dc.l script_subop_0F_camera_pan_right
+	dc.l script_subop_10_camera_pan_left
+	dc.l script_subop_11_flag09e8_2_on
+	dc.l script_subop_12_flag09e8_2_off
+	dc.l script_subop_13_sfx_random_a
+	dc.l script_subop_14_sfx_random_b
+	dc.l script_subop_15_follow_mode_on
+	dc.l script_subop_16_follow_mode_off
+	dc.l script_subop_17_overlay_a_on
+	dc.l script_subop_18_overlay_b_on
+	dc.l script_subop_19_overlay_off
+	dc.l script_subop_1A_pal_flash_on
+	dc.l script_subop_1B_pal_flash_off
+	dc.l script_subop_1C_bar_show
+	dc.l script_subop_1D_bar_hide
+	dc.l script_subop_1E_ending_credits
+	dc.l script_subop_1F_flag09e9_0_on
+	dc.l script_subop_20_flag09e9_0_off
+	dc.l script_subop_21_wait_dpad_choice
+	dc.l script_subop_22_shaggy_anim_by_x
+	dc.l script_subop_23_flag09e9_1_on
+	dc.l script_subop_24_flag09e9_1_off
+	dc.l script_subop_25_wait_shaggy_path
+	dc.l script_subop_26_test_shaggy_path
+	dc.l script_subop_27_minigame_throw
+	dc.l script_subop_28_talk_end
+	dc.l script_subop_29_flag09e9_3_on
+	dc.l script_subop_2A_flag09e9_3_off
+	dc.l script_subop_2B_shaggy_alt_sprite_on
+	dc.l script_subop_2C_shaggy_alt_sprite_off
+	dc.l script_subop_2D_flag09e9_6_on
+	dc.l script_subop_2E_flag09e9_6_off
+	dc.l script_subop_2F_then_talk
+	dc.l script_subop_30_no_idle_anim_on
+	dc.l script_subop_31_no_idle_anim_off
+	dc.l script_subop_32_minigame_tug
+	dc.l script_subop_33_flag09eb_0_on
+	dc.l script_subop_34_flag09eb_0_off
+	dc.l script_subop_35_shaggy_pose_45
+	dc.l script_subop_36_scooby_pose_off
+	dc.l script_subop_37_shaggy_pose_47
+	dc.l script_subop_38_skippable_off
+	dc.l script_subop_39_skippable_on
+	dc.l script_subop_3A_flag09eb_5_on
+	dc.l script_subop_3B_flag09eb_5_off
+	dc.l script_subop_3C_flag09eb_6_on
+	dc.l script_subop_3D_flag09eb_6_off
+script_subop_00_nop:
 	rts
-script_subop_3C:
+script_subop_3C_flag09eb_6_on:
 	bset.b #0x6,(ram_09eb).l
 	rts
-script_subop_3D:
+script_subop_3D_flag09eb_6_off:
 	bclr.b #0x6,(ram_09eb).l
 	rts
-script_subop_3A:
+script_subop_3A_flag09eb_5_on:
 	bset.b #0x5,(ram_09eb).l
 	rts
-script_subop_3B:
+script_subop_3B_flag09eb_5_off:
 	bclr.b #0x5,(ram_09eb).l
 	rts
-script_subop_38:
+script_subop_38_skippable_off:
 	bclr.b #0x1,(ram_script_flags2).l
 	rts
-script_subop_39:
+script_subop_39_skippable_on:
 	bset.b #0x1,(ram_script_flags2).l
 	btst.b #0x2,(ram_09ed).l
 	beq.s loc_002FFA
 	bset.b #0x0,(ram_script_flags2).l
 loc_002FFA:
 	rts
-script_subop_0B:
+script_subop_0B_scooby_pose_on:
 	move.w (ram_scooby_facing).l,d0
 	addq.w #0x4,d0
 	move.w d0,(ram_484a).l
 	bset.b #0x2,(ram_09eb).l
 	rts
-script_subop_36:
+script_subop_36_scooby_pose_off:
 	bclr.b #0x2,(ram_09eb).l
 	rts
-script_subop_35:
+script_subop_35_shaggy_pose_45:
 	move.w #0x45,(ram_cur_index).l
 loc_003026:
 	btst.b #0x0,(0xff0ab6).l
@@ -3105,9 +3117,9 @@ loc_003086:
 loc_00308E:
 	bset.b #0x2,(ram_0ab5).l
 	jsr (sub_00B0B8).l
-	ori.b #0x3,(0xff0abf).l
+	ori.b #0x3,(ram_actors_frozen).l
 	rts
-script_subop_37:
+script_subop_37_shaggy_pose_47:
 	move.w #0x47,(ram_cur_index).l
 loc_0030AE:
 	btst.b #0x0,(0xff0ab6).l
@@ -3134,15 +3146,15 @@ loc_00310E:
 loc_003116:
 	bset.b #0x2,(ram_0ab5).l
 	jsr (sub_00B0B8).l
-	ori.b #0x3,(0xff0abf).l
+	ori.b #0x3,(ram_actors_frozen).l
 	rts
-script_subop_33:
+script_subop_33_flag09eb_0_on:
 	bset.b #0x0,(ram_09eb).l
 	rts
-script_subop_34:
+script_subop_34_flag09eb_0_off:
 	bclr.b #0x0,(ram_09eb).l
 	rts
-script_subop_32:
+script_subop_32_minigame_tug:
 	move.w #0x8a94,(vdp_ctrl).l
 	move.w (ram_shaggy_facing).l,-(sp)
 	lea.l (ram_08bc).l,a0
@@ -3239,7 +3251,7 @@ loc_00324A:
 	move.w #0xa300,d0
 	move.w #0x80,d1
 	bsr.w vdp_copy_to_vram
-	lea.l (ram_script_stack).l,a0
+	lea.l (ram_inv_nametable).l,a0
 	move.w #0xa400,d0
 	bsr.w vdp_copy_to_vram
 	move.l #0xf88dc,(0xff0470).l
@@ -3258,7 +3270,7 @@ loc_00331A:
 	dc.w 0x203c,0x0000,0x007b	| move.l #$7b, d0
 	bsr.w sound_play
 	bsr.w wait_vblank
-	bsr.w script_subop_02
+	bsr.w script_subop_02_room_fade_in
 	dc.w 0x203c,0x0000,0x0079	| move.l #$79, d0
 	bsr.w sound_play
 	move.w #0x32,d0
@@ -3296,7 +3308,7 @@ loc_0033D8:
 	move.w #0xa300,d0
 	move.w #0x80,d1
 	bsr.w vdp_copy_to_vram
-	lea.l (ram_script_stack).l,a0
+	lea.l (ram_inv_nametable).l,a0
 	move.w #0xa400,d0
 	bsr.w vdp_copy_to_vram
 	tst.b (0xff0aa0).l
@@ -3585,7 +3597,7 @@ loc_0038DC:
 	bsr.w sub_00B0B8
 	btst.l d0,(ram_actors_anim_done).l
 	beq.s loc_0038DC
-	bsr.w script_subop_03
+	bsr.w script_subop_03_fade_out
 	move.w #0x8aa3,(vdp_ctrl).l
 	dc.w 0x203c,0x0000,0x007b	| move.l #$7b, d0
 	bsr.w sound_stop
@@ -3623,7 +3635,7 @@ loc_00395E:
 	move.l #0x0,(a0)+
 	move.l #0x0,(a0)+
 	dbra d3,loc_00394A
-	lea.l (ram_script_stack).l,a0
+	lea.l (ram_inv_nametable).l,a0
 	move.w (0xff0a9a).l,d4
 	move.w #0x7,d3
 loc_003996:
@@ -3923,23 +3935,23 @@ dat_003D86:
 	.incbin "baserom.md",0x3D86,0x10
 dat_003D96:
 	.incbin "baserom.md",0x3D96,0x100
-script_subop_2F:
+script_subop_2F_then_talk:
 	bset.b #0x3,(ram_script_flags2).l
-	move.w (ram_objects+12).l,(0xff06da).l
+	move.w (ram_objects+12).l,(ram_then_talk_obj).l
 	rts
-script_subop_30:
+script_subop_30_no_idle_anim_on:
 	bset.b #0x7,(ram_09e9).l
 	rts
-script_subop_31:
+script_subop_31_no_idle_anim_off:
 	bclr.b #0x7,(ram_09e9).l
 	rts
-script_subop_2D:
+script_subop_2D_flag09e9_6_on:
 	bset.b #0x6,(ram_09e9).l
 	rts
-script_subop_2E:
+script_subop_2E_flag09e9_6_off:
 	bclr.b #0x6,(ram_09e9).l
 	rts
-script_subop_2B:
+script_subop_2B_shaggy_alt_sprite_on:
 	bset.b #0x4,(ram_09e9).l
 	bclr.b #0x0,(ram_actors_depth_on).l
 	move.l #0xb5d02,(0xff0470).l
@@ -3951,22 +3963,22 @@ loc_003EFC:
 	beq.w loc_003EFC
 	bclr.b #0x7,(ram_vblank_flags).l
 	rts
-script_subop_2C:
+script_subop_2C_shaggy_alt_sprite_off:
 	bset.b #0x0,(ram_actors_depth_on).l
 	move.l #0x32700,(0xff0470).l
 	bclr.b #0x4,(ram_09e9).l
 	bclr.b #0x7,(ram_vblank_flags).l
 	rts
-script_subop_29:
+script_subop_29_flag09e9_3_on:
 	bset.b #0x3,(ram_09e9).l
 	rts
-script_subop_2A:
+script_subop_2A_flag09e9_3_off:
 	bclr.b #0x3,(ram_09e9).l
 	rts
-script_subop_28:
+script_subop_28_talk_end:
 	bset.b #0x2,(ram_script_flags2).l
 	rts
-script_subop_27:
+script_subop_27_minigame_throw:
 	bset.b #0x2,(ram_09e9).l
 	moveq #0x0,d1
 	move.b #0xff,(ram_pad1).l
@@ -4057,7 +4069,7 @@ loc_004086:
 	bsr.w sound_play
 	tst.w (ram_objects+12).l
 	beq.s loc_0040AE
-	bset.b #0x2,(0xff0abf).l
+	bset.b #0x2,(ram_actors_frozen).l
 loc_0040AE:
 	bsr.w wait_vblank
 	subq.w #0x1,(ram_actor_y2+4).l
@@ -4066,27 +4078,27 @@ loc_0040AE:
 	bclr.b #0x6,(ram_vblank_flags).l
 	bsr.w palette_read_cram
 	bset.b #0x6,(ram_vblank_flags).l
-	bclr.b #0x2,(0xff0abf).l
+	bclr.b #0x2,(ram_actors_frozen).l
 	rts
-script_subop_26:
+script_subop_26_test_shaggy_path:
 	move.w #0x0,(ram_objects+12).l
 	btst.b #0x0,(ram_actors_on_path).l
 	bne.s loc_0040FA
 	move.w #0x1,(ram_objects+12).l
 loc_0040FA:
 	rts
-script_subop_25:
+script_subop_25_wait_shaggy_path:
 	bsr.w sub_00B0B8
 	btst.b #0x0,(ram_actors_on_path).l
-	bne.s script_subop_25
+	bne.s script_subop_25_wait_shaggy_path
 	rts
-script_subop_23:
+script_subop_23_flag09e9_1_on:
 	bset.b #0x1,(ram_09e9).l
 	rts
-script_subop_24:
+script_subop_24_flag09e9_1_off:
 	bclr.b #0x1,(ram_09e9).l
 	rts
-script_subop_22:
+script_subop_22_shaggy_anim_by_x:
 	move.w #0x49,d1
 	move.w (ram_shaggy_x).l,d0
 	cmpi.w #0x114,d0
@@ -4101,7 +4113,7 @@ loc_004148:
 	btst.b #0x0,(ram_actors_anim_looped).l
 	beq.w loc_004148
 	rts
-script_subop_21:
+script_subop_21_wait_dpad_choice:
 	bsr.w sub_00B0B8
 	btst.b #0x2,(ram_pad1).l
 	bne.s loc_004172
@@ -4114,18 +4126,18 @@ loc_004172:
 	bra.s loc_004198
 loc_004186:
 	btst.b #0x1,(ram_pad1).l
-	bne.s script_subop_21
+	bne.s script_subop_21_wait_dpad_choice
 	move.w #0x2,(ram_objects+12).l
 loc_004198:
 	bset.b #0x0,(ram_actors_path_once).l
 	rts
-script_subop_1F:
+script_subop_1F_flag09e9_0_on:
 	bset.b #0x0,(ram_09e9).l
 	rts
-script_subop_20:
+script_subop_20_flag09e9_0_off:
 	bclr.b #0x0,(ram_09e9).l
 	rts
-script_subop_1E:
+script_subop_1E_ending_credits:
 	move.w #0x1e,d0
 	bsr.w wait_vblanks
 	bset.b #0x1,(ram_09eb).l
@@ -4181,16 +4193,16 @@ loc_004258:
 	bclr.b #0x6,(ram_vblank_flags).l
 	bsr.w palette_read_cram
 	bra.w soft_reset
-script_subop_1A:
+script_subop_1A_pal_flash_on:
 	move.w #0xffff,(0xff08aa).l
 	move.w #0x1,(0xff08ac).l
 	move.b (dat_03247C).l,(0xff0acf).l
 	bset.b #0x7,(ram_09e8).l
 	rts
-script_subop_1B:
+script_subop_1B_pal_flash_off:
 	bclr.b #0x7,(ram_09e8).l
 	rts
-script_subop_17:
+script_subop_17_overlay_a_on:
 	move.w #0x7f8,(0xff08a4).l
 	move.w #0xff00,d0
 	move.w #0x80,d1
@@ -4201,7 +4213,7 @@ script_subop_17:
 	bset.b #0x5,(ram_09e8).l
 	bset.b #0x4,(ram_09e8).l
 	rts
-script_subop_18:
+script_subop_18_overlay_b_on:
 	move.w #0x47f8,(0xff08a4).l
 	move.w #0xff00,d0
 	move.w #0x40,d1
@@ -4214,13 +4226,13 @@ script_subop_18:
 	bset.b #0x5,(ram_09e8).l
 	bset.b #0x4,(ram_09e8).l
 	rts
-script_subop_19:
+script_subop_19_overlay_off:
 	bclr.b #0x4,(ram_09e8).l
 	rts
-script_subop_15:
+script_subop_15_follow_mode_on:
 	bsr.w sub_00B0B8
 	btst.b #0x0,(ram_actors_anim_done).l
-	beq.w script_subop_15
+	beq.w script_subop_15_follow_mode_on
 	moveq #0x2,d0
 loc_00433E:
 	btst.l d0,(ram_actors_active).l
@@ -4234,10 +4246,10 @@ loc_004350:
 	clr.b (0xff0ac6).l
 	bsr.w wait_vblank
 	rts
-script_subop_16:
+script_subop_16_follow_mode_off:
 	bclr.b #0x3,(ram_09e8).l
 	rts
-script_subop_13:
+script_subop_13_sfx_random_a:
 	moveq #0x2,d0
 	bsr.w rng_next
 	tst.w d0
@@ -4247,7 +4259,7 @@ script_subop_13:
 loc_004386:
 	dc.w 0x203c,0x0000,0x0025	| move.l #$25, d0
 	bra.w sound_play
-script_subop_14:
+script_subop_14_sfx_random_b:
 	moveq #0x2,d0
 	bsr.w rng_next
 	tst.w d0
@@ -4257,13 +4269,13 @@ script_subop_14:
 loc_0043A2:
 	dc.w 0x203c,0x0000,0x0028	| move.l #$28, d0
 	bra.w sound_play
-script_subop_11:
+script_subop_11_flag09e8_2_on:
 	bset.b #0x2,(ram_09e8).l
 	rts
-script_subop_12:
+script_subop_12_flag09e8_2_off:
 	bclr.b #0x2,(ram_09e8).l
 	rts
-script_subop_0F:
+script_subop_0F_camera_pan_right:
 	bset.b #0x1,(ram_09e8).l
 	bclr.b #0x0,(ram_camera_x+1).l
 	move.w (ram_camera_x).l,d0
@@ -4287,7 +4299,7 @@ loc_004418:
 	bne.s loc_004418
 loc_004426:
 	rts
-script_subop_10:
+script_subop_10_camera_pan_left:
 	bset.b #0x1,(ram_09e8).l
 	bclr.b #0x0,(ram_camera_x+1).l
 	move.w (ram_camera_x).l,d0
@@ -4306,23 +4318,23 @@ loc_004470:
 	bne.w loc_004470
 loc_004480:
 	rts
-script_subop_0D:
+script_subop_0D_flag09e8_1_on:
 	bset.b #0x1,(ram_09e8).l
 	rts
-script_subop_0E:
+script_subop_0E_flag09e8_1_off:
 	bclr.b #0x1,(ram_09e8).l
 	rts
-script_subop_09:
+script_subop_09_scooby_away:
 	bset.b #0x7,(ram_verb_state).l
-	bset.b #0x1,(0xff0abf).l
+	bset.b #0x1,(ram_actors_frozen).l
 	rts
-script_subop_0A:
+script_subop_0A_scooby_back:
 	bclr.b #0x7,(ram_verb_state).l
-	bclr.b #0x1,(0xff0abf).l
+	bclr.b #0x1,(ram_actors_frozen).l
 	rts
-script_subop_07:
+script_subop_07_closeup_picture:
 	tst.b (0xff0ab6).l
-	bne.s script_subop_07
+	bne.s script_subop_07_closeup_picture
 	bset.b #0x6,(ram_verb_state).l
 	lea.l (dat_031DFA).l,a0
 	lea.l (ram_lzss_ring).l,a1
@@ -4353,36 +4365,36 @@ loc_004518:
 	addi.w #0x6a,d0
 	dbra d2,loc_004514
 	rts
-script_subop_08:
+script_subop_08_closeup_off:
 	bclr.b #0x6,(ram_verb_state).l
 	rts
-script_subop_01:
+script_subop_01_end:
 	bset.b #0x0,(ram_script_flags).l
 	rts
-script_subop_02:
+script_subop_02_room_fade_in:
 	bsr.w room_fade_in
 	rts
-script_subop_03:
+script_subop_03_fade_out:
 	move.b (ram_vblank_flags).l,-(sp)
 	bclr.b #0x6,(ram_vblank_flags).l
 	bsr.w palette_read_cram
 	move.b (sp)+,(ram_vblank_flags).l
 	rts
-script_subop_04:
+script_subop_04_wait_button:
 	bsr.w run_object_events
 	bsr.w sub_00B0B8
 	btst.b #0x6,(ram_pad1).l
 	bne.w loc_00458A
 	btst.b #0x6,(ram_pad_last).l
-	beq.w script_subop_04
+	beq.w script_subop_04_wait_button
 	rts
 loc_00458A:
 	btst.b #0x4,(ram_pad1).l
-	bne.w script_subop_04
+	bne.w script_subop_04_wait_button
 	btst.b #0x4,(ram_pad_last).l
-	beq.w script_subop_04
+	beq.w script_subop_04_wait_button
 	rts
-script_subop_05:
+script_subop_05_fullscreen_picture:
 	btst.b #0x1,(ram_game_state).l
 	beq.w loc_0045B2
 	rts
@@ -4500,7 +4512,7 @@ loc_004716:
 	bsr.w vdp_dma_cram
 	bset.b #0x6,(ram_vblank_flags).l
 loc_0047A6:
-	bsr.w script_subop_1D
+	bsr.w script_subop_1D_bar_hide
 	rts
 sub_0047AC:
 	bclr.b #0x3,(ram_vblank_flags).l
@@ -4536,14 +4548,14 @@ loc_004806:
 	addi.w #0x40,d0
 	dbra d3,loc_004802
 	rts
-script_subop_06:
+script_subop_06_bar_show_if_hidden:
 	btst.b #0x1,(ram_game_state).l
 	bne.w loc_004828
 	rts
 loc_004828:
-	bsr.w script_subop_1C
+	bsr.w script_subop_1C_bar_show
 	rts
-script_subop_1D:
+script_subop_1D_bar_hide:
 	bset.b #0x1,(ram_game_state).l
 loc_004836:
 	tst.b (ram_bar_slide).l
@@ -4554,10 +4566,10 @@ loc_00484C:
 	bsr.w sub_00B0B8
 	tst.b (ram_bar_slide).l
 	bpl.w loc_00484C
-	move.w d4,(0xff0876).l
+	move.w d4,(ram_bar_saved).l
 	rts
-script_subop_1C:
-	move.w (0xff0876).l,d4
+script_subop_1C_bar_show:
+	move.w (ram_bar_saved).l,d4
 	move.b #0x10,(ram_bar_slide).l
 loc_004870:
 	bsr.w sub_00B0B8
@@ -4578,7 +4590,7 @@ loc_00488C:
 	bsr.w font_tiles_load
 	bclr.b #0x1,(ram_game_state).l
 	rts
-script_op_0D:
+script_op_0D_sound:
 	beq.w loc_0048D2
 	move.w (0x2,a5),d0
 	bpl.s loc_0048CC
@@ -4592,7 +4604,7 @@ loc_0048CC:
 loc_0048D2:
 	lea.l (0x4,a5),a5
 	rts
-script_op_15:
+script_op_15_wait:
 	beq.w loc_0048F2
 	move.w (0x2,a5),(ram_frame_countdown).l
 loc_0048E4:
@@ -4602,7 +4614,7 @@ loc_0048E4:
 loc_0048F2:
 	lea.l (0x4,a5),a5
 	rts
-script_op_20:
+script_op_20_stop_path:
 	beq.w loc_00493E
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -4628,7 +4640,7 @@ loc_004938:
 loc_00493E:
 	lea.l (0x4,a5),a5
 	rts
-script_op_21:
+script_op_21_path:
 	beq.w loc_0049B0
 	move.w (0x4,a5),d0
 	subq.w #0x1,d0
@@ -4662,7 +4674,7 @@ loc_0049B0:
 	move.w (0x2,a5),d0
 	lea.l (0x8,a5,d0.w),a5
 	rts
-script_op_0E:
+script_op_0E_walk_spawn:
 	beq.w loc_004B10
 	move.w d7,-(sp)
 	move.w (0x2,a5),d0
@@ -4850,7 +4862,7 @@ loc_004C10:
 	bne.w loc_004C10
 loc_004C1E:
 	rts
-script_op_0F:
+script_op_0F_walk_obj:
 	beq.w sub_004D7A
 	move.w d7,-(sp)
 	move.w (0x2,a5),d0
@@ -4953,7 +4965,7 @@ sub_004D78:
 sub_004D7A:
 	lea.l (0xc,a5),a5
 	rts
-script_op_10:
+script_op_10_say:
 	beq.w loc_004EDE
 	move.w d7,-(sp)
 	move.w (0x2,a5),d0
@@ -5041,7 +5053,7 @@ loc_004EDC:
 loc_004EDE:
 	lea.l (0x8,a5),a5
 	rts
-script_op_18:
+script_op_18_goto_room_cut:
 	beq.w loc_004F08
 	move.w (0x2,a5),(ram_room_index).l
 	move.w (0x6,a5),(ram_shaggy_facing).l
@@ -5052,7 +5064,7 @@ script_op_18:
 loc_004F08:
 	lea.l (0x8,a5),a5
 	rts
-script_op_11:
+script_op_11_goto_room:
 	beq.w loc_004F4A
 	move.w (0x2,a5),(ram_room_index).l
 	move.w (0x6,a5),(ram_shaggy_facing).l
@@ -5067,7 +5079,7 @@ script_op_11:
 loc_004F4A:
 	lea.l (0x8,a5),a5
 	rts
-script_op_12:
+script_op_12_set_hotspot:
 	beq.w loc_004F6A
 	move.w (0x2,a5),d0
 	subq.w #0x3,d0
@@ -5077,7 +5089,7 @@ script_op_12:
 loc_004F6A:
 	lea.l (0x6,a5),a5
 	rts
-script_op_1F:
+script_op_1F_wait_stop:
 	beq.w loc_004FB8
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -5102,7 +5114,7 @@ loc_004FA0:
 loc_004FB8:
 	lea.l (0x4,a5),a5
 	rts
-script_op_17:
+script_op_17_wait_anim:
 	beq.w loc_004FFC
 	move.w (0x2,a5),d0
 	subq.w #0x1,d0
@@ -6085,7 +6097,7 @@ inventory_upload:
 	lea.l (ram_game_state+512).l,a0
 	bsr.w vdp_dma_vram
 	move.w #0x5,d2
-	lea.l (ram_script_stack).l,a0
+	lea.l (ram_inv_nametable).l,a0
 	move.w #0x14,d1
 	move.w #0xaacc,d0
 loc_005CDA:
@@ -6109,7 +6121,7 @@ loc_005D0E:
 inventory_build_page:
 	movem.l a5-a6,-(sp)
 	moveq #0x8,d2
-	lea.l (ram_script_stack).l,a5
+	lea.l (ram_inv_nametable).l,a5
 	lea.l (ram_inv_list).l,a0
 	movea.l a0,a1
 	moveq #0x0,d0
@@ -6374,7 +6386,7 @@ loc_0060BA:
 loc_0060CA:
 	btst.b #0x7,(ram_vblank_flags).l
 	bne.w loc_006114
-	btst.b #0x0,(0xff0abf).l
+	btst.b #0x0,(ram_actors_frozen).l
 	bne.s loc_006114
 	btst.b #0x2,(ram_09e8).l
 	bne.s loc_006114
@@ -6543,7 +6555,7 @@ loc_00638C:
 	subq.w #0x1,d3
 	bra.w camera_follow
 loc_0063BA:
-	btst.b #0x0,(0xff0abf).l
+	btst.b #0x0,(ram_actors_frozen).l
 	bne.w actors_update
 	btst.b #0x4,(ram_09e9).l
 	bne.w verb_menu_open_check
@@ -7042,7 +7054,7 @@ loc_006C70:
 	move.w #0x0,(ram_target2_obj).l
 	btst.b #0x6,(ram_09e9).l
 	bne.s loc_006CC6
-	btst.b #0x0,(0xff0abf).l
+	btst.b #0x0,(ram_actors_frozen).l
 	bne.s loc_006CF8
 	btst.b #0x4,(ram_09e9).l
 	beq.s loc_006CD8
@@ -7660,7 +7672,7 @@ loc_007616:
 	move.w (a0)+,(a1)+
 	dbra d2,loc_007616
 	bclr.b #0x6,(ram_verb_state).l
-	move.b #0x0,(0xff0acd).l
+	move.b #0x0,(ram_palcyc_on).l
 	mulu.w #0x14,d0
 	movea.l (0x8,a5),a3
 	adda.l d0,a3
@@ -7994,7 +8006,7 @@ loc_007A74:
 	tst.l (sp)+
 	rts
 room_setup_actors:
-	andi.b #0x3,(0xff0abf).l
+	andi.b #0x3,(ram_actors_frozen).l
 	clr.b (ram_actors_path_once).l
 	clr.b (ram_actors_on_path).l
 	move.w #0x64,(ram_scooby_wander_timer).l
@@ -8082,7 +8094,7 @@ loc_007BD2:
 	clr.b (0xff0ab9).l
 	btst.b #0x7,(ram_verb_state).l
 	beq.s loc_007C02
-	bset.b #0x1,(0xff0abf).l
+	bset.b #0x1,(ram_actors_frozen).l
 loc_007C02:
 	rts
 object_timers:
@@ -8432,7 +8444,7 @@ sub_00801A:
 	clr.b (ram_actors_moving).l
 	clr.b (0xff0ab9).l
 	clr.b (ram_actors_behind).l
-	clr.b (0xff0abf).l
+	clr.b (ram_actors_frozen).l
 	clr.b (ram_actors_no_zone).l
 	move.w #0x4,(ram_cur_index).l
 	move.w #0x4,(ram_484a).l
@@ -11045,9 +11057,9 @@ palette_cycle:
 	move.w #0x8,d3
 	moveq #0x4,d4
 loc_00A7D4:
-	btst.l d4,(0xff0acd).l
+	btst.l d4,(ram_palcyc_on).l
 	beq.w loc_00A820
-	lea.l (0xff0890).l,a1
+	lea.l (ram_palcyc+20).l,a1
 	subq.w #0x1,(0xa,a1,d3.w)
 	bpl.w loc_00A820
 	move.w (0x0,a1,d3.w),(0xa,a1,d3.w)
@@ -11345,7 +11357,7 @@ loc_00AC0A:
 	move.w d0,(a0)+
 	move.l #0x0,(a0)+
 	addq.w #0x4,d5
-	move.b (0xff0abf).l,(0xff0aba).l
+	move.b (ram_actors_frozen).l,(0xff0aba).l
 	move.b (ram_actors_active).l,d0
 	eori.b #0xff,(0xff0aba).l
 	and.b d0,(0xff0aba).l
