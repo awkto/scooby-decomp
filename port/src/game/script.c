@@ -470,7 +470,11 @@ static void set_hotspot(hle_ctx *ctx)
 	}
 	ctx->a[5] += 6;
 }
+/* $004F50 (op $12) is the same code as $002E7E but is never executed on any route, so it
+ * has no difftest states: not registered (build with -DSCRIPT_UNTESTED to enable). */
+#ifdef SCRIPT_UNTESTED
 HLE_FUNC(0x004F50, script_op_set_hotspot, 70) { set_hotspot(ctx); }
+#endif
 HLE_FUNC(0x002E7E, script_op_set_hotspot2, 70) { set_hotspot(ctx); }
 
 /* $002AD0 op $16 freeze [16][who]: set the actor's bit in $FF0ABF with interrupts off.
@@ -500,7 +504,7 @@ HLE_FUNC(0x002AD0, script_op_freeze, 80)
 
 /* $00255E op $1C test_moving / $002510 op $1D test_anim_done [op][who]:
  * $FF2A00 bit 2 (resp. 3) = the actor's bit in ram_actors_moving (resp. anim_done) */
-static void test_actor_bit(hle_ctx *ctx, int flagbit, uint32_t bits_addr)
+static __attribute__((unused)) void test_actor_bit(hle_ctx *ctx, int flagbit, uint32_t bits_addr)
 {
 	if (exec_mode(ctx)) {
 		bit_clr(ctx, RAM_GAME_STATE, flagbit);
@@ -531,8 +535,11 @@ static void test_actor_bit(hle_ctx *ctx, int flagbit, uint32_t bits_addr)
 	}
 	ctx->a[5] += 4;
 }
+/* ops $1C/$1D are never executed on any route (no difftest states): not registered. */
+#ifdef SCRIPT_UNTESTED
 HLE_FUNC(0x00255E, script_op_test_moving, 90) { test_actor_bit(ctx, 2, RAM_ACTORS_MOVING); }
 HLE_FUNC(0x002510, script_op_test_anim_done, 90) { test_actor_bit(ctx, 3, RAM_ACTORS_ANIMDONE); }
+#endif
 
 /* $002626 op $1A pal_cycle [1A][slot][first][last][speed]: slot 0-4 of the VBlank palette
  * cycler; speed < 0 turns the slot off and DMAs colours first..last-1 of the target palette
