@@ -32,23 +32,25 @@ Key tricks:
   generic refusals `"I can't open ."` are at `$2FECC`). `said()` returns them in order. No OCR needed.
 * **Routes are flat and deterministic.** Savestates are *not* bit-exact (a route recorded across `load`s replayed to a
   different state), so exploration may use savestates but the route generator runs in *strict* mode: no loads, no scans,
-  object points from the JSON cache (`world = crosshair + camera`), everything it presses is recorded. The only extras
-  the recorder emits are `poke FF06DC/FF06DE` (crosshair position), which is plain input the game reads every frame.
+  object hit points computed from the ROM hotspot rectangles and probed with the live hit test (`world = crosshair + camera`, plus
+  the +8/-8 hit-cell offset, see below; the points.json cache is only the fallback), and **everything the driver does to the
+  emulator is recorded**, including the crosshair pokes and frames of a probe (a replay that skipped them diverged).
 * Interaction recipe (all verified): `press A` enters/leaves pointer mode; poke the crosshair onto a verb cell and hold B
   4+ frames after >= 10 settle frames (shorter settle loses the click); poke it onto an object, check `$FF06AE`, press B;
   wait until `$FF09DC` bit 7 has been clear for 30 frames. **Use/Give**: select the verb, `press C` (inventory view,
   24 frames), put the crosshair on the item slot (slot c = 40*(c+1)+20, y 176/200), `press B`, `press C` back, click
   the target (the target then lands in `$FF06B6`, not `$FF06AE`). Two-object mode only starts if the *first* object's
   script has a Use/Give block with a second object (see `combos.py`), otherwise the verb fires at once on the item.
-* Walking: D-pad is ~0.35 px/frame; floors are irregular, so `walk_to` moves axis-wise with sidesteps. Room exits are
-  walked through (`exit_via`): after reaching the exit object keep pressing towards it. Pointer coordinates: `world =
-  crosshair + camera ($FF06CA/$FF06CE)`, Shaggy's world y ~ crosshair y - 8.
+* Walking: `walk_to` / `go_to` / `exit_via` plan on the game's collision map (`walkplan.py`, details in the Blake section below) and
+  fall back to the old greedy axis-wise walker with sidesteps when the model finds no way (exits just outside the collision fence).
+  Room exits are walked through (`exit_via`): after reaching the exit's hotspot keep pressing towards it. Pointer coordinates: the hit
+  cell is `((px+8+cam_x)>>3, (py-8+cam_y)>>3)` with `cam = $FF06CA/$FF06CE`.
 
 ## Routes (`tools/scripts/story/`)
 
 All start at power-on. "warp" = through the CONTINUE password screen with the initial story state (script from
 `tools/scripts/rooms/`), i.e. an isolated puzzle, not a from-the-start natural route. End states are asserted by the
-generator and re-checked with `verify.py` (batch replay) - all six matched.
+generator and re-checked with `verify.py` (batch replay) - all eight matched.
 
 | route | start | what it does | end state |
 |---|---|---|---|
@@ -510,3 +512,14 @@ in `$E1..$F6`; in the C VBlank the V counter apparently never gets there (not ch
 cleared and the game stays at `$FF09DC` = `$E4` (action pending, verb Take selected; the PC alternates `$5D0E/$5D16` for
 thousands of frames) and further clicks are ignored. More frames never help, so it is not a timing artefact. The fix belongs to
 the vblank owner (e.g. let the HLE'd `$5C8E` ignore the beam test).
+
+**Result of the long routes (#29, after merging main with the later replacements)**: `port/tools/storytest.sh long` passes with the
+plain `--hle all` (no `-vblank_main` exclusion needed any more; the Take/inventory hang above no longer occurs): `w0_full` none == all
+over 132 checkpoints (power-on to the credits, end room 0), `w1_part` none == all over 39 checkpoints (end room 7). No bisect was needed,
+so there is no divergence to report. What the long routes added for the closed loop: every probe, hit test and wait is decided from RAM
+(the pointer hit test, `$FF09DE` bit 0 for the second-object mode, `$FF06EE` for the TALK menu, the claw and pistol offsets of the
+Crane Game, both meters of the Bumper Car duel), so emulated-time differences between the replacements and the 68k code do not matter;
+a step that waited a fixed number of frames would have been fragile (the first fixed-wait drafts of the hose, Poison Oak and Kid steps were).
+Two timing-sensitive spots that are *handled*, not hidden: the main loop sets the two-object flag a few frames after the item click (the
+driver polls up to 36 frames), and Scooby trails Shaggy by an unpredictable distance (the driver waits until he is on screen and standing still
+before using him as a click target).
