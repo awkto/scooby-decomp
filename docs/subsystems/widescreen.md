@@ -15,6 +15,8 @@ F10                                                    # widescreen on / off
 --options ws_stats=1  (or SCOOBY_WS_STATS=1)           # counters at exit;  SCOOBY_WS_DEBUG=1: rule changes
 ```
 
+`widescreen` and `ws_stats` are entries of the options table (`port/src/options.c`, so also
+`widescreen = 21:9` in `~/.config/scooby-decomp/scooby.ini`).
 Needs the native renderer (the default). Scripted / batch runs (`--script`, `--frames`,
 `--screenshot`) stay 4:3 unless they pass `--options widescreen=...`, so every existing test, its
 screenshots and its mouse coordinates are unchanged. Script commands `fmouse X Y` / `fclick B X Y`
