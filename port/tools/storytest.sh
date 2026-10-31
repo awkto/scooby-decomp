@@ -29,7 +29,7 @@ run_one() { # ROUTE SPEC TAG [PORT_OPTIONS]
 	d="$out/$1.$3"
 	mkdir -p "$d"
 	SCOOBY_PORT_OPTS="${4:-}" SCOOBY_STATE_LOG="${4:+$out/$1.$3.state}" SCOOBY_FRAME_HASH_LOG="${4:+$out/$1.$3.fhash}" \
-	SCOOBY_BACKEND="port:$2" python3 tools/py/session.py serve "$d" >"$d.log" 2>&1 &
+	SCOOBY_BACKEND="${SIDE_BACKEND:-port}:$2" python3 tools/py/session.py serve "$d" >"$d.log" 2>&1 &
 	sp=$!
 	n=0; while [ ! -S "$d/sock" ] && [ $n -lt 100 ]; do sleep 0.2; n=$((n+1)); done
 	# write regenerated routes under runs/, never over the committed tools/scripts/story/*.txt (mousetest reads those)
@@ -112,8 +112,11 @@ if [ -n "${STORYTEST_WS:-}" ]; then
 	exit $fail
 fi
 
+# STORYTEST_NATIVE=1 (#24): the second side is the native runner (no 68k instruction executed;
+# SCOOBY_NATIVE_BIN=build/port/scooby for the build without a 68k core), compared with --hle none
 for r in $routes; do
-	run_one "$r" none none; run_one "$r" "${STORYTEST_HLE:-all}" all
+	SIDE_BACKEND=; run_one "$r" none none
+	SIDE_BACKEND=${STORYTEST_NATIVE:+native}; run_one "$r" "${STORYTEST_HLE:-all}" all; SIDE_BACKEND=
 	if [ ! -s "$out/$r.none.cp.json" ] || [ ! -s "$out/$r.all.cp.json" ]; then
 		echo "FAIL $r: route did not complete (see $out/$r.*.out)"; fail=1; continue; fi
 	if ! cmp_cp "$out/$r.none.cp.json" "$out/$r.all.cp.json"; then
@@ -124,7 +127,7 @@ for r in $routes; do
 	n=$(python3 -c "import json;print(len(json.load(open('$out/$r.none.cp.json'))))")
 	end=$(python3 -c "import json;c=json.load(open('$out/$r.none.cp.json'))[-1];print(c['room'])")
 	exp=$(grep '^# end state' "tools/scripts/story/$r.txt" | sed 's/.* room=\([0-9]*\).*/\1/')
-	echo "PASS $r: none == all over $n checkpoints, end room $end"
+	echo "PASS $r: none == ${STORYTEST_NATIVE:+native }all over $n checkpoints, end room $end"
 	[ "$end" = "$exp" ] || echo "  note: end room differs from harness route header (room $exp)"
 done
 exit $fail

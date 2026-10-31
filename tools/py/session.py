@@ -22,11 +22,17 @@ def serve(d):
             os.remove(p)
     os.mkfifo(ctl)
     # backend: default the GPGX harness; SCOOBY_BACKEND=port:HLESPEC drives build/port/scoobyport instead
+    # SCOOBY_BACKEND=native:HLESPEC: the native runner (#24, no 68k instruction executed): SCOOBY_NATIVE_BIN
+    # (the scooby build) or build/port/scoobyport with SCOOBY_NATIVE=1
     be = os.environ.get("SCOOBY_BACKEND", "harness")
-    if be.startswith("port"):
+    if be.startswith("port") or be.startswith("native"):
         hle = be.split(":", 1)[1] if ":" in be else "all"
         env = dict(os.environ, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
-        cmd = ["build/port/scoobyport", "--hle", hle, "--script", ctl, "--outdir", d, "--frames", "0"]
+        binary = "build/port/scoobyport"
+        if be.startswith("native"):
+            env["SCOOBY_NATIVE"] = "1"
+            binary = os.environ.get("SCOOBY_NATIVE_BIN") or binary
+        cmd = [binary, "--hle", hle, "--script", ctl, "--outdir", d, "--frames", "0"]
         if os.environ.get("SCOOBY_PORT_OPTS"):     # e.g. widescreen=16:9 (port/tools/storytest.sh, STORYTEST_WS)
             cmd += ["--options", os.environ["SCOOBY_PORT_OPTS"]]
         h = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=open(os.path.join(d, "harness.err"), "w"))

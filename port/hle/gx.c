@@ -115,3 +115,19 @@ void gx_set_render_hooks(void (*line)(int), void (*parse)(int), void (*remap)(in
 uint8_t *gx_sat(void) { return sat; }
 int gx_viewport_w(void) { return bitmap.viewport.w; }
 int gx_viewport_h(void) { return bitmap.viewport.h; }
+
+/* 68k cycles left in the CPU's current time slice of the frame loop (hle_idle) */
+int gx_m68k_slice_left(void)
+{
+	if (!m68k.cycle_end || (int)m68k.cycle_end <= m68k.cycles)
+		return 0;
+	return ((int)m68k.cycle_end - m68k.cycles + 6) / 7;
+}
+
+/* instructions the 68k core executed (gpgx-native.patch; the native build has no core: 0) */
+#ifdef SCOOBY_NO_68K
+unsigned long gx_m68k_insn_count(void) { return 0; }
+#else
+extern unsigned long m68k_insn_count;
+unsigned long gx_m68k_insn_count(void) { return m68k_insn_count; }
+#endif

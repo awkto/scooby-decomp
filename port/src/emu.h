@@ -55,6 +55,11 @@ typedef void (*emu_hook_fn)(int type, int width, unsigned addr, unsigned value);
 void emu_add_hook(emu_hook_fn fn);
 void emu_remove_hook(emu_hook_fn fn);
 
+/* the native runner (#24, docs/native.md): true when no 68k instruction is executed (SCOOBY_NATIVE=1,
+ * or the scooby build, which has no 68k core). Every reached address must then be a C block. */
+bool emu_native(void);
+void native_init(void);
+
 /* misc state for overlays/tools */
 uint8_t emu_ram8(uint32_t addr);
 uint16_t emu_ram16(uint32_t addr);

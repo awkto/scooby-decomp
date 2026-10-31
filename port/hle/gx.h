@@ -25,6 +25,8 @@ int gx_m68k_cycles(void);        /* master clocks (7 per 68k cycle) */
 void gx_vdp_fifo_clamp(void);    /* FIFO read-out stamps <= CPU clock (after a rewind) */
 void gx_m68k_set_cycles(int c);  /* rewind the CPU clock (hle.c, after nested calls) */
 void gx_m68k_clear_irq(void);
+int gx_m68k_slice_left(void);    /* 68k cycles left in the CPU's current frame-loop slice */
+unsigned long gx_m68k_insn_count(void); /* instructions executed by the 68k core (#24) */
 void gx_m68k_resync_irq(void);   /* int level = what the VDP asserts (after holding it off) */
 
 /* VDP / Z80 */

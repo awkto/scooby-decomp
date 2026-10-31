@@ -1,0 +1,91 @@
+--- a/core/m68k/m68kcpu.c
++++ b/core/m68k/m68kcpu.c
+@@ -41,6 +41,18 @@
+ int (*m68k_hle_handler)(unsigned int pc) = NULL;
+ unsigned int m68k_hle_skip_pc = 0xFFFFFFFF;
+ static int m68k_hle_try(void);
++/* scooby-decomp #24 (gpgx-native.patch): the native runner (port/hle/native.c). While
++ * native_active is set, this core never executes an instruction: m68k_run, m68k_step_one,
++ * the delayed IRQ and the HLE SR access go to the runner, which only runs C blocks.
++ * m68k_insn_count counts the instructions this core executed (the #24 proof: 0). */
++extern int native_active;
++extern void native_run(unsigned int cycles);
++extern int native_step_one(void);
++extern void native_set_irq_delay(unsigned int level);
++extern unsigned int native_get_sr(void);
++extern void native_set_ccr(unsigned int v);
++extern void native_set_sr(unsigned int v);
++unsigned long m68k_insn_count = 0;
+ #endif
+ 
+ 
+@@ -233,6 +245,9 @@
+ /* IRQ latency (Fatal Rewind, Sesame's Street Counting Cafe)*/
+ void m68k_set_irq_delay(unsigned int int_level)
+ {
++#ifdef HOOK_HLE
++  if (native_active) { native_set_irq_delay(int_level); return; }
++#endif
+   /* Prevent reentrance */
+   if (!irq_latency)
+   {
+@@ -249,6 +264,9 @@
+       m68ki_trace_t1() /* auto-disable (see m68kcpu.h) */
+       m68ki_use_data_space() /* auto-disable (see m68kcpu.h) */
+       REG_IR = m68ki_read_imm_16();
++#ifdef HOOK_HLE
++      m68k_insn_count++;
++#endif
+       m68ki_instruction_jump_table[REG_IR]();
+       m68ki_exception_if_trace() /* auto-disable (see m68kcpu.h) */
+       irq_latency = 0;
+@@ -268,6 +286,9 @@
+ 
+ void m68k_run(unsigned int cycles) 
+ {
++#ifdef HOOK_HLE
++  if (native_active) { native_run(cycles); return; }
++#endif
+   /* Make sure CPU is not already ahead */
+   if (m68k.cycles >= cycles)
+   {
+@@ -324,6 +345,9 @@
+     }
+ 
+     /* Execute instruction */
++#ifdef HOOK_HLE
++    m68k_insn_count++;
++#endif
+     m68ki_instruction_jump_table[REG_IR]();
+     USE_CYCLES(CYC_INSTRUCTION[REG_IR]);
+ 
+@@ -464,9 +488,9 @@
+ void m68k_bus_write32(unsigned int address, unsigned int value) { m68ki_write_32(address & 0xffffff, value); }
+ 
+ /* SR / CCR access (set_ccr has no side effects; set_sr may switch stacks / take an IRQ) */
+-unsigned int m68k_hle_get_sr(void) { return m68ki_get_sr(); }
+-void m68k_hle_set_ccr(unsigned int value) { m68ki_set_ccr(value); }
+-void m68k_hle_set_sr(unsigned int value) { m68ki_set_sr(value); }
++unsigned int m68k_hle_get_sr(void) { return native_active ? native_get_sr() : m68ki_get_sr(); }
++void m68k_hle_set_ccr(unsigned int value) { if (native_active) native_set_ccr(value); else m68ki_set_ccr(value); }
++void m68k_hle_set_sr(unsigned int value) { if (native_active) native_set_sr(value); else m68ki_set_sr(value); }
+ 
+ /* Execute exactly one instruction (or one HLE handler call), without polling interrupts
+  * first. Safe to call from inside an HLE handler (nested 68k calls): the address error
+@@ -474,6 +498,8 @@
+  * Returns 0 = instruction executed, 1 = HLE handler ran, -1 = address error taken. */
+ int m68k_step_one(void)
+ {
++  if (native_active)
++    return native_step_one();
+   volatile int ret = 0;
+   jmp_buf saved;
+   __builtin_memcpy(saved, m68ki_cpu.aerr_trap, sizeof(jmp_buf));
+@@ -506,6 +532,7 @@
+     m68k.refresh_cycles = m68k.cycles + (128*7);
+     m68k.cycles += (2*7);
+   }
++  m68k_insn_count++;
+   m68ki_instruction_jump_table[REG_IR]();
+   USE_CYCLES(CYC_INSTRUCTION[REG_IR]);
+   m68ki_exception_if_trace(); /* auto-disable (see m68kcpu.h) */

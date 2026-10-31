@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "gx.h"
+#include "native.h"
 
 /* from gpgx-hle.patch */
 extern unsigned char *m68k_hle_bitmap;
@@ -37,6 +38,9 @@ typedef struct {
 
 static entry g_ent[MAX_DEFS];
 static int g_n;
+/* address -> entry index + 1, open addressing (dispatch runs for every C block) */
+#define HASH_SIZE 16384
+static uint16_t g_hash[HASH_SIZE];
 static uint8_t g_bitmap[0x400000 >> 4];
 static bool g_installed;
 static unsigned long g_frame_calls;
@@ -45,11 +49,13 @@ uint8_t *hle_rom;
 void (*hle_post_access)(void);
 
 /* ------------------------------------------------------------------ registry */
+static unsigned hash_slot(uint32_t addr) { return (unsigned)((addr * 2654435761u) >> 18) & (HASH_SIZE - 1); }
+
 static entry *find_addr(uint32_t addr)
 {
-	for (int i = 0; i < g_n; i++)
-		if (g_ent[i].def.addr == addr)
-			return &g_ent[i];
+	for (unsigned h = hash_slot(addr); g_hash[h]; h = (h + 1) & (HASH_SIZE - 1))
+		if (g_ent[g_hash[h] - 1].def.addr == addr)
+			return &g_ent[g_hash[h] - 1];
 	return NULL;
 }
 
@@ -78,6 +84,10 @@ void hle_register_def(const hle_def *def)
 	if (g_n == MAX_DEFS)
 		abort();
 	e = &g_ent[g_n++];
+	unsigned h = hash_slot(def->addr);
+	while (g_hash[h])
+		h = (h + 1) & (HASH_SIZE - 1);
+	g_hash[h] = (uint16_t)g_n;
 	e->def = *def;
 	e->enabled = !def->group;
 	bitmap_set(def->addr, e->enabled);
@@ -85,7 +95,7 @@ void hle_register_def(const hle_def *def)
 
 void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles)
 {
-	hle_def d = { addr, name, fn, cycles, "(runtime)", NULL, NULL };
+	hle_def d = { addr, name, fn, cycles, "(runtime)", NULL, NULL, 0 };
 	if (!name) {
 		char *buf = malloc(16);
 		snprintf(buf, 16, "sub_%06X", addr);
@@ -433,8 +443,17 @@ static void nest_end(void)
 		sess_end();
 }
 
+static void no_original(const char *what, uint32_t addr)
+{
+	fprintf(stderr, "native: %s($%06X): the original 68k code cannot run in the native build "
+	        "(a path no route reaches; docs/native.md)\n", what, addr);
+	abort();
+}
+
 static void call68k(hle_ctx *c, uint32_t addr, bool orig)
 {
+	if (orig && native_active)
+		no_original("hle_call68k_orig", addr);
 	/* push the sentinel return address, run until it is popped */
 	hle_ctx save = *c;
 	c->a[7] -= 4;
@@ -480,8 +499,24 @@ void hle_dma_end(void)
 }
 void hle_set_usp(uint32_t usp) { gx_m68k_set_usp(usp); }
 
+/* The original spins here until an interrupt changes something (wait primitives, docs/native.md):
+ * charge the rest of the CPU's current time slice, so the frame loop moves on and the interrupt
+ * is taken at the raster line where the original's spin would have taken it. */
+void hle_idle(hle_ctx *c)
+{
+	if (g_nest > 0 || hle_post_access) {
+		fprintf(stderr, "hle: %s ($%06X) waits for an interrupt inside a nested call / the sandbox\n",
+		        c->def ? c->def->name : "?", c->def ? c->def->addr : 0);
+		abort();
+	}
+	int left = native_active ? native_slice_left() : gx_m68k_slice_left();
+	c->cycles = left > 4 ? left : 4;
+}
+
 void hle_run68k_until(hle_ctx *c, const uint32_t *exits)
 {
+	if (native_active)
+		no_original("hle_run68k_until", c->pc);
 	hle_ctx save = *c;
 	uint32_t sp = c->a[7], start = c->pc;
 	nest_begin();
@@ -561,4 +596,14 @@ void bus_w32(uint32_t a, uint32_t v)
 		gx_vdp_untimed_end();
 	if (hle_post_access)
 		hle_post_access();
+}
+
+/* fatal errors of the native runner (native.c cannot use stdio: GPGX's headers remap it) */
+void native_fatal(const char *what, unsigned pc, unsigned sr, unsigned sp, unsigned ret)
+{
+	fprintf(stderr, "native: %s at $%06X (SR $%04X, SP $%06X, long at SP $%06X).\n"
+	        "        Every 68k address the game reaches must be a registered C block (HLE function or\n"
+	        "        range); nothing is interpreted in the native build (docs/native.md).\n",
+	        what, pc & 0xFFFFFF, sr, sp, ret);
+	abort();
 }

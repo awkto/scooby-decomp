@@ -590,12 +590,13 @@ int main(int argc, char **argv)
 		usage();
 
 	/* resolve targets */
-	const hle_def *targets[512];
+	static const hle_def *targets[4096];
 	int nt = 0;
 	for (int i = 0; i < npos; i++) {
 		if (!strcmp(pos[i], "all")) {
-			for (int k = 0; k < hle_count() && nt < 512; k++)
-				if (hle_get(k)->addr != 0x01006C)   /* hblank_verb_bar: raster wait, not comparable */
+			for (int k = 0; k < hle_count() && nt < 4096; k++)
+				/* hblank_verb_bar: raster wait; HLE_F_WAIT: waits for an interrupt (not comparable) */
+				if (hle_get(k)->addr != 0x01006C && !(hle_get(k)->flags & HLE_F_WAIT))
 					targets[nt++] = hle_get(k);
 			continue;
 		}

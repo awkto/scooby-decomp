@@ -54,7 +54,11 @@ typedef struct hle_def {
 	 * enabled by "all" while its group is active (hle_set_group). Used for C versions that need
 	 * a host feature, e.g. "native" = the native renderer draws the verb-bar split (#25). */
 	const char *group;
+	/* HLE_F_WAIT: the code waits for an interrupt (hle_idle); it cannot run in the difftest
+	 * sandbox, which holds interrupts, so difftest skips it (docs/native.md) */
+	unsigned flags;
 } hle_def;
+enum { HLE_F_WAIT = 1 };
 
 /* Range exit with a declared stack delta (docs/porting.md, "Ranges that push or pop"):
  * the range leaves at ADDR with SP = entry SP + DELTA. DELTA is even, -256..+254: negative
@@ -83,7 +87,7 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
 
 #define HLE_FUNC(ADDR, NAME, CYCLES)                                                    \
 	void NAME(hle_ctx *ctx);                                                            \
-	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__, 0, 0 }; \
+	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__, 0, 0, 0 }; \
 	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
 	{ hle_register_def(&hle_def_##NAME); }                                              \
 	void NAME(hle_ctx *ctx)
@@ -94,7 +98,27 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
 #define HLE_FUNC_GROUP(ADDR, NAME, CYCLES, GROUP)                                       \
 	void NAME(hle_ctx *ctx);                                                            \
 	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__, 0, \
-	                                        (GROUP) };                                  \
+	                                        (GROUP), 0 };                               \
+	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
+	{ hle_register_def(&hle_def_##NAME); }                                              \
+	void NAME(hle_ctx *ctx)
+
+/* HLE_WAIT_FUNC / HLE_WAIT_RANGE: like HLE_FUNC / HLE_RANGE, for code that spins until an
+ * interrupt changes something (wait_vblank, the countdown and flag spins). The spin itself is
+ * hle_idle(ctx) followed by hle_jump to the spin's own address: the block runs again in the next
+ * time slice, after the interrupt (docs/native.md, "Waits"). */
+#define HLE_WAIT_FUNC(ADDR, NAME, CYCLES)                                               \
+	void NAME(hle_ctx *ctx);                                                            \
+	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__, 0, 0, \
+	                                        HLE_F_WAIT };                               \
+	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
+	{ hle_register_def(&hle_def_##NAME); }                                              \
+	void NAME(hle_ctx *ctx)
+#define HLE_WAIT_RANGE(ADDR, NAME, CYCLES, ...)                                         \
+	void NAME(hle_ctx *ctx);                                                            \
+	static const uint32_t hle_exits_##NAME[] = { __VA_ARGS__, 0 };                      \
+	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__,   \
+	                                        hle_exits_##NAME, 0, HLE_F_WAIT };          \
 	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
 	{ hle_register_def(&hle_def_##NAME); }                                              \
 	void NAME(hle_ctx *ctx)
@@ -113,7 +137,7 @@ void hle_register_named(uint32_t addr, const char *name, hle_fn fn, int cycles);
 	void NAME(hle_ctx *ctx);                                                            \
 	static const uint32_t hle_exits_##NAME[] = { __VA_ARGS__, 0 };                      \
 	static const hle_def hle_def_##NAME = { (ADDR), #NAME, NAME, (CYCLES), __FILE__,   \
-	                                        hle_exits_##NAME, 0 };                      \
+	                                        hle_exits_##NAME, 0, 0 };                   \
 	__attribute__((constructor)) static void hle_ctor_##NAME(void)                      \
 	{ hle_register_def(&hle_def_##NAME); }                                              \
 	void NAME(hle_ctx *ctx)
@@ -181,6 +205,9 @@ void hle_call68k_orig(hle_ctx *ctx, uint32_t addr);
  * the final registers into ctx and hle_jump to that exit. Used by difftest --passthrough
  * for HLE_RANGE functions. Interrupts don't fire while it runs. */
 void hle_run68k_until(hle_ctx *ctx, const uint32_t *exits);
+/* Wait for an interrupt (only in HLE_WAIT_* code at top level): charge the rest of the CPU's
+ * current time slice. Follow it with hle_jump(ctx, <the spin's address>). */
+void hle_idle(hle_ctx *ctx);
 /* resume 68k execution at addr instead of returning (tail jump / bra to shared code) */
 static inline void hle_jump(hle_ctx *ctx, uint32_t addr) { ctx->pc = addr; ctx->jumped = 1; }
 /* move An,usp (the user stack pointer is not part of hle_ctx) */

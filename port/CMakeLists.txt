@@ -20,24 +20,35 @@ include(cmake/gpgx.cmake)
 file(GLOB GAME_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/game/*.c")
 file(GLOB MOUSE_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse/*.c")
 file(GLOB RENDER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/render/*.c")
-add_library(scooby_common OBJECT
+set(SCOOBY_COMMON_SOURCES
   src/emu.c src/sha1.c src/saveslot.c src/script.c src/capture.c src/sndlog.c src/ipprof.c
-  hle/hle.c hle/sandbox.c hle/gx.c
+  hle/hle.c hle/sandbox.c hle/gx.c hle/native.c
   ${GAME_SOURCES} ${MOUSE_SOURCES} ${RENDER_SOURCES})
-target_include_directories(scooby_common PUBLIC
-  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/hle"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/game" "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/render")
-target_link_libraries(scooby_common PUBLIC gpgx_core)
-target_compile_options(scooby_common PRIVATE -Wall -Wextra -Wno-unused-parameter
-  -fno-strict-aliasing)
-target_compile_definitions(scooby_common PUBLIC SCOOBY_ROOT="${SCOOBY_ROOT}")
-# release build (tools/package.sh): no development-tree ROM lookups
 option(SCOOBY_DIST "release build" OFF)
-if(SCOOBY_DIST)
-  target_compile_definitions(scooby_common PUBLIC SCOOBY_DIST)
-endif()
-set_source_files_properties(hle/gx.c PROPERTIES COMPILE_DEFINITIONS "${GPGX_DEFINES}")
+# scooby_common: on GPGX with its 68k core (scoobyport, difftest, the tools);
+# scooby_native_common: the same code on gpgx_core_native, without a 68k core (the scooby build, #24)
+foreach(lib scooby_common scooby_native_common)
+  if(lib STREQUAL scooby_common)
+    add_library(${lib} OBJECT ${SCOOBY_COMMON_SOURCES})
+    target_link_libraries(${lib} PUBLIC gpgx_core)
+  else()
+    add_library(${lib} OBJECT ${SCOOBY_COMMON_SOURCES} hle/native_core.c)
+    target_link_libraries(${lib} PUBLIC gpgx_core_native)
+    target_compile_definitions(${lib} PUBLIC SCOOBY_NO_68K)
+  endif()
+  target_include_directories(${lib} PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/hle"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game" "${CMAKE_CURRENT_SOURCE_DIR}/src/mouse"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/render")
+  target_compile_options(${lib} PRIVATE -Wall -Wextra -Wno-unused-parameter
+    -fno-strict-aliasing)
+  target_compile_definitions(${lib} PUBLIC SCOOBY_ROOT="${SCOOBY_ROOT}")
+  # release build (tools/package.sh): no development-tree ROM lookups
+  if(SCOOBY_DIST)
+    target_compile_definitions(${lib} PUBLIC SCOOBY_DIST)
+  endif()
+endforeach()
+set_source_files_properties(hle/gx.c hle/native.c hle/native_core.c PROPERTIES COMPILE_DEFINITIONS "${GPGX_DEFINES}")
 
 # ---- SDL2 host ----
 find_package(SDL2 QUIET)
@@ -51,6 +62,16 @@ if(SDL2_FOUND)
     target_link_libraries(scoobyport PRIVATE ${SDL2_LIBRARIES})
   endif()
   target_compile_options(scoobyport PRIVATE -Wall -Wextra -Wno-unused-parameter)
+  # the native build (#24): the same host, no 68k core linked (docs/native.md)
+  add_executable(scooby src/main.c src/overlay.c src/options.c src/romfind.c src/hostmenu.c)
+  target_link_libraries(scooby PRIVATE scooby_native_common)
+  if(TARGET SDL2::SDL2)
+    target_link_libraries(scooby PRIVATE SDL2::SDL2)
+  else()
+    target_include_directories(scooby PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(scooby PRIVATE ${SDL2_LIBRARIES})
+  endif()
+  target_compile_options(scooby PRIVATE -Wall -Wextra -Wno-unused-parameter)
 else()
   message(WARNING "SDL2 not found: only the headless tools will be built (apt install libsdl2-dev)")
 endif()

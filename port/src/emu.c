@@ -11,6 +11,7 @@
 
 #include "libretro.h"
 #include "gx.h"
+#include "native.h"
 #include "render/render_emu.h"
 #include "render/hifps.h"
 
@@ -233,6 +234,7 @@ bool emu_init(const char *rom_path, const char *workdir, char *err, size_t errle
 	}
 	retro_get_system_av_info(&g_av);
 	hle_install();
+	native_init();         /* SCOOBY_NATIVE=1 / the scooby build: no 68k instruction is executed (#24) */
 	g_boot = malloc(emu_state_size());
 	if (!emu_state_save(g_boot, emu_state_size())) {
 		free(g_boot);
@@ -487,3 +489,28 @@ bool emu_write_vdp(const char *prefix)
 uint8_t emu_ram8(uint32_t a) { return work_ram[(a & 0xFFFF) ^ 1]; }
 uint16_t emu_ram16(uint32_t a) { return *(uint16_t *)(work_ram + (a & 0xFFFE)); }
 uint32_t emu_ram32(uint32_t a) { return ((uint32_t)emu_ram16(a) << 16) | emu_ram16(a + 2); }
+
+/* ------------------------------------------------------------------ native runner (#24) */
+static void native_report(void)
+{
+	if (native_active)
+		fprintf(stderr, "native: %lu C blocks run, %lu instructions executed by a 68k core\n",
+		        native_blocks, gx_m68k_insn_count());
+}
+
+void native_init(void)
+{
+#ifdef SCOOBY_NO_68K
+	native_active = 1;
+#else
+	const char *e = getenv("SCOOBY_NATIVE");
+	native_active = e && *e && strcmp(e, "0");
+#endif
+	static bool reg;
+	if (native_active && !reg) {
+		atexit(native_report);
+		reg = true;
+	}
+}
+
+bool emu_native(void) { return native_active; }

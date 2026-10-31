@@ -12,7 +12,7 @@ set(GPGX_DIR "${SCOOBY_ROOT}/ext/gpgx" CACHE PATH "Genesis-Plus-GX git checkout 
 option(GPGX_CLONE "Clone Genesis-Plus-GX into GPGX_DIR if it does not exist (network)" OFF)
 
 # applied in this order (gpgx-hle.patch appends to vdp_ctrl.c after the vdptrace hunks)
-set(GPGX_PATCHES gpgx-cpuhook.patch gpgx-vdptrace.patch gpgx-hle.patch gpgx-render.patch)
+set(GPGX_PATCHES gpgx-cpuhook.patch gpgx-vdptrace.patch gpgx-hle.patch gpgx-render.patch gpgx-native.patch)
 
 set(GPGX_SRC "${CMAKE_BINARY_DIR}/gpgx-src")
 
@@ -106,3 +106,15 @@ set(GPGX_DEFINES
 target_compile_definitions(gpgx_core PRIVATE ${GPGX_DEFINES})
 target_compile_options(gpgx_core PRIVATE -w -O2 -fno-strict-aliasing)
 target_link_libraries(gpgx_core PUBLIC m)
+
+# The same machine without a 68000 (GitLab #24, the native build `scooby`): the main CPU and the
+# Sega CD sub-CPU interpreters (core/m68k/m68kcpu.c, s68kcpu.c with the opcode tables they include)
+# are not compiled; port/hle/native_core.c provides the CPU API on top of the native runner.
+set(GPGX_SOURCES_NATIVE ${GPGX_SOURCES})
+list(FILTER GPGX_SOURCES_NATIVE EXCLUDE REGEX "/core/m68k/[ms]68kcpu\\.c$")
+add_library(gpgx_core_native STATIC ${GPGX_SOURCES_NATIVE})
+target_include_directories(gpgx_core_native SYSTEM PUBLIC ${_inc} "${GPGX_SRC}/libretro" "${_lrc}/include")
+target_include_directories(gpgx_core_native PRIVATE "${_zlib}")
+target_compile_definitions(gpgx_core_native PRIVATE ${GPGX_DEFINES})
+target_compile_options(gpgx_core_native PRIVATE -w -O2 -fno-strict-aliasing)
+target_link_libraries(gpgx_core_native PUBLIC m)

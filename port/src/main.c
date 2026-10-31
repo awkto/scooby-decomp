@@ -619,6 +619,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "unknown --renderer %s (gpgx | native)\n", a.renderer);
 		return 2;
 	}
+	/* the native runner (#24) needs the native renderer: the verb-bar split is a band there,
+	 * not a raster wait (docs/native.md) */
+	if (emu_native() && render_emu_kind() != RENDERER_NATIVE && !render_emu_select("native"))
+		return 2;
 	if (a.hle && !hle_configure(a.hle))
 		return 2;
 	ipprof_init(a.hle ? a.hle : "default");   /* SCOOBY_IPPROF=file: interpreted-instruction profile (src/ipprof.c) */
