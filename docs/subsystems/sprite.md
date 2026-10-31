@@ -43,6 +43,14 @@ Two quirks, kept bit for bit:
 
 The animation of an actor whose hot spot is more than 80 px off screen pauses (Scooby's never does).
 
+## High frame rate announcement (#27)
+
+The C `sprite_build` tells the presentation layer which SAT entries each actor wrote and where the
+actor is (slot, first entry, piece count, 16.16 world position, plus the camera), via
+`hifps_spr_begin` / `hifps_spr_actor` / `hifps_spr_end` (`port/src/render/hifps.h`). Host memory only;
+the emulated machine and difftest see no difference. Used to match sprites between frames by
+owner + anchor ([hifps.md](hifps.md)).
+
 ## Follow mode (`$FF09E8` bit 3, script sub-op `$15`)
 
 Script sub-op `$15` waits for Shaggy's animation to end, puts the first free slot ≥ 2 in `$FF08B0` and sets

@@ -199,6 +199,7 @@ void hifps_reset(void)
 {
 	g_prev.valid = g_cur.valid = false;
 	s_ok = false;
+	g_ann_ready.done = false;        /* a loaded state's sprite table is not the last build's */
 }
 
 /* ------------------------------------------------------------------ helpers */

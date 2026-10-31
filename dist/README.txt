@@ -36,6 +36,7 @@ Controls
   Game      F8 game saves   F5 / F9 quick save / load of the whole machine   F6 / F7 pick quick slot
             F3 output filter (nearest / smooth / crt)   F11 or Alt+Enter fullscreen   P pause
             N or . single frame   Tab (hold) fast forward   F12 screenshot   F1 debug overlay   Esc quit
+            F10 widescreen on / off   F4 high frame rate on / off (smooth motion on 120-240 Hz screens)
 
 Game saves instead of passwords
 -------------------------------

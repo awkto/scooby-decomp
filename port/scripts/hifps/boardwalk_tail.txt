@@ -1,0 +1,7 @@
+# appended to tools/scripts/rooms/w1_r24.txt (the warp to The Boardwalk) by port/tools/hifpstest.sh:
+# walk right, then left, the camera following Shaggy
+run 60
+press R 240
+run 10
+press L 240
+run 10

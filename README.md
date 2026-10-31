@@ -38,7 +38,7 @@ on. The ROM that worked is remembered in the ini. A file with the wrong sha1 is 
 
 **Controls**: arrows = D-pad, Z/A = A, X/S = B, C/D = C, Enter = Start (rebindable); gamepad supported;
 mouse: left click walks / uses the verb, right click looks, middle = Start, wheel = inventory (`docs/mouse.md`).
-F8 game saves, F5/F9 quick states, F3 filter, F11 fullscreen, P pause, N step, Tab fast-forward, F12 screenshot, Esc quit.
+F8 game saves, F5/F9 quick states, F3 filter, F10 widescreen, F4 high frame rate (`docs/subsystems/hifps.md`), F11 fullscreen, P pause, N step, Tab fast-forward, F12 screenshot, Esc quit.
 
 **Game saves** (instead of typing 50-letter passwords): F8 opens 8 slots (mouse or keyboard); `--load-slot N`
 and `--list-slots` on the command line. A slot is the game's own password state (start room + 29 story bytes,

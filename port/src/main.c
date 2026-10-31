@@ -211,10 +211,11 @@ static void video_draw(video_t *v)
 		SDL_RenderCopy(v->ren, v->tex, NULL, &dst);
 }
 
-static void video_present(video_t *v, const uint32_t *px, int w, int h)
+/* upload the frame (prescaled) and draw it into the back buffer; video_present also flips */
+static bool video_prepare(video_t *v, const uint32_t *px, int w, int h)
 {
 	if (!v->ren || !px)
-		return;
+		return false;
 	int ow, oh;
 	SDL_GetRendererOutputSize(v->ren, &ow, &oh);
 	/* prescale on the CPU by the whole-number fit (crt: the effect needs the pixels; smooth:
@@ -246,7 +247,13 @@ static void video_present(video_t *v, const uint32_t *px, int w, int h)
 		SDL_UpdateTexture(v->tex, NULL, v->scaled, tw * 4);
 	}
 	video_draw(v);
-	SDL_RenderPresent(v->ren);
+	return true;
+}
+
+static void video_present(video_t *v, const uint32_t *px, int w, int h)
+{
+	if (video_prepare(v, px, w, h))
+		SDL_RenderPresent(v->ren);
 }
 
 /* the frame to show: the native renderer's, or GPGX's (RGB565 -> RGBA) */
@@ -389,10 +396,19 @@ static void wait_until(Uint64 t, Uint64 freq)
 static FILE *g_present_log;
 static Uint64 g_present_t0;
 
+static void wait_until(Uint64 t, Uint64 freq);
+
+/* present a picture at `due` (0: now): everything but the flip is done before the wait, so the
+ * spacing does not depend on how long the picture took to make */
 static void present_logged(video_t *v, const uint32_t *px, int w, int h, char kind, long k, int j, int n, Uint64 due)
 {
-	Uint64 f = SDL_GetPerformanceFrequency(), a = SDL_GetPerformanceCounter();
-	video_present(v, px, w, h);
+	Uint64 f = SDL_GetPerformanceFrequency();
+	bool ok = video_prepare(v, px, w, h);
+	if (due)
+		wait_until(due, f);
+	Uint64 a = SDL_GetPerformanceCounter();
+	if (ok)
+		SDL_RenderPresent(v->ren);
 	if (g_present_log) {
 		Uint64 b = SDL_GetPerformanceCounter();
 		fprintf(g_present_log, "%llu %llu %llu %c %ld %d %d\n", (unsigned long long)((a - g_present_t0) * 1000000 / f),
@@ -992,8 +1008,9 @@ int main(int argc, char **argv)
 				hi_base = t;                  /* (re)start the present clock */
 			hi_clock = true;
 			for (int j = 1; j < hi_n; j++) {
+				/* draw the picture first, then wait for its time: the spacing does not
+				 * depend on how long the drawing took */
 				Uint64 d = hi_base + tick * (Uint64)j / (Uint64)hi_n;
-				wait_until(d, perf_freq);
 				int iw, ih;
 				bool moved;
 				const uint32_t *px = hifps_frame(j, hi_n, &iw, &ih, &moved);
@@ -1010,7 +1027,6 @@ int main(int argc, char **argv)
 				present_logged(&v, v.buf, iw, ih, moved ? 'I' : 'H', emu_frame_count(), j, hi_n, d);
 			}
 			due = hi_base + tick;
-			wait_until(due, perf_freq);
 		} else {
 			hi_clock = false;
 		}
