@@ -132,7 +132,33 @@ other one on the native build. `rendertest` compares the native renderer with GP
 
 ## Results
 
-(filled in at the end of #24; see the commit log)
+Measured on a 4-vCPU VM at the end of #24 (all with the native renderer, the player's default).
+
+**P1, emulated build, `--hle all`** (`port/tools/ipprof.sh`, `docs/remaining68k.md`): **0 interpreted
+instructions** on every gate route: intro_w0/w1, the menu tour, mouse (9 runs), sound, the six short story
+routes, both full walkthroughs (210,981 frames) and the 9 extra routes. The `--hle none` baseline over the same
+gates is 3.38 G instructions. The new blocks (glue.c, intro.c, roomflow.c, roomstream.c): `port/tools/dt-native`
+249 PASS on the capture and intro routes (up to 200 states each); 168 blocks are not reached by those routes
+(story-only paths) and the 12 blocks the sandbox cannot compare (pop-then-rts, computed jumps; listed in the
+script) are covered by the gates below. Gates: hosttest, irqtest (10/10), mousetest (all passed), storytest short
+6/6 and long 2/2 (none == all), rendertest (409,314 frames, 0 differ), wstest, hifpstest, slottest: PASS.
+
+**P2, `SCOOBY_NATIVE=1`** (core linked, never stepped): `native: N C blocks run, 0 instructions executed by a
+68k core` on every run; storytest short 6/6 and long 2/2 none == native (w0_full 33.3 M blocks, w1_full
+37.6 M blocks, 0 core instructions).
+
+**P3, `scooby`** (no core): `port/tools/nativetest.sh` PASS: the symbol scan finds no core symbol in `scooby` and
+`frameprof_native` (3,506 in `scoobyport`), no m68kcpu/s68kcpu object in `libgpgx_core_native.a`, and on 11
+open-loop routes (Lobby, both intros, 8 extras; 147,537 frames, 30 M blocks) the machine state is identical at
+every frame with and without the core. On the native build: storytest short 6/6 and long 2/2 none == native,
+hosttest, irqtest 10/10, mousetest all passed, wstest, hifpstest, slottest 16/16: PASS. `make dist` builds the
+tarball from `scooby` (romscan CLEAN); the unpacked binary plays 600 frames and refuses a modified ROM.
+
+**Found on the way.** Loading saved games 4-8 of the Ha Ha Carnival walkthrough (slottest w1_full) makes the
+original game (`--hle none`) jump through a null code pointer (`ram_script_cb` is still 0 when an if/else body
+runs) and hang in the bus error handler at `$892`; slottest passed because the loaded game and the typed
+password hang the same way. The native build reproduces the hang (`waits.c`, `null_jump_crash`). Whether the
+loader or the game is at fault is not investigated here.
 
 ## What is left
 

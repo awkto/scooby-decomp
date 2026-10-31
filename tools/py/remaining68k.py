@@ -280,7 +280,7 @@ def main():
       "This report is the measurement of phase 1: with `--hle all` on the emulated build, the tables below should "
       "show no interpreted instruction on any gate route. Anything listed is a gap the native build would stop at "
       "(\"no C block\"). Routes that start from a `--hle none` savestate (the mouse gate's states) can resume in "
-      "the middle of 68k code; port/tools/ipprof.sh makes those states with --hle all.\n")
+      "the middle of 68k code; mousetest finishes that code with the C on before it saves its states.\n")
     w("Goal of #24: a build without the 68k CPU. Everything counted here is code that would still need a C "
       "(or native) replacement, or a design change, first. The counts are **executed 68k instructions** (every "
       "instruction the emulated CPU runs, per address, attributed to its function in `data/functions.txt`). "
@@ -345,7 +345,7 @@ def main():
         w("The two scaled-bitmap blit routines `sub_00E40C` / `sub_00F272` (title bats and menu pictures, called "
           "every frame of the menu screens; pure computation) are %s of those %s interpreted instructions. "
           "Without them the remainder is **%.2f %%** of the original's instructions.\n" % (
-              "%.1f %%" % (100.0 * bn / sa), f"{sa:,}", 100.0 * (sa - bn) / sn))
+              "%.1f %%" % (100.0 * bn / max(sa, 1)), f"{sa:,}", 100.0 * (sa - bn) / sn))
     w("Caveats: the `none` and `all` runs of a gate execute the same inputs, but a C function costs about zero "
       "emulated time, so closed-loop routes (story) and the main loop (which runs as often as time allows) do a "
       "different amount of main-loop work. `mouse` is left out of the ratio because its `none` side includes the "
