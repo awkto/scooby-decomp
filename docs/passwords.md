@@ -65,3 +65,16 @@ The first d-pad press after a savestate load is sometimes ignored; give the menu
 
 D-pad walks Shaggy. **C** toggles pointer mode (arrow icons at the bottom corners); in pointer mode the d-pad moves a
 crosshair, which highlights verbs when over the verb bar and names objects under it ("Outside Door"), and **B** clicks.
+
+## Game saves in the port (#28)
+
+`port/src/saveslot.c` stores a password state in 8 slots (`~/.local/share/scooby-decomp/slotN.sav`, text: `mystery`, `room`,
+`roomname`, `date`, `playtime` in frames, `password`). Saving encodes `$FF06AC` + `$FF2A00..+28` with `password.c`, exactly as the pause
+menu's password display does. Loading does not poke the game state: after `emu_reset()` it presses the game's own buttons
+(Start x3 through the title, D for Carnival, Start = mystery, D = CONTINUE, Start = ENTER PASSWORD), waits for the entry screen, writes
+the 2 x 31-byte display text into `$FF08BC` (what the entry loop redraws from), moves the grid cursor to END (Up, Left x3) and presses A.
+The ROM's checker (`$009298`) and start code (`$00933E` -> `$008CD6`) then run; the loader is done when `$FF09ED` has
+`MF_FROM_PASSWORD` set, `$FF0A90` equals the room and `$FF2A00..+28` equals the slot. If a menu step was missed it starts over
+with 2x then 3x longer waits (3 attempts). The mystery's intro cut scene plays afterwards, as after typing a password.
+`port/tools/slottest.sh` saves 8 slots along each full walkthrough and compares the loaded game against the same password typed
+key by key (mystery, room, inventory, story bytes).

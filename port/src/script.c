@@ -4,6 +4,7 @@
 #include "gx.h"
 #include "hle.h"
 #include "mouse.h"
+#include "saveslot.h"
 #include "widescreen.h"
 
 #include <stdio.h>
@@ -104,6 +105,15 @@ bool script_step(script *s, unsigned *pad)
 			if (sscanf(line, "%*s %*s %*s %*s %*s %511s", a3) == 1)
 				skip = atoi(a3);
 			capture_start((uint32_t)strtoul(a1 + (a1[0] == '$'), NULL, 16), (int)n, a2, every, skip);
+		} else if (!strcmp(cmd, "slot") && sscanf(line, "%*s %ld", &n) == 1) {
+			/* slot N: store the running game in game-save slot N (saveslot.h); #28 tests */
+			char serr[200];
+			if (slot_save_current((int)n, emu_frame_count(), serr, sizeof serr))
+				fprintf(stderr, "saved slot %ld\n", n);
+			else {
+				fprintf(stderr, "slot %ld: %s\n", n, serr);
+				s->errors++;
+			}
 		} else if (!strcmp(cmd, "regs")) {
 			const uint32_t *r = gx_m68k_dar();
 			fprintf(stderr, "frame %ld pc %06X  D:", emu_frame_count(), gx_m68k_pc());
