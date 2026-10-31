@@ -159,9 +159,11 @@ const char *emu_find_rom(const char *explicit_path, const char *argv0)
 		return explicit_path;
 	if (file_exists("rom/baserom.md"))
 		return "rom/baserom.md";
+#ifndef SCOOBY_DIST          /* the development tree the binary was built from (not in release builds) */
 	snprintf(buf, sizeof buf, "%s/rom/baserom.md", SCOOBY_ROOT);
 	if (file_exists(buf))
 		return buf;
+#endif
 	/* <exe dir>/../rom, ../../rom, ../../../rom */
 	char exe[1024];
 	ssize_t n = readlink("/proc/self/exe", exe, sizeof exe - 1);

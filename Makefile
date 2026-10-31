@@ -42,7 +42,11 @@ disasm:
 functions: disasm
 	$(PY) tools/py/symtab.py
 
+# Linux release tarball (binary, README, LICENSES, source) + romscan certificate; run on a VM: see tools/package.sh
+dist:
+	tools/package.sh
+
 clean:
 	rm -rf build
 
-.PHONY: all disasm functions clean z80check z80disasm
+.PHONY: all dist disasm functions clean z80check z80disasm

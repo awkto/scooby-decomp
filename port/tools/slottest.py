@@ -86,7 +86,10 @@ def main():
             if i in marks:
                 out.append(f"slot {marks[i]}")
         open(os.path.join(d, "route.txt"), "w").write("\n".join(out) + "\n")
-        res = run(["--savedir", d, "--outdir", d, "--script", os.path.join(d, "route.txt"), "--frames", "0"])
+        # the committed routes are open-loop recordings made on the plain emulator: replay them on the pure 68k code
+        # (--hle none, SLOTTEST_HLE to change) so they reach the same story points; the loaded / typed runs use the default C code
+        res = run(["--hle", os.environ.get("SLOTTEST_HLE", "none"), "--savedir", d, "--outdir", d,
+                   "--script", os.path.join(d, "route.txt"), "--frames", "0"])
         print(f"{route}: route replayed ({len(lines)} lines)")
         for n in range(1, npts + 1):
             sl = read_slot(d, n)

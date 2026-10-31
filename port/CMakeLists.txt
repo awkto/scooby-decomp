@@ -32,6 +32,11 @@ target_link_libraries(scooby_common PUBLIC gpgx_core)
 target_compile_options(scooby_common PRIVATE -Wall -Wextra -Wno-unused-parameter
   -fno-strict-aliasing)
 target_compile_definitions(scooby_common PUBLIC SCOOBY_ROOT="${SCOOBY_ROOT}")
+# release build (tools/package.sh): no development-tree ROM lookups
+option(SCOOBY_DIST "release build" OFF)
+if(SCOOBY_DIST)
+  target_compile_definitions(scooby_common PUBLIC SCOOBY_DIST)
+endif()
 set_source_files_properties(hle/gx.c PROPERTIES COMPILE_DEFINITIONS "${GPGX_DEFINES}")
 
 # ---- SDL2 host ----
