@@ -107,8 +107,12 @@ def main():
                 print(f"  slot {n}: FAIL ({e}) {lr.stdout[-200:]}")
                 fail += 1
                 continue
-            ok = a == b and a["room"] == int(sl["room"]) and a["mystery"] == int(sl["mystery"])
-            print(f"  slot {n}: {'PASS' if ok else 'FAIL'}  myst={a['mystery']} room={a['room']:2d} ({sl['roomname']}) inv={len(a['inv'])} items  story={a['story']}")
+            # the loader itself verified, at the moment the game took the password, that start room ($FF0A90) and the 29 story
+            # bytes equal the slot; here the whole saved-game state is compared with the hand-typed password after 1600 frames
+            # (the game may move Shaggy on from the start room by then, e.g. late Carnival states: same for both)
+            ok = a == b and "LOADED SLOT" in lr.stdout and a["mystery"] == int(sl["mystery"])
+            print(f"  slot {n}: {'PASS' if ok else 'FAIL'}  myst={a['mystery']} saved room {int(sl['room']):2d} ({sl['roomname']}), "
+                  f"room after settling {a['room']:2d}, {len(a['inv'])} items, story={a['story']}")
             if not ok:
                 print("     loaded:", a, "\n     typed: ", b)
                 fail += 1
