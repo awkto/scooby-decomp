@@ -1,7 +1,7 @@
 #!/bin/bash
 # provision VM — one-time: wait for cloud-init, upload ROM, build GPGX libretro core with our patches.
 . "$(dirname "$0")/common.sh"
-vm=${1:?}; ip=$(vm_ip "$vm"); repo=/path/to/scooby-decomp
+vm=${1:?}; ip=$(vm_ip "$vm"); repo=$SCOOBY_REPO
 until ssh "${SSH_OPTS[@]}" root@$ip test -f /var/lib/cloud/scooby-ready 2>/dev/null; do sleep 15; done
 ssh "${SSH_OPTS[@]}" root@$ip "mkdir -p /opt/scooby/rom /work"
 rsync -aL -e "ssh ${SSH_OPTS[*]}" "$repo/rom/baserom.md" root@$ip:/opt/scooby/rom/baserom.md

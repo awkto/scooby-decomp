@@ -1,7 +1,28 @@
-# Scooby-Doo Mystery (Genesis) decompilation
+# Scooby-Doo Mystery (Genesis): decompilation and native Linux port
 
-Goal: native Linux port with real mouse control, higher resolution/widescreen.
-Tracking: https://github.com/awkto/scooby-decomp
+A matching disassembly of the 1995 Sega Genesis game *Scooby-Doo Mystery* (USA), plus a native
+Linux port built on top of it. The port adds real mouse control, widescreen, a high frame rate
+option and 8 save slots instead of typing passwords. Repository: https://github.com/awkto/scooby-decomp
+
+**No game data is in this repository.** You need your own legally obtained ROM
+(`Scooby-Doo Mystery (USA)`, sha1 `ccc9542d964de5bdc1e9101620cae40dd98e7127`), copied to
+`rom/baserom.md` for building, or picked at first run of the port. The build re-creates the game's
+data from your ROM with `.incbin`; `tools/py/romscan.py --tracked` proves nothing of it is committed.
+
+## Status
+- `make` rebuilds a byte-identical ROM from the disassembly; `make z80check` does the same for the Z80 sound driver.
+- The port has been tested headless only: closed-loop scripted walkthroughs of both mysteries (`port/tools/storytest.sh`),
+  differential tests of every replaced function against the original 68000 code, interrupt/mouse/save-slot tests.
+- It still awaits a playtest on a real desktop by a human (window, audio device, mouse feel, gamepads); see `docs/USER_VERIFIED.md`.
+  Expect rough edges there.
+
+## How it was made
+Hand-written 68000 assembly was disassembled to a byte-matching source (recursive-descent disassembler
+guided by runtime coverage from a patched emulator). The port then runs the original code inside the
+Genesis Plus GX core and replaces it function by function with readable C through an HLE layer, each
+replacement proven equivalent by differential testing on captured states. Whole-game "closed-loop"
+gates drive scripted walkthroughs and check story state. Much of this work was done with AI coding
+agents (Claude Code), directed and reviewed by the author.
 
 ## Layout
 - `rom/` – copy your ROM to `rom/baserom.md` (sha1 `ccc9542d964de5bdc1e9101620cae40dd98e7127`, not committed)
@@ -14,7 +35,7 @@ Tracking: https://github.com/awkto/scooby-decomp
 - `tools/patches/gpgx-vdptrace.patch` – optional core patch for the harness `trace`/`vdp` commands
 - `docs/sound.md`, `src/z80/driver.s` – sound driver (`make z80check`)
 
-## Setup
+## Setup (build the disassembly and the harness)
     sudo apt install binutils-m68k-linux-gnu
     python3 -m venv .venv && .venv/bin/pip install capstone
     git clone https://github.com/libretro/Genesis-Plus-GX ext/gpgx
@@ -91,11 +112,33 @@ decompiling a function.
   `data/rom_data_reads.txt`; `tools/py/covreport.py --md docs/coverage.md` writes the coverage report.
 - `states/INDEX.md` + `tools/scripts/rooms/*.txt`: room name -> script that regenerates the savestate (states are gitignored).
 
-## Heavy work runs on remote VMs
-Remote test machines each have the toolchain, the ROM in `/opt/scooby/rom`, and GPGX built with both patches in `/opt/scooby/ext/gpgx`.
+## Running heavy tests on remote machines (optional)
+`tools/vm/` has small generic helpers for farming builds and tests out to a pool of Linux machines you can ssh to
+as root (any provider; list them as `name ip` lines in `.vm/vms.txt`, or point `SCOOBY_VM_HOME` elsewhere;
+`tools/vm/cloud-init.yaml` and `tools/vm/provision` show the toolchain a machine needs). Each machine keeps the ROM
+in `/opt/scooby/rom` and a patched Genesis Plus GX build in `/opt/scooby/ext/gpgx`.
 
-    vm=$(tools/vm/lease my-task)          # take a free VM (waits if all busy)
-    tools/vm/vmrun $vm 'make && ...'      # rsync this worktree to VM:/work/<worktree> and run there
+    vm=$(tools/vm/lease my-task)          # take a free machine (waits if all busy)
+    tools/vm/vmrun $vm 'make && ...'      # rsync this worktree to the machine and run there
     tools/vm/vmpull $vm runs/x/ runs/x/   # fetch results back
     tools/vm/release $vm                  # ALWAYS release when done
     tools/vm/status                       # who holds what
+
+## Screenshots
+None are committed (they would be ROM-derived). Generate your own with F12 in the port, or `tools/harness`
+(`shot NAME` command) / `tools/py/gfx.py`; they land under `build/` or `runs/`, which are gitignored.
+
+## Documentation
+`docs/porting.md` (how functions are replaced), `docs/formats.md` (graphics, rooms), `docs/script.md`
+(adventure script VM), `docs/sound.md`, `docs/mouse.md`, `docs/passwords.md`, `docs/walkthrough.md`,
+`docs/coverage.md`, and one page per subsystem in `docs/subsystems/`.
+
+## License
+The code in this repository is MIT licensed (see `LICENSE`).
+
+The port links **Genesis Plus GX** (`port/third_party/gpgx`, `tools/patches/`), which is licensed for
+**non-commercial use only**: binaries built from this port may not be sold or used commercially (terms in
+`port/third_party/gpgx/LICENSE.txt`; other bundled third-party licences in `dist/`). SDL2 is linked dynamically (zlib licence).
+
+*Scooby-Doo Mystery* is (c) 1995 Sunsoft / Acclaim / Illusions Gaming Company. This project is not affiliated
+with or endorsed by them, includes none of the game's data, and requires you to own the cartridge/ROM.
