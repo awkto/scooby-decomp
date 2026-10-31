@@ -34,6 +34,9 @@ unsigned mouse_frame(unsigned pad_in);
  * already marks the mouse position) */
 void mouse_draw(uint16_t *px, int w, int h);
 void mouse_draw_rgba(uint32_t *px, int w, int h);   /* same, RGBA buffer */
+/* the arrow at frame pixel (fx, fy) instead of the last mouse position the game was given: the
+ * host's cursor at the display rate (high frame rate, #27); same visibility rules */
+void mouse_draw_rgba_at(uint32_t *px, int w, int h, int fx, int fy);
 
 /* window pixel -> game pixel for an integer-scaled, centred (letterboxed) image:
  * out_w x out_h = renderer output size in pixels, tex_w x tex_h = game image.

@@ -131,7 +131,7 @@ static int g_bar_l, g_bar_r;             /* room band: output x outside [l, r) i
 static int g_screen_w = 256;             /* the VDP's width this frame */
 
 /* layout of the last finished frame (mouse mapping) */
-static struct { bool on, wide; int width, x0, centre, screen_w; } g_last, g_cur;
+static struct { bool on, wide; int width, x0, centre, screen_w, cam; } g_last, g_cur;
 
 /* counters */
 static long c_frames, c_wide, c_reason[WS_REASONS], c_flips;
@@ -188,7 +188,19 @@ static ws_reason decide(const render_vdp *v, int *cam_x)
 
 /* the room map in plane coordinates, the VRAM columns of the 4:3 picture, and the terrain check
  * of those columns (VRAM against the map); returns the mismatching cells */
+static long build_names_into(const render_vdp *v, int cam_x, int rcam, room_stat *rs,
+                             uint16_t names[2][32][RENDER_VIEW_CELLS], uint8_t from_vram[2][RENDER_VIEW_CELLS],
+                             bool check);
+
 static long build_names(const render_vdp *v, int cam_x, int rcam, room_stat *rs)
+{
+	return build_names_into(v, cam_x, rcam, rs, g_names, g_from_vram, true);
+}
+
+/* check = false (in-between frames, #27): fill only, no terrain check and no counters */
+static long build_names_into(const render_vdp *v, int cam_x, int rcam, room_stat *rs,
+                             uint16_t names[2][32][RENDER_VIEW_CELLS], uint8_t from_vram[2][RENDER_VIEW_CELLS],
+                             bool check)
 {
 	int w = emu_ram16(MAP_WIDTH), h = emu_ram16(MAP_HEIGHT);
 	int vs = v->vsram[1] & 0xFF;
@@ -203,7 +215,7 @@ static long build_names(const render_vdp *v, int cam_x, int rcam, room_stat *rs)
 	int first = cam_x >> 3, last = (cam_x + g_screen_w - 1) >> 3;
 	for (int i = 0; i < RENDER_VIEW_CELLS; i++) {
 		int wc = c0 + i - 2;
-		g_from_vram[0][i] = g_from_vram[1][i] = wc >= first && wc <= last;
+		from_vram[0][i] = from_vram[1][i] = wc >= first && wc <= last;
 	}
 	for (int p = 0; p < 2; p++) {
 		uint32_t map = p ? PLANEB_MAP : PLANEA_MAP;
@@ -211,11 +223,13 @@ static long build_names(const render_vdp *v, int cam_x, int rcam, room_stat *rs)
 			int wr = wrow[r];
 			for (int i = 0; i < RENDER_VIEW_CELLS; i++) {
 				int wc = c0 + i - 2;
-				g_names[p][r][i] = (wr >= 0 && wr < h && wc >= 0 && wc < w)
+				names[p][r][i] = (wr >= 0 && wr < h && wc >= 0 && wc < w)
 				                       ? emu_ram16(map + 2 * (uint32_t)(wr * w + wc)) : 0;
 			}
 		}
 	}
+	if (!check)
+		return 0;
 	/* terrain check: in the plane rows of the room band, the 4:3 columns must hold the map
 	 * (they are the streamers' output); the other columns of the view are stale in VRAM (not
 	 * checked, counted: what the view would show wrong without the map) */
@@ -233,17 +247,17 @@ static long build_names(const render_vdp *v, int cam_x, int rcam, room_stat *rs)
 				if (wc < 0 || wc >= w)
 					continue;
 				uint16_t vw = vram_word(v, nt[p] + (uint32_t)(r * 128 + (wc & 63) * 2));
-				if (g_from_vram[p][i]) {
+				if (from_vram[p][i]) {
 					cells++;
-					if (vw != g_names[p][r][i]) {
+					if (vw != names[p][r][i]) {
 						bad++;
 						if (getenv("SCOOBY_WS_DEBUG") && bad <= 2)
 							fprintf(stderr, "ws %ld: plane %c row %d (world %d) col %d (4:3 cols %d..%d, cam %d,%d vs %d): vram %04X map %04X\n",
 							        emu_frame_count(), p ? 'B' : 'A', r, wr, wc, first, last, cam_x, cam_y, vs,
-							        vw, g_names[p][r][i]);
+							        vw, names[p][r][i]);
 					}
 				} else {
-					stale += vw != g_names[p][r][i];
+					stale += vw != names[p][r][i];
 				}
 			}
 		}
@@ -323,6 +337,7 @@ void ws_frame_begin(const render_vdp *v)
 	if (!was && c_frames > 1)
 		c_flips++;
 	g_frame_wide = true;
+	g_cur.cam = cam_x;
 	c_wide++;
 	if (rs)
 		rs->wide++;
@@ -389,6 +404,52 @@ void ws_frame_end(void)
 		}
 	}
 	g_last = g_cur;
+}
+
+/* ------------------------------------------------------------------ in-between frames (#27) */
+static uint16_t gi_names[2][32][RENDER_VIEW_CELLS];
+static uint8_t gi_from_vram[2][RENDER_VIEW_CELLS];
+
+bool ws_last_wide(int *width, int *cam)
+{
+	*width = g_last.width;
+	*cam = g_last.cam;
+	return g_last.on && g_last.wide;
+}
+
+bool ws_interp_view(const render_vdp *v, int cam, render_view *out, int *bar_l, int *bar_r)
+{
+	if (!g_last.on || !g_last.wide)
+		return false;
+	int vw = g_last.width, sw = g_last.screen_w;
+	int rw = emu_ram16(MAP_WIDTH) * 8;
+	int rcam;
+	if (rw >= vw) {                          /* the same placement as ws_frame_begin */
+		rcam = cam - (vw - sw) / 2;
+		if (rcam > rw - vw) rcam = rw - vw;
+		if (rcam < 0) rcam = 0;
+	} else {
+		rcam = (rw - vw) / 2;
+	}
+	if (rcam > cam) rcam = cam;
+	if (rcam < cam + sw - vw) rcam = cam + sw - vw;
+	/* the cells the last frame's 4:3 picture showed are in VRAM; everything else, including
+	 * a column the in-between camera shows just outside that window, comes from the map */
+	int save = g_screen_w;
+	g_screen_w = sw;
+	build_names_into(v, g_last.cam, rcam, NULL, gi_names, gi_from_vram, false);
+	g_screen_w = save;
+	out->x0 = rcam - cam;
+	out->cell_ofs = rcam & 7;
+	out->width = vw;
+	out->names[0] = gi_names[0];
+	out->names[1] = gi_names[1];
+	out->from_vram[0] = gi_from_vram[0];
+	out->from_vram[1] = gi_from_vram[1];
+	out->sprites_wrapped = out->sprites_lost = 0;
+	*bar_l = rcam < 0 ? -rcam : 0;
+	*bar_r = rw - rcam < vw ? rw - rcam : vw;
+	return true;
 }
 
 /* ------------------------------------------------------------------ mouse mapping */

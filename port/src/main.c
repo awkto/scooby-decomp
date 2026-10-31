@@ -5,7 +5,8 @@
  *       F6/F7 previous/next state slot, P pause, N or . frame advance (pauses),
  *       Tab (hold) fast forward, F11 or Alt+Enter fullscreen, F12 screenshot, Esc quit,
  *       F3 output filter (nearest / smooth / crt), F8 game saves (8 slots, keyboard + mouse),
- *       F10 widescreen on/off (#26, docs/subsystems/widescreen.md).
+ *       F10 widescreen on/off (#26, docs/subsystems/widescreen.md),
+ *       F4 high frame rate on/off (#27, docs/subsystems/hifps.md).
  * Gamepad (SDL GameController): D-pad / left stick, X/Y = A, A = B, B/RB = C, Start,
  *       Back = pause.
  * Mouse (docs/mouse.md; --no-mouse disables it): left click = walk there / use the
@@ -24,6 +25,7 @@
 
 #include "capture.h"
 #include "emu.h"
+#include "hifps.h"
 #include "hostmenu.h"
 #include "ipprof.h"
 #include "hle.h"
@@ -83,6 +85,7 @@ static void usage(const char *argv0)
 	       "  --capture-dir DIR       (default runs/states/<ADDR>)  --capture-every K  --capture-skip K\n"
 	       "  --no-throttle           run as fast as possible\n"
 	       "  --no-mouse              ignore the mouse (keyboard/gamepad only)\n"
+	       "  --options high_fps=auto|off|HZ   interpolated in-between pictures (logic stays 59.92 Hz, F4)\n"
 	       "Headless: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy %s --script s.txt --screenshot out.ppm\n",
 	       argv0, argv0);
 }
@@ -325,6 +328,94 @@ static void mouse_from_window(video_t *v, int x, int y)
 	}
 }
 
+/* ------------------------------------------------------------------ high frame rate (#27) */
+/* "auto" | "off" | "0" | a rate in Hz (61..1000); false on anything else */
+static bool hifps_spec_ok(const char *s)
+{
+	if (!strcmp(s, "auto") || !strcmp(s, "off") || !strcmp(s, "0"))
+		return true;
+	char *end;
+	long n = strtol(s, &end, 10);
+	return end != s && !*end && n > 60 && n <= 1000;
+}
+
+static int display_refresh(video_t *v)
+{
+	SDL_DisplayMode m;
+	int idx = v->win ? SDL_GetWindowDisplayIndex(v->win) : 0;
+	if (idx < 0 || SDL_GetCurrentDisplayMode(idx, &m) != 0)
+		return 0;
+	return m.refresh_rate;
+}
+
+/* the rate to use: auto = the display's refresh if over 60 Hz; with vsync a rate above the
+ * display's refresh is capped to it (each present waits for a refresh: more pictures than
+ * refreshes would slow the game down). `fallback` replaces off/auto-on-60 Hz (F4). */
+static int hifps_resolve(const char *spec, video_t *v, bool vsync, int fallback)
+{
+	int refresh = display_refresh(v), r;
+	if (!strcmp(spec, "auto"))
+		r = refresh > 60 ? refresh : 0;
+	else if (!strcmp(spec, "off") || !strcmp(spec, "0"))
+		r = 0;
+	else
+		r = atoi(spec);
+	if (!r)
+		r = fallback;
+	if (r > 0 && vsync && refresh > 0 && r > refresh)
+		r = refresh;
+	return r > 60 ? r : 0;
+}
+
+/* wait for the performance counter to reach t: sleep, then spin the last ~1.5 ms */
+static void wait_until(Uint64 t, Uint64 freq)
+{
+	for (;;) {
+		Uint64 now = SDL_GetPerformanceCounter();
+		if (now >= t)
+			return;
+		Uint64 us = (t - now) * 1000000 / freq;
+		if (us > 2500)
+			SDL_Delay((Uint32)(us / 1000 - 2));
+		else if (us > 300)
+			SDL_Delay(0);
+	}
+}
+
+/* SCOOBY_PRESENT_LOG=FILE: one row per picture presented: microseconds since start (before and
+ * after SDL_RenderPresent), when it was due, its kind (W whole frame / I in-between / H an
+ * in-between that holds the previous frame), the frame and its index j of n.
+ * port/tools/hifpstest.sh makes the spacing histogram from it. */
+static FILE *g_present_log;
+static Uint64 g_present_t0;
+
+static void present_logged(video_t *v, const uint32_t *px, int w, int h, char kind, long k, int j, int n, Uint64 due)
+{
+	Uint64 f = SDL_GetPerformanceFrequency(), a = SDL_GetPerformanceCounter();
+	video_present(v, px, w, h);
+	if (g_present_log) {
+		Uint64 b = SDL_GetPerformanceCounter();
+		fprintf(g_present_log, "%llu %llu %llu %c %ld %d %d\n", (unsigned long long)((a - g_present_t0) * 1000000 / f),
+		        (unsigned long long)((b - g_present_t0) * 1000000 / f),
+		        (unsigned long long)(due > g_present_t0 ? (due - g_present_t0) * 1000000 / f : 0), kind, k, j, n);
+	}
+}
+
+/* the host's arrow at the mouse's position now (high frame rate: every picture, not only the
+ * logic frames; the game is given the position at its next frame as before) */
+static void host_arrow(video_t *v, int w, int h)
+{
+	int mx, my, gx, gy;
+	SDL_PumpEvents();                    /* events stay queued for the main loop */
+	SDL_GetMouseState(&mx, &my);
+	v->gw = w;
+	v->gh = h;
+	if (window_to_game(v, mx, my, &gx, &gy) > 0)
+		mouse_draw_rgba_at(v->buf, w, h, gx, gy);
+	else
+		mouse_draw_rgba(v->buf, w, h);
+}
+
 /* ------------------------------------------------------------------ saves menu */
 /* carry out what the GAME SAVES overlay asked for; `status` is the line it shows */
 static void menu_do(hm_action act, int sl, long play_frames, char *status, size_t n, SDL_AudioDeviceID adev, bool mouse_on)
@@ -445,6 +536,12 @@ int main(int argc, char **argv)
 			return 2;
 		}
 	}
+	/* high frame rate (#27): like widescreen, scripted / batch runs stay at 60 Hz unless asked */
+	if (!hifps_spec_ok(options_str("high_fps"))) {
+		fprintf(stderr, "high_fps: '%s' is not auto | off | a rate in Hz (61..1000)\n", options_str("high_fps"));
+		return 2;
+	}
+	bool hifps_opt = options_source("high_fps") == OPT_CLI || !(a.script || a.frames >= 0 || a.screenshot || a.window_shot);
 
 	char savedir[1024];
 	if (a.savedir)
@@ -530,6 +627,24 @@ int main(int argc, char **argv)
 	static video_t v;
 	if (!video_init(&v, a.scale, a.fullscreen, a.vsync, a.filter))
 		fprintf(stderr, "video unavailable (%s), running without a window\n", SDL_GetError());
+	if (hifps_opt) {
+		/* runs that are not paced (scripts, --frames) render every frame's in-betweens right
+		 * away: the counters, SCOOBY_HIFPS_DUMP and the state / frame-hash tests use that;
+		 * nothing is presented at the rate, so it is not capped to the display's */
+		bool eager = (a.script || a.frames >= 0) && !a.realtime_script;
+		int hz = hifps_resolve(options_str("high_fps"), &v, a.vsync && v.ren && !eager, 0);
+		hifps_set_rate(hz);
+		if (hz && render_emu_kind() != RENDERER_NATIVE)
+			fprintf(stderr, "high_fps needs the native renderer: off\n");
+		hifps_set_eager(eager);
+		if (hz)
+			printf("high_fps: %d Hz, %d pictures per logic frame%s\n", hz, hifps_steps(),
+			       a.vsync && v.ren ? " (vsync)" : "");
+	}
+	if (getenv("SCOOBY_PRESENT_LOG") && *getenv("SCOOBY_PRESENT_LOG")) {
+		g_present_log = fopen(getenv("SCOOBY_PRESENT_LOG"), "w");
+		g_present_t0 = SDL_GetPerformanceCounter();
+	}
 	mouse_set_enabled(!a.no_mouse);
 	if (!a.no_mouse && v.win)
 		SDL_ShowCursor(SDL_DISABLE);       /* the host cursor is drawn into the game image */
@@ -574,6 +689,9 @@ int main(int argc, char **argv)
 	long fps_frames = 0, total = 0;
 	const double frame_dt = 1.0 / emu_fps();
 	const bool mouse_on = !a.no_mouse;
+	bool hi_clock = false;            /* high frame rate: the present clock runs */
+	Uint64 hi_base = 0;               /* when R(k-1) was due */
+	static char ovl_text[256];
 	if (a.load_slot && !a.script) {       /* straight into a save */
 		post_done = true;
 		if (!slot_load_begin(a.load_slot, err, sizeof err)) {
@@ -660,6 +778,23 @@ int main(int argc, char **argv)
 						snprintf(msg, sizeof msg, "WIDESCREEN %s", ws_enabled() ? "ON" : "OFF");
 						if (ws_enabled() && render_emu_kind() != RENDERER_NATIVE)
 							snprintf(msg, sizeof msg, "WIDESCREEN NEEDS THE NATIVE RENDERER");
+						msg_timer = 90;
+					} else if (k == SDLK_F4) {
+						/* high frame rate on / off: the option's rate, else the display's,
+						 * else 144 (without vsync) */
+						if (hifps_rate()) {
+							hifps_set_rate(0);
+							snprintf(msg, sizeof msg, "HIGH FPS OFF");
+						} else {
+							int hz = hifps_resolve(options_str("high_fps"), &v, a.vsync && v.ren, 144);
+							hifps_set_rate(hz);
+							if (!hz)
+								snprintf(msg, sizeof msg, "HIGH FPS NEEDS A DISPLAY OVER 60 HZ");
+							else if (render_emu_kind() != RENDERER_NATIVE)
+								snprintf(msg, sizeof msg, "HIGH FPS NEEDS THE NATIVE RENDERER");
+							else
+								snprintf(msg, sizeof msg, "HIGH FPS %d HZ", hz);
+						}
 						msg_timer = 90;
 					} else if (k == SDLK_F12) {
 						char p[1200];
@@ -841,29 +976,82 @@ int main(int argc, char **argv)
 			if (!SDL_GetRendererOutputSize(v.ren, &ow, &oh))
 				ws_set_window_aspect(ow, oh);    /* widescreen=auto follows the window */
 		}
-		if (v.ren && show && game_frame(&v, &w, &h)) {
+		/* high frame rate (#27, docs/subsystems/hifps.md): logic frame k has just run and R(k)
+		 * is drawn. Its picture is due at k x T on the present clock (hi_base + T), as at 60 Hz;
+		 * before it, n - 1 in-between pictures evenly spaced at hi_base + j T / n, interpolated
+		 * from R(k-1) toward R(k) (or R(k-1) held where nothing moves). The pads of frame k+1
+		 * are read after R(k) is shown, as at 60 Hz. The host's arrow follows the mouse at
+		 * the display rate. */
+		bool hi = hifps_active() && !fast && ran && !frozen && (v.ren || g_present_log);
+		const Uint64 tick = (Uint64)(frame_dt * perf_freq);
+		int hi_n = hifps_steps();
+		Uint64 due = 0;
+		if (hi) {
+			Uint64 t = SDL_GetPerformanceCounter();
+			if (!hi_clock || t > hi_base + 4 * tick || t + tick < hi_base)
+				hi_base = t;                  /* (re)start the present clock */
+			hi_clock = true;
+			for (int j = 1; j < hi_n; j++) {
+				Uint64 d = hi_base + tick * (Uint64)j / (Uint64)hi_n;
+				wait_until(d, perf_freq);
+				int iw, ih;
+				bool moved;
+				const uint32_t *px = hifps_frame(j, hi_n, &iw, &ih, &moved);
+				if (!px)
+					continue;
+				for (int y = 0; y < ih; y++)
+					memcpy(v.buf + (size_t)y * iw, px + (size_t)y * RENDER_MAX_W, (size_t)iw * 4);
+				if (overlay)
+					overlay_text_rgba(v.buf, iw, ih, 2, 2, render_rgba(15, 15, 0), ovl_text);
+				if (msg_timer > 0)
+					overlay_text_rgba(v.buf, iw, ih, 2, ih - 8, render_rgba(15, 15, 15), msg);
+				host_arrow(&v, iw, ih);
+				hostmenu_draw(v.buf, iw, ih, menu_status);
+				present_logged(&v, v.buf, iw, ih, moved ? 'I' : 'H', emu_frame_count(), j, hi_n, d);
+			}
+			due = hi_base + tick;
+			wait_until(due, perf_freq);
+		} else {
+			hi_clock = false;
+		}
+		if ((v.ren || hi) && show && game_frame(&v, &w, &h)) {
 			if (overlay) {
-				char t[256];
 				uint32_t sx = emu_ram32(0xFF04DC) >> 16, sy = emu_ram32(0xFF04F4) >> 16;
-				snprintf(t, sizeof t, "F %ld  %.1f FPS%s%s\nHLE %lu/F  SLOT %d\nSHAGGY %u,%u\nPAD %02X  AQ %u MS\nMOUSE %s\nRENDER %s %s",
+				snprintf(ovl_text, sizeof ovl_text, "F %ld  %.1f FPS%s%s\nHLE %lu/F  SLOT %d\nSHAGGY %u,%u\nPAD %02X  AQ %u MS\nMOUSE %s\nRENDER %s %s%s",
 				         emu_frame_count(), fps_show, paused ? "  PAUSED" : "", ff ? "  FF" : "",
 				         hle_calls_this_frame(), slot, sx, sy, emu_ram8(0xFF09E0),
 				         adev ? (unsigned)(SDL_GetQueuedAudioSize(adev) * 1000 / (rate * 4)) : 0,
 				         mouse_enabled() ? mouse_status() : "OFF",
-				         render_emu_kind() == RENDERER_NATIVE ? "NATIVE" : "GPGX", present_filter_name(v.filter));
-				overlay_text_rgba(v.buf, w, h, 2, 2, render_rgba(15, 15, 0), t);
+				         render_emu_kind() == RENDERER_NATIVE ? "NATIVE" : "GPGX", present_filter_name(v.filter),
+				         hifps_active() ? "\nHIGH FPS ON" : "");
+				overlay_text_rgba(v.buf, w, h, 2, 2, render_rgba(15, 15, 0), ovl_text);
 			}
 			if (msg_timer > 0) {
 				overlay_text_rgba(v.buf, w, h, 2, h - 8, render_rgba(15, 15, 15), msg);
 				msg_timer--;
 			}
-			mouse_draw_rgba(v.buf, w, h);
+			if (hi)
+				host_arrow(&v, w, h);
+			else
+				mouse_draw_rgba(v.buf, w, h);
 			hostmenu_draw(v.buf, w, h, menu_status);
-			video_present(&v, v.buf, w, h);
+			present_logged(&v, v.buf, w, h, 'W', emu_frame_count(), 0, hi ? hi_n : 1, due);
 		}
 
 		/* throttle */
-		if (!fast) {
+		if (hi) {
+			hi_base += tick;
+			next_tick = hi_base;
+			/* the audio device's clock is not the performance counter's: keep the queue near
+			 * its target by moving the present clock a little (1/32 frame per frame) */
+			if (adev) {
+				Uint32 q = SDL_GetQueuedAudioSize(adev), fb = (Uint32)(rate * 4 * frame_dt);
+				if (q > q_target + 2 * fb)
+					hi_base += tick / 32;
+				else if (q + fb < q_target)
+					hi_base -= tick / 32;
+			}
+		} else if (!fast) {
 			if (adev) {
 				while (SDL_GetQueuedAudioSize(adev) > q_target)
 					SDL_Delay(1);

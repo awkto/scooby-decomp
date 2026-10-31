@@ -12,6 +12,7 @@
 #include "libretro.h"
 #include "gx.h"
 #include "render/render_emu.h"
+#include "render/hifps.h"
 
 /* core/debug/cpuhook.c (type is hook_type_t, an enum) */
 extern void set_cpu_hook(void (*hook)(int type, int width, unsigned int address, unsigned int value));
@@ -364,7 +365,7 @@ double emu_sample_rate(void) { return g_av.timing.sample_rate; }
 /* ------------------------------------------------------------------ state */
 size_t emu_state_size(void) { return retro_serialize_size(); }
 bool emu_state_save(void *buf, size_t size) { return retro_serialize(buf, size); }
-bool emu_state_load(const void *buf, size_t size) { hle_state_reset(); return retro_unserialize(buf, size); }
+bool emu_state_load(const void *buf, size_t size) { hle_state_reset(); hifps_reset(); return retro_unserialize(buf, size); }
 
 bool emu_state_save_file(const char *path)
 {

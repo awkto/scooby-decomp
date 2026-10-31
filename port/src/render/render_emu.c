@@ -10,6 +10,7 @@
 #include "emu.h"
 #include "gx.h"
 #include "hle.h"
+#include "hifps.h"
 #include "widescreen.h"
 
 /* game/frameloop.c: record the verb-bar band at the 68k hblank_verb_bar (SCOOBY_RENDER_SPLIT=model) */
@@ -75,6 +76,8 @@ static void on_line(int line)
 	if (line == 0 && g_frame_stats)
 		snapshot();
 	render_vdp v = live_view();
+	if (line == 0)
+		hifps_line0(&v);             /* high frame rate (#27): the state the display uses */
 	if (line == 0) {
 		g_ws_frame = ws_enabled() && g_kind == RENDERER_NATIVE;
 		if (g_ws_frame) {
@@ -343,6 +346,11 @@ void render_emu_frame_end(long frame)
 		compare(frame);
 	if (g_ws_frame)
 		ws_frame_end();
+	if (g_kind == RENDERER_NATIVE) {
+		int w = 0, h = 0;
+		const uint32_t *img = render_emu_frame(&w, &h);
+		hifps_frame_end(frame, &g_band, img, w, h);
+	}
 	g_band.line = -1;
 }
 

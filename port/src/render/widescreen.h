@@ -39,6 +39,14 @@ void ws_count_centre(bool differs);
 /* the frame is done (counters; the layout becomes the one the mouse maps through) */
 void ws_frame_end(void);
 
+/* ---- in-between frames (#27, render/hifps.c) */
+/* was the last finished frame wide? its output width and camera x (4:3 screen's left edge, world px) */
+bool ws_last_wide(int *width, int *cam);
+/* the view of the last finished wide frame with the 4:3 screen moved to camera x `cam` (the
+ * in-between frame's), and its bars; false if that frame was not wide. Reads the room map from
+ * RAM like ws_frame_begin; changes no counters. */
+bool ws_interp_view(const render_vdp *v, int cam, render_view *out, int *bar_l, int *bar_r);
+
 /* ---- mouse (main.c / mouse.c): frame pixel <-> game (4:3 screen) pixel of the last frame */
 void ws_frame_to_game(int fx, int fy, int *gx, int *gy);
 void ws_game_to_frame(int gx, int gy, int *fx, int *fy);

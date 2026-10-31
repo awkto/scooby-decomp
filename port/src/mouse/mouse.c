@@ -626,7 +626,16 @@ void mouse_draw(uint16_t *px, int w, int h)
 		}
 }
 
+static void draw_arrow_rgba(uint32_t *px, int w, int h, int fx, int fy);
+
 void mouse_draw_rgba(uint32_t *px, int w, int h)
+{
+	int fx, fy;                                 /* the frame may be wider than the game's screen */
+	ws_game_to_frame(M.mx, M.my, &fx, &fy);
+	mouse_draw_rgba_at(px, w, h, fx, fy);
+}
+
+void mouse_draw_rgba_at(uint32_t *px, int w, int h, int fx, int fy)
 {
 	if (!M.enabled || !M.inside)
 		return;
@@ -634,8 +643,11 @@ void mouse_draw_rgba(uint32_t *px, int w, int h)
 	if (mg_mode_get() == MG_POINTER && M.my < MG_BAR_TOP && M.my >= MG_ROOM_TOP && !M.override && M.active &&
 	    !in_margin())
 		return;
-	int fx, fy;                                 /* the frame may be wider than the game's screen */
-	ws_game_to_frame(M.mx, M.my, &fx, &fy);
+	draw_arrow_rgba(px, w, h, fx, fy);
+}
+
+static void draw_arrow_rgba(uint32_t *px, int w, int h, int fx, int fy)
+{
 	for (int r = 0; r < (int)(sizeof arrow / sizeof arrow[0]); r++)
 		for (int c = 0; arrow[r][c]; c++) {
 			int x = fx + c, y = fy + r;

@@ -24,6 +24,7 @@
 #include "sprite.h"
 #include "frameloop.h"
 #include "cc68k.h"
+#include "hifps.h"     /* #27: owner + anchor of every actor's sprites (presentation only) */
 
 #define RLE_DECOMPRESS 0x009C64
 #define VDP_DMA_VRAM   0x0099F6
@@ -278,6 +279,7 @@ HLE_FUNC(0x00A984, sprite_build, 5279)
 	RAM8(ACTORS_DRAWN) = 0;
 	d[5] = 1;
 	a[0] = SAT_BUF;
+	hifps_spr_begin((int16_t)RAM16(CAMERA_X), (int16_t)RAM16(CAMERA_Y));
 
 	/* ---- 1. pointer */
 	if (RAM8(VBLANK_FLAGS) & VBF_POINTER) {
@@ -475,8 +477,16 @@ HLE_FUNC(0x00A984, sprite_build, 5279)
 		a[2] = ACTOR_SHOWN_FRAME(0) + (int16_t)(uint16_t)d[1];
 		a[3] = ACTOR_FRAME(0) + (int16_t)(uint16_t)d[0];
 		R.x = 0;
+		uint32_t first = a[0];
 		actor_draw(&R);
+		/* high frame rate (#27): this actor owns SAT entries [first, a0); its anchor is its
+		 * 16.16 world position (the hot spot: the actor's point, not the frame's corner, so a
+		 * new animation frame changes in place). Host memory only. */
+		if (a[0] > first)
+			hifps_spr_actor(slot, (int)((first - SAT_BUF) / 8), (int)((a[0] - first) / 8),
+			                (int32_t)RAM32(ACTOR_X(slot)), (int32_t)RAM32(ACTOR_Y(slot)));
 	}
+	hifps_spr_end((int)((a[0] - SAT_BUF) / 8));
 	setw(&d[0], saved_link);
 	if (a[0] == SAT_BUF) {                      /* (unreachable: the masking sprites are always there) */
 		RAM32_W(SAT_BUF, 0);

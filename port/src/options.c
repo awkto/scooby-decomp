@@ -28,6 +28,7 @@ static opt_t opts[] = {
 	OPT("vsync", T_BOOL, "on", "", 0, "sync presentation to the display"),
 	OPT("renderer", T_ENUM, "native", "native|gpgx", 0, "who draws the picture: the C renderer or the emulator core"),
 	OPT("widescreen", T_STR, "16:9", "", 0, "wider room view (presentation only, F10 toggles): 16:9 | 21:9 | W:H | width in pixels | auto (the window's aspect) | 4:3; scripted runs default to 4:3"),
+	OPT("high_fps", T_STR, "auto", "", 0, "high frame rate presentation (logic stays 59.92 Hz; F4 toggles): auto (the display's refresh if over 60 Hz) | off | a rate in Hz (61..1000); scripted runs default to off"),
 	OPT("ws_stats", T_BOOL, "off", "", 0, "print the widescreen counters at exit (docs/subsystems/widescreen.md)"),
 	OPT("mouse", T_BOOL, "on", "", 0, "mouse control (click to walk / use verbs, docs/mouse.md)"),
 	OPT("mute", T_BOOL, "off", "", 0, "no audio"),
