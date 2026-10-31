@@ -158,6 +158,10 @@ into the game frame before the filter.
 
 ## For #26 (widescreen) and #27 (high frame rate)
 
+**#26 is done**: `render_view` / `render_line_pixels_view` (a wider view of the room band, with
+undrawn plane cells from a name table and the sprites' x range opened), see
+[widescreen.md](widescreen.md). `RENDER_MAX_W` is 640 now.
+
 The renderer is written against `render_scene`, not against GPGX, and the per-line work takes its
 inputs from a few explicit values. The planned extensions:
 - **wider viewport**: `render_vdp.width` is already a parameter of every stage (line buffers are

@@ -105,6 +105,7 @@ typedef enum {
 	WS_CLOSEUP,          /* close-up picture (script sub-op $07): plane A follows Shaggy */
 	WS_SCROLL_MODE,      /* line/cell h-scroll or 2-cell v-scroll: not the room camera */
 	WS_PLANE_SPLIT,      /* planes A and B scrolled differently (cut-scene layouts) */
+	WS_CAMERA_OUTSIDE,   /* the scroll shows a part of the planes outside the room (full-screen picture) */
 	WS_PLANES_NOT_MAP,   /* the planes do not show the room map (full-screen picture, ...) */
 	WS_REASONS
 } ws_reason;
@@ -116,6 +117,7 @@ static const struct { ws_reason r; const char *name, *why; } ws_rules[WS_REASONS
 	{ WS_CLOSEUP, "closeup", "close-up picture ($FF09DE bit 6): plane A is the picture, placed at Shaggy" },
 	{ WS_SCROLL_MODE, "scroll-mode", "h-scroll per line/cell or 2-cell v-scroll: not the room camera" },
 	{ WS_PLANE_SPLIT, "plane-split", "planes A and B scrolled differently" },
+	{ WS_CAMERA_OUTSIDE, "camera-outside", "the h-scroll shows plane columns outside the room (full-screen pictures animate by flipping it)" },
 	{ WS_PLANES_NOT_MAP, "planes-not-map", "the 4:3 window of the planes does not show the room map (full-screen picture, ...)" },
 };
 
@@ -245,6 +247,8 @@ static long build_names(const render_vdp *v, int cam_x, int rcam, room_stat *rs)
 				}
 			}
 		}
+	if (!cells)
+		bad = 1;                          /* nothing of the room in the window: not a room view */
 	c_cells += cells;
 	if (rs)
 		rs->stale += stale;
@@ -281,13 +285,15 @@ void ws_frame_begin(const render_vdp *v)
 		} else {
 			rcam = (rw - vw) / 2;            /* narrower than the view: centred, bars both sides */
 		}
+		if (cam_x < 0 || cam_x > (rw > v->width ? rw - v->width : 0))
+			g_reason = WS_CAMERA_OUTSIDE;
 		if (rcam > cam_x) rcam = cam_x;      /* the 4:3 picture stays inside the view */
 		if (rcam < cam_x + v->width - vw) rcam = cam_x + v->width - vw;
 		/* the 4:3 window of the planes must be exactly the room map: otherwise the planes hold
 		 * something else (a picture, cleared VRAM before a load) and the map would not continue
 		 * it. Such a frame is shown 4:3 (in every room view of the 51-room test the window
 		 * matches the map on every frame: the map is the streamers' source) */
-		long bad = build_names(v, cam_x, rcam, rs);
+		long bad = g_reason == WS_OK ? build_names(v, cam_x, rcam, rs) : 0;
 		if (bad) {
 			g_reason = WS_PLANES_NOT_MAP;
 			c_mismatch += bad;
@@ -304,8 +310,10 @@ void ws_frame_begin(const render_vdp *v)
 	if (dbg < 0)
 		dbg = getenv("SCOOBY_WS_DEBUG") != NULL;
 	if (dbg && g_reason != last_reason)    /* SCOOBY_WS_DEBUG=1: every change of the screen rule */
-		fprintf(stderr, "ws %ld: %s (room w%d r%02d, camera %d)\n", emu_frame_count(), ws_rules[g_reason].name,
-		        emu_ram16(MYSTERY_IDX), emu_ram16(ROOM_INDEX), cam_x);
+		fprintf(stderr, "ws %ld: %s (room w%d r%02d, camera %d; hscroll %04X %04X vscroll %04X %04X)\n",
+		        emu_frame_count(), ws_rules[g_reason].name, emu_ram16(MYSTERY_IDX), emu_ram16(ROOM_INDEX), cam_x,
+		        vram_word(v, ((uint32_t)v->reg[13] << 10) & 0xFC00), vram_word(v, (((uint32_t)v->reg[13] << 10) & 0xFC00) + 2),
+		        v->vsram[0], v->vsram[1]);
 	last_reason = g_reason;
 	if (g_reason != WS_OK) {
 		if (was)
