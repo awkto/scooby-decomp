@@ -154,11 +154,12 @@ every frame with and without the core. On the native build: storytest short 6/6 
 hosttest, irqtest 10/10, mousetest all passed, wstest, hifpstest, slottest 16/16: PASS. `make dist` builds the
 tarball from `scooby` (romscan CLEAN); the unpacked binary plays 600 frames and refuses a modified ROM.
 
-**Found on the way.** Loading saved games 4-8 of the Ha Ha Carnival walkthrough (slottest w1_full) makes the
+**Found on the way.** Loading saved games 4-8 of the Ha Ha Carnival walkthrough (slottest w1_full) made the
 original game (`--hle none`) jump through a null code pointer (`ram_script_cb` is still 0 when an if/else body
 runs) and hang in the bus error handler at `$892`; slottest passed because the loaded game and the typed
-password hang the same way. The native build reproduces the hang (`waits.c`, `null_jump_crash`). Whether the
-loader or the game is at fault is not investigated here.
+password hung the same way. The native build reproduces the hang (`waits.c`, `null_jump_crash`). #35 found it is a
+cartridge bug of passwords typed after power-on (docs/passwords.md, "Cold-start password bug"); the slot loader
+now works around it and slottest checks that every loaded game becomes playable.
 
 ## What is left
 

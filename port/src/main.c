@@ -43,6 +43,7 @@ void sndlog_init(void);
 typedef struct {
 	const char *rom, *script, *outdir, *screenshot, *window_shot, *savedir, *hle, *renderer, *config, *dump_ram;
 	int load_slot, save_slot;
+	const char *load_file;         /* --load-slot FILE.sav (load_slot is then -1) */
 	bool list_slots;
 	present_filter filter;
 	const char *cap_dir;
@@ -60,7 +61,7 @@ static void usage(const char *argv0)
 	       "  --options K=V,...       set options for this run (--options --json lists them all); an\n"
 	       "                          ini file ~/.config/scooby-decomp/scooby.ini holds the permanent ones\n"
 	       "  --config FILE           use this ini instead\n"
-	       "  --load-slot N           start by loading game save N (1..8, see F8 in the game)\n"
+	       "  --load-slot N|FILE      start by loading game save N (1..8, see F8 in the game) or a .sav file\n"
 	       "  --save-slot N           (after --script) store the running game in save slot N\n"
 	       "  --list-slots            list the game saves and exit\n"
 	       "  --dump-ram FILE         at exit, write the 64 KiB work RAM\n"
@@ -500,7 +501,15 @@ int main(int argc, char **argv)
 				return 2;
 			}
 		}
-		else if (!strcmp(s, "--load-slot")) a.load_slot = atoi(NEXT());
+		else if (!strcmp(s, "--load-slot")) {
+			const char *v = NEXT();
+			if (v[0] && strspn(v, "0123456789") == strlen(v))
+				a.load_slot = atoi(v);
+			else {
+				a.load_file = v;
+				a.load_slot = -1;
+			}
+		}
 		else if (!strcmp(s, "--save-slot")) a.save_slot = atoi(NEXT());
 		else if (!strcmp(s, "--list-slots")) a.list_slots = true;
 		else if (!strcmp(s, "--dump-ram")) a.dump_ram = NEXT();
@@ -576,7 +585,7 @@ int main(int argc, char **argv)
 		}
 		return 0;
 	}
-	if ((a.load_slot && (a.load_slot < 1 || a.load_slot > SLOT_COUNT)) || (a.save_slot && (a.save_slot < 1 || a.save_slot > SLOT_COUNT))) {
+	if ((a.load_slot > 0 && (a.load_slot < 1 || a.load_slot > SLOT_COUNT)) || (a.save_slot && (a.save_slot < 1 || a.save_slot > SLOT_COUNT))) {
 		fprintf(stderr, "slots are 1..%d\n", SLOT_COUNT);
 		return 2;
 	}
@@ -714,7 +723,7 @@ int main(int argc, char **argv)
 	static char ovl_text[256];
 	if (a.load_slot && !a.script) {       /* straight into a save */
 		post_done = true;
-		if (!slot_load_begin(a.load_slot, err, sizeof err)) {
+		if (!(a.load_file ? slot_load_begin_file(a.load_file, err, sizeof err) : slot_load_begin(a.load_slot, err, sizeof err))) {
 			fprintf(stderr, "%s\n", err);
 			return 1;
 		}
@@ -909,7 +918,7 @@ int main(int argc, char **argv)
 			}
 			if (a.save_slot)
 				printf("saved slot %d\n", a.save_slot);
-			if (a.load_slot && !slot_load_begin(a.load_slot, err, sizeof err)) {
+			if (a.load_slot && !(a.load_file ? slot_load_begin_file(a.load_file, err, sizeof err) : slot_load_begin(a.load_slot, err, sizeof err))) {
 				fprintf(stderr, "%s\n", err);
 				rc = 1;
 				break;
@@ -931,7 +940,9 @@ int main(int argc, char **argv)
 				if (adev)
 					SDL_ClearQueuedAudio(adev);
 			}
-		} else if (scr) {
+		}
+		/* a script goes on in the frame its `loadslot` finished */
+		if (!scripted && !slot_loader_active() && scr) {
 			unsigned pad;
 			if (script_step(scr, &pad)) {
 				emu_set_pad(0, mouse_frame(pad));

@@ -21,7 +21,55 @@ struct script {
 	int line;
 	int errors;
 	FILE *peek;            /* OUTDIR/peek.log (harness format) */
+	/* autoslot: store a game save each time the room changes (slottest) */
+	bool autoslot;
+	char autoslot_prefix[1600];
+	int autoslot_delay, autoslot_count, autoslot_wait;
+	unsigned autoslot_room;   /* room of the last save (0: none yet) */
+	unsigned pending_slots;   /* bit n: `slot n` asked during a cut scene, stored once saving is possible */
 };
+
+static unsigned ram_room(void) { return ((unsigned)emu_ram8(0xFF06AC) << 8) | emu_ram8(0xFF06AD); }
+
+/* autoslot: once the game has been in a new room for `delay` frames, store a save
+ * PREFIX_NNN.sav and append "NNN frame room" to PREFIX.idx */
+static void autoslot_frame(script *s)
+{
+	for (int n = 1; n <= SLOT_COUNT && s->pending_slots && slot_can_save(); n++) {
+		char err[200];
+		if (!(s->pending_slots & (1u << n)))
+			continue;
+		if (slot_save_current(n, emu_frame_count(), err, sizeof err))
+			fprintf(stderr, "saved slot %d (deferred)\n", n);
+		else
+			fprintf(stderr, "slot %d: %s\n", n, err);
+		s->pending_slots &= ~(1u << n);
+	}
+	if (!s->autoslot)
+		return;
+	unsigned room = ram_room();
+	if (!slot_can_save() || room == s->autoslot_room) {
+		s->autoslot_wait = 0;
+		return;
+	}
+	if (++s->autoslot_wait < s->autoslot_delay)
+		return;
+	char path[1700], err[200];
+	snprintf(path, sizeof path, "%s_%03d.sav", s->autoslot_prefix, s->autoslot_count);
+	if (slot_save_file(path, emu_frame_count(), err, sizeof err)) {
+		snprintf(path, sizeof path, "%s.idx", s->autoslot_prefix);
+		FILE *f = fopen(path, "a");
+		if (f) {
+			fprintf(f, "%03d %ld %u\n", s->autoslot_count, emu_frame_count(), room);
+			fclose(f);
+		}
+		s->autoslot_count++;
+	} else {
+		fprintf(stderr, "autoslot: %s\n", err);
+	}
+	s->autoslot_room = room;
+	s->autoslot_wait = 0;
+}
 
 script *script_open(const char *path, const char *outdir)
 {
@@ -54,6 +102,7 @@ bool script_step(script *s, unsigned *pad)
 {
 	for (;;) {
 		if (s->frames_left > 0) {
+			autoslot_frame(s);
 			s->frames_left--;
 			*pad = s->cur_pad;
 			return true;
@@ -105,10 +154,50 @@ bool script_step(script *s, unsigned *pad)
 			if (sscanf(line, "%*s %*s %*s %*s %*s %511s", a3) == 1)
 				skip = atoi(a3);
 			capture_start((uint32_t)strtoul(a1 + (a1[0] == '$'), NULL, 16), (int)n, a2, every, skip);
-		} else if (!strcmp(cmd, "slot") && sscanf(line, "%*s %ld", &n) == 1) {
-			/* slot N: store the running game in game-save slot N (saveslot.h); #28 tests */
+		} else if (!strcmp(cmd, "slot") && sscanf(line, "%*s %511s", a1) == 1 && strspn(a1, "0123456789") != strlen(a1)) {
+			/* slot NAME: store the running game in the game-save file NAME (OUTDIR/NAME.sav) */
 			char serr[200];
-			if (slot_save_current((int)n, emu_frame_count(), serr, sizeof serr))
+			out_path(s, path, sizeof path, a1, "sav");
+			if (slot_save_file(path, emu_frame_count(), serr, sizeof serr))
+				fprintf(stderr, "saved %s\n", path);
+			else {
+				fprintf(stderr, "slot %s: %s\n", a1, serr);
+				s->errors++;
+			}
+		} else if (!strcmp(cmd, "autoslot") && sscanf(line, "%*s %511s %ld", a1, &n) == 2) {
+			/* autoslot PREFIX DELAY: from now on, a save OUTDIR/PREFIX_NNN.sav each time the game has
+			 * been in a new room for DELAY frames in which it could open its pause menu (index lines "NNN frame room" in OUTDIR/PREFIX.idx) */
+			snprintf(s->autoslot_prefix, sizeof s->autoslot_prefix, "%s/%s", s->outdir, a1);
+			s->autoslot = true;
+			s->autoslot_delay = (int)(n > 0 ? n : 1);
+			s->autoslot_room = slot_can_save() ? ram_room() : 0;
+		} else if (!strcmp(cmd, "loadslot") && sscanf(line, "%*s %511s", a1) == 1) {
+			/* loadslot N|NAME: load game save N (1..8) or the file NAME (OUTDIR/NAME.sav) the way the
+			 * player's F8 menu does; the script goes on once the loader is done (main.c runs the
+			 * loader in place of the script while slot_loader_active()) */
+			char serr[200];
+			bool ok;
+			if (strspn(a1, "0123456789") == strlen(a1)) {
+				ok = slot_load_begin(atoi(a1), serr, sizeof serr);
+			} else {
+				out_path(s, path, sizeof path, a1, "sav");
+				ok = slot_load_begin_file(path, serr, sizeof serr);
+			}
+			if (!ok) {
+				fprintf(stderr, "loadslot: %s\n", serr);
+				s->errors++;
+			} else {
+				*pad = 0;
+				return true;
+			}
+		} else if (!strcmp(cmd, "slot") && sscanf(line, "%*s %ld", &n) == 1) {
+			/* slot N: store the running game in game-save slot N (saveslot.h); #28 tests.  During a cut
+			 * scene the save waits until the game could open its pause menu (slot_can_save) */
+			char serr[200];
+			if (n >= 1 && n <= SLOT_COUNT && slot_in_game() && !slot_can_save()) {
+				s->pending_slots |= 1u << n;
+				fprintf(stderr, "slot %ld: deferred to the end of the cut scene\n", n);
+			} else if (slot_save_current((int)n, emu_frame_count(), serr, sizeof serr))
 				fprintf(stderr, "saved slot %ld\n", n);
 			else {
 				fprintf(stderr, "slot %ld: %s\n", n, serr);

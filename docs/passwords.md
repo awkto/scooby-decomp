@@ -76,5 +76,42 @@ the 2 x 31-byte display text into `$FF08BC` (what the entry loop redraws from), 
 The ROM's checker (`$009298`) and start code (`$00933E` -> `$008CD6`) then run; the loader is done when `$FF09ED` has
 `MF_FROM_PASSWORD` set, `$FF0A90` equals the room and `$FF2A00..+28` equals the slot. If a menu step was missed it starts over
 with 2x then 3x longer waits (3 attempts). The mystery's intro cut scene plays afterwards, as after typing a password.
-`port/tools/slottest.sh` saves 8 slots along each full walkthrough and compares the loaded game against the same password typed
-key by key (mystery, room, inventory, story bytes).
+Since #35 a save is only taken where the game's own pause menu could open (`slot_can_save`: in a mystery, no script
+running -- `ram_vblank_flags` bit 7 clear -- and `$FF09E9` bit 4 clear, the main loop's own pause condition), so a save is
+always a password the game itself would show. During a cut scene F8 answers "not during a cut scene"; a saved-mid-cut-scene
+state such as the intro's Mystery Machine (room 26) loaded into the van with Shaggy frozen and nothing to do. The loader also sets `ram_script_cb` if it is still 0 (next section) -- the one value it writes that is not the
+password text. `port/tools/slottest.sh` saves 8 slots along each full walkthrough and compares the loaded game against the
+same password typed key by key (mystery, room, inventory, story bytes); it also stores a save every time the walkthrough has
+been in a new room for 60 frames, and for every save checks that the loaded game becomes playable: no script running, verb
+bar shown, and the D-pad walks Shaggy (a hang freezes RAM and fails). `SCOOBY_BIN="port/tools/nativewrap.sh scoobyport"` runs
+the loads on the native build. Script commands for this: `slot N|NAME`, `autoslot PREFIX DELAY`, `loadslot N|NAME`
+(`port/src/script.c`); `--load-slot` also takes a `.sav` path.
+
+## Cold-start password bug (#35, a cartridge bug)
+
+Some Ha Ha Carnival passwords hang the original game when typed in right after power-on: the screen keeps
+cycling colour 0 (the bus error handler loop at `$892`). Cause:
+
+* `game_start` (`$000CB8`) runs the mystery's two start-up scripts with a direct `bsr script_run_frame` and never sets
+  `ram_script_cb` (`$FF0878`), the loop that `script_op_04_if_else` (`$00274A`) calls (`jsr (a0)`) for a true then-body.
+* Only the verb code (`action_execute`, `$1A2A`/`$1A66`) and the TALK reply code (`$1F20`) leave a value there; the
+  room scripts, object events and `script_run_nested` save and restore it. The boot code clears work RAM on a cold
+  start (the soft reset of QUIT MYSTERY keeps it).
+* Blake's Hotel's start-up scripts have no if/else. The Carnival's second one (`start2`, ROM `$1BB392`) has exactly one:
+  `if F07.0 == 1: (if F07.1 == 1: Engine = 0 else Engine = 1) else: (if F07.1 == 1: Engine = 3)` at `$1BB488`
+  (the bumper car engine). Story bit F07.0 is set once the engine has been dealt with (slots 4-8 of the w1_full
+  walkthrough). With such a password and a cold console, the then-body is called through address 0: the 68000
+  runs the vector table, takes an illegal-instruction exception into non-code and ends in the bus error loop.
+
+Checked on the original code (`--hle none`), at 7 points of the w1_full walkthrough: the password the game itself shows
+in the pause menu equals the slot's password except for the last character (its two low bits are the ignored bits 248-249,
+which the game fills from uninitialised `ram_pw_raw+31`, the port's encoder with 0). Typing the game's own password after
+power-on hangs for every state with F07.0 set (4 of 4) and works for the others; two of them (slots 6 and 8) typed after playing
+and QUIT MYSTERY (soft reset, `ram_script_cb` = `script_run_frame` or `script_run` left by the last verb) load fine into
+the saved room (both values tested). So the saved state is a state the real game produces and shows; the hang is the cartridge's.
+
+The slot loader therefore makes the console "warm": just before pressing END it writes `ram_script_cb` = `script_run_frame`
+(`$002406`, the execute-mode loop the then-body was written for, and what a game played since power-on usually leaves)
+if the pointer is still 0 (`warm_script_cb` in `port/src/saveslot.c`). Nothing else differs from a hand-typed password
+on a console that has been played. A password typed by hand into the port right after start-up still hangs, as on the
+cartridge.

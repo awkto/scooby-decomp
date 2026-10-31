@@ -66,8 +66,10 @@ and `--list-slots` on the command line. A slot is the game's own password state 
 `docs/passwords.md`) plus mystery, room name, date and play time, in `~/.local/share/scooby-decomp/slotN.sav`
 (text; contains the password). Loading presses the game's own buttons: reset, title, mystery menu, CONTINUE,
 password, END - so the result is exactly the password-entered game (`port/tools/slottest.sh` proves it by
-comparing against a hand-typed password at 8 points of each full walkthrough). The mystery's intro cut scene
-plays first, as after typing a password (Start skips it).
+comparing against a hand-typed password at 8 points of each full walkthrough, and loads a save taken at every
+room change of both walkthroughs and checks that the game becomes playable). The mystery's intro cut scene
+plays first, as after typing a password (Start skips it). One deliberate deviation: the loader works around a
+cartridge bug that hangs some Ha Ha Carnival passwords typed right after power-on (`docs/passwords.md`, #35).
 
 **Options**: `~/.config/scooby-decomp/scooby.ini` (written when the ROM is first remembered), overridden per
 run with `--options scale=4,filter=crt,volume=60,key_a=Z|Space`; `--options --json` lists them all with

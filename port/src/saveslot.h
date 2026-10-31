@@ -28,10 +28,16 @@ typedef struct {
 void slots_init(const char *dir);
 bool slot_read(int n, slot_info *out);                      /* n = 1..SLOT_COUNT */
 bool slot_erase(int n);
+/* the same on any file path (the tests store many saves along a walkthrough) */
+bool slot_read_file(const char *path, slot_info *out);
+bool slot_save_file(const char *path, long playtime, char *err, size_t errlen);
+bool slot_load_begin_file(const char *path, char *err, size_t errlen);
 
 /* a mystery is running (the pause menu exists, a room is loaded)? */
 bool slot_in_game(void);
-/* store the current game in slot n */
+/* ... and the game's pause menu could be opened now (no cut scene running): saving is allowed */
+bool slot_can_save(void);
+/* store the current game in slot n (fails during a cut scene) */
 bool slot_save_current(int n, long playtime, char *err, size_t errlen);
 
 /* Load: resets the emulator and starts feeding the game the buttons that enter the slot's
