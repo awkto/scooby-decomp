@@ -112,8 +112,8 @@ piece. Larger pieces that had no C at all are ported as functions:
   capture and ipprof work on it unchanged.
 - Savestates are GPGX's in both builds; a state saved by the native runner (PC at a block start) also loads in
   the emulated build. A state saved by `--hle none` can have the PC in the middle of a 68k function and does not
-  load into the native runner: gates that need start states make them on the side that uses them
-  (`MOUSETEST_STATE_HLE=all`).
+  load into the native runner. mousetest therefore makes its start states with `--hle none` and then runs two
+  frames with the C on (script command `hle all`), which finishes the 68k function in progress, before it saves.
 
 ## Running the gates on the native runner
 

@@ -277,3 +277,21 @@ HLE_WAIT_RANGE(0x0044BA, closeup_wait_inventory, 20, 0x0044BA, 0x0044C2)
 
 /* $003FD2 script_subop_27_minigame_throw: the frame pacing countdown */
 HLE_WAIT_RANGE(0x003FD2, throw_wait, 20, 0x003FD2, 0x003FDC) { frame_countdown_spin(ctx, 0x003FD2, 0x003FDC); }
+
+/* ------------------------------------------------------------------ the crash */
+/* $000000: a jump through a null code pointer. Loading some saved games of the Ha Ha Carnival
+ * (port/tools/slottest.sh, w1_full slots 4-8) runs an if/else body through ram_script_cb before
+ * it is set, and the original does that too (--hle none). The 68000 then executes the vector table:
+ * $00FF is an illegal instruction, its vector is not code, and the CPU ends up in the bus error
+ * handler at $892, which cycles colour 0 forever: the game hangs on a flashing screen. The C does
+ * the same, without the exception frames on the way. */
+HLE_FUNC(0x000000, null_jump_crash, 34) { hle_jump(ctx, 0x000892); }
+
+/* $000892 BusError: move.l #$C0000000,(vdp_ctrl) / move.w d0,(vdp_data) / addi.w #1,d0 / bra $892 */
+HLE_FUNC(0x000892, bus_error_hang, 44)
+{
+	vdp_ctrl_w32(0xC0000000);
+	vdp_data_w((uint16_t)ctx->d[0]);
+	set_w(&ctx->d[0], cc_add(ctx, ctx->d[0], 1, 16));
+	hle_jump(ctx, 0x000892);
+}
