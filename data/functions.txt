@@ -68,13 +68,13 @@
 003372   358 sub_003372  # 100 insns +0038a4:150
 0034d8    38 sub_0034D8  # 8 insns
 0034fe   934 sub_0034FE  # 181 insns
-00393a   154 sub_00393A  # 43 insns
-0039d4   148 sub_0039D4  # 46 insns
-003a68    18 sub_003A68  # 5 insns
-003a7a   118 sub_003A7A  # 44 insns
-003af0   384 sub_003AF0  # 83 insns
-003c70   142 sub_003C70  # 26 insns
-003cfe   136 sub_003CFE  # 25 insns
+00393a   154 duel_meters  # 43 insns
+0039d4   148 duel_overlap  # 46 insns
+003a68    18 duel_aim  # 5 insns
+003a7a   118 duel_bearing  # 44 insns
+003af0   384 duel_bump  # 83 insns
+003c70   142 duel_wall0  # 26 insns
+003cfe   136 duel_wall1  # 25 insns
 003e96    20 script_subop_2F_then_talk  # 3 insns
 003eaa    10 script_subop_30_no_idle_anim_on  # 2 insns
 003eb4    10 script_subop_31_no_idle_anim_off  # 2 insns

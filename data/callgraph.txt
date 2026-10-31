@@ -63,17 +63,17 @@
 0030a6 script_subop_37_shaggy_pose_47 -> actor_animate
 00312e script_subop_33_flag09eb_0_on -> -
 003138 script_subop_34_flag09eb_0_off -> -
-003142 script_subop_32_minigame_tug -> sub_00393A script_subop_02_room_fade_in wait_vblanks wait_vblank sound_play sound_stop vdp_copy_to_vram vdp_write_word vdp_dma_vram actor_animate
+003142 script_subop_32_minigame_tug -> duel_meters script_subop_02_room_fade_in wait_vblanks wait_vblank sound_play sound_stop vdp_copy_to_vram vdp_write_word vdp_dma_vram actor_animate
 003372 sub_003372 -> sub_0034FE^ script_subop_03_fade_out wait_vblank sound_play sound_stop vdp_copy_to_vram actor_animate sound_cmd_pause sound_cmd_unpause
 0034d8 sub_0034D8 -> sub_0034FE^
-0034fe sub_0034FE -> sub_003372^ sub_00393A sub_0039D4 sub_003A68 sub_003AF0 sub_003C70 sub_003CFE walk_blocked_line_probe
-00393a sub_00393A -> -
-0039d4 sub_0039D4 -> -
-003a68 sub_003A68 -> sub_003A7A
-003a7a sub_003A7A -> -
-003af0 sub_003AF0 -> sub_003A7A sound_play
-003c70 sub_003C70 -> sound_play
-003cfe sub_003CFE -> sound_play
+0034fe sub_0034FE -> sub_003372^ duel_meters duel_overlap duel_aim duel_bump duel_wall0 duel_wall1 walk_blocked_line_probe
+00393a duel_meters -> -
+0039d4 duel_overlap -> -
+003a68 duel_aim -> duel_bearing
+003a7a duel_bearing -> -
+003af0 duel_bump -> duel_bearing sound_play
+003c70 duel_wall0 -> sound_play
+003cfe duel_wall1 -> sound_play
 003e96 script_subop_2F_then_talk -> -
 003eaa script_subop_30_no_idle_anim_on -> -
 003eb4 script_subop_31_no_idle_anim_off -> -

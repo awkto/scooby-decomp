@@ -421,7 +421,5 @@ static void walk_obj_next(hle_ctx *ctx, uint32_t facing)
 	hle_jump(ctx, WO_RTS);
 }
 HLE_RANGE(0x004D1C, script_op_walk_obj_shaggy, 128, HLE_EXIT_SP(WO_RTS, 2)) { walk_obj_next(ctx, RAM_SHAGGY_FACING); }
-#ifdef SCRIPT_UNTESTED   /* no states: no route walks Scooby to an object and waits */
 HLE_RANGE(0x004D48, script_op_walk_obj_scooby, 128, HLE_EXIT_SP(WO_RTS, 2)) { walk_obj_next(ctx, RAM_SCOOBY_FACING); }
-#endif
 HLE_RANGE(0x004D78, script_op_walk_obj_done, 16, HLE_EXIT_SP(WO_RTS, 2)) { walk_obj_next(ctx, 0); }
