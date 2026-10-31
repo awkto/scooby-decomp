@@ -7,7 +7,7 @@
 # (tools/py/romscan.py); without it the scan is skipped (CI has no ROM, so it cannot ship one).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-EMSDK_VERSION=6.0.13            # the version CI installs (.github/workflows/pages.yml)
+PINNED_EMCC=6.0.13              # the version CI installs (.github/workflows/pages.yml)
 
 if ! command -v emcc >/dev/null; then
   if [ -n "${EMSDK:-}" ] && [ -f "$EMSDK/emsdk_env.sh" ]; then
@@ -15,9 +15,9 @@ if ! command -v emcc >/dev/null; then
     . "$EMSDK/emsdk_env.sh" >/dev/null 2>&1
   fi
 fi
-command -v emcc >/dev/null || { echo "web_build.sh: emcc not found (install emsdk $EMSDK_VERSION, set EMSDK)" >&2; exit 1; }
+command -v emcc >/dev/null || { echo "web_build.sh: emcc not found (install emsdk $PINNED_EMCC, set EMSDK)" >&2; exit 1; }
 v=$(emcc -dumpversion 2>/dev/null || true)
-[ "$v" = "$EMSDK_VERSION" ] || echo "web_build.sh: note: emcc $v, CI pins $EMSDK_VERSION" >&2
+[ "$v" = "$PINNED_EMCC" ] || echo "web_build.sh: note: emcc $v, CI pins $PINNED_EMCC" >&2
 
 bdir=build/web-cmake
 out=build/web
