@@ -523,6 +523,12 @@ static void render_at(double f)
 				dst[x] = black();
 		}
 	}
+	/* the verb-bar band never moves (and its masking sprites keep the actors off it), but the
+	 * main loop rewrites it (verb highlight, inventory) while the screen is drawn, after the
+	 * line-0 snapshot: take those lines from the raster frame R(k) as the display showed them */
+	if (band->line >= 0)
+		for (int l = band->line; l < c->height && l < RENDER_MAX_H; l++)
+			memcpy(g_out + (size_t)l * RENDER_MAX_W, g_img[g_icur] + (size_t)l * RENDER_MAX_W, (size_t)W * 4);
 }
 
 static bool same_image(const uint32_t *a, const uint32_t *b, int w, int h)
@@ -546,8 +552,21 @@ static void zero_check(void)
 		c_why[WHY_MOTION]--;
 		c_why[WHY_FRAMEMODE]++;
 		g_plan.why = WHY_FRAMEMODE;
-		if (getenv("SCOOBY_HIFPS_DEBUG"))
-			fprintf(stderr, "hifps %ld: frame mode differs from the raster frame: held\n", g_cur.frame);
+		if (getenv("SCOOBY_HIFPS_DEBUG")) {
+			int fx = -1, fy = -1, lines = 0, n = 0;
+			for (int y = 0; y < g_cur.out_h; y++) {
+				int ln = 0;
+				for (int x = 0; x < g_cur.out_w; x++)
+					if (g_out[y * RENDER_MAX_W + x] != g_img[g_icur][y * RENDER_MAX_W + x]) {
+						if (fx < 0) { fx = x; fy = y; }
+						ln++;
+					}
+				n += ln;
+				lines += ln > 0;
+			}
+			fprintf(stderr, "hifps %ld: frame mode differs from the raster frame: held (%d px on %d lines, first %d,%d; "
+			        "hook %06X, band %d)\n", g_cur.frame, n, lines, fx, fy, emu_ram32(VBLANK_HOOK), g_cur.band.line);
+		}
 	}
 }
 

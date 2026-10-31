@@ -102,7 +102,11 @@ in the `hifps:` report):
 - **frame mode differs**: before the first in-between of a frame, R(k)'s snapshot is rendered with
   no step (frame mode, `render_frame`'s contract) and compared with the raster frame R(k); if the
   game changed the VDP during the display (beyond the verb-bar band, which the scene carries),
-  frame mode cannot reproduce R(k) and the frame is held. 0 such frames in every test so far.
+  frame mode cannot reproduce R(k) and the frame is held. The verb-bar band's lines of every
+  in-between are copied from the raster frame R(k): the main loop rewrites the bar (verb highlight)
+  while the screen is drawn, after the line-0 snapshot (before this, 1-7 frames per story route
+  differed in lines 178-190 only); the bar never moves and its masking sprites keep actors off it.
+  With that, 0 frames differ in every test.
 
 ## Widescreen
 
