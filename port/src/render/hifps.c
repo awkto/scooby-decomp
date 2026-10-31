@@ -240,6 +240,7 @@ void hifps_line0(const render_vdp *v)
 	/* the owners of the sprite table the display uses: sprite_build's last run (in the VBlank
 	 * just before). Valid only if the VDP's table is that run's output, entry for entry. */
 	s_ann = g_ann_ready;
+	g_ann_ready.done = false;        /* used once: a frame without a C sprite_build run has no owners */
 	s_ok = true;
 }
 
