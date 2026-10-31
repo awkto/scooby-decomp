@@ -109,7 +109,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   res.shots.push(await shot('lobby'));
   res.room_lobby = await page.evaluate(() => [Module._web_ram16(0xFF06AA), Module._web_ram16(0xFF06AC)]);
   // walk a bit (keyboard) and click (mouse)
-  await page.keyboard.down('ArrowRight'); await sleep(800); await page.keyboard.up('ArrowRight');
+  const fw = await frame();
+  await page.keyboard.down('ArrowRight'); await waitFrame(fw + 48); await page.keyboard.up('ArrowRight');
   res.shots.push(await shot('walked'));
   // mouse: click on the floor left of Shaggy, he walks there (X = word at $FF04DC)
   const box = await (await page.$('#canvas')).boundingBox();
@@ -117,11 +118,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await page.mouse.move(box.x + box.width * 0.42, box.y + box.height * 0.42);
   await sleep(100);
   await page.mouse.click(box.x + box.width * 0.42, box.y + box.height * 0.42);
-  await sleep(2500);
+  await waitFrame(await frame() + 150);
   const x1 = await page.evaluate(() => Module._web_ram16(0xFF04DC));
   res.mouse_walk_x = [x0, x1];
   res.shots.push(await shot('mouse-walked'));
 
+  // cost of an in-between picture while Shaggy walks (high fps on only)
+  if (process.env.HIFPS) {
+    await page.keyboard.down('ArrowLeft');
+    const costs = [];
+    for (let i = 0; i < 20 && costs.length < 5; i++) {
+      await sleep(50);
+      const c = await page.evaluate(() => Module._web_bench_hifps(20));
+      if (c >= 0) costs.push(Math.round(c * 100) / 100);
+    }
+    await page.keyboard.up('ArrowLeft');
+    res.hifps_ms_per_picture = costs;
+  }
   // fps over 5 s
   const f0 = await frame(), tA = Date.now();
   await sleep(5000);

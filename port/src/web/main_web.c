@@ -270,6 +270,9 @@ static struct {
 	double raf_last, raf_sum;
 	int raf_n, display_hz;
 	bool hifps_user_off;              /* F4 / high_fps=off */
+	bool hifps_slow;                  /* turned off: the machine could not draw them in time */
+	int slow_secs;
+	bool hifps_force;                 /* page URL ?hifps=force: never turn them off for speed */
 	/* fps counters */
 	double t_fps;
 	int n_logic, n_present;
@@ -292,7 +295,7 @@ static void save_option(const char *k, const char *v)
 
 static void hifps_apply(void)
 {
-	bool want = !S.hifps_user_off && S.display_hz > 65 && render_emu_kind() == RENDERER_NATIVE;
+	bool want = !S.hifps_user_off && !S.hifps_slow && S.display_hz > 65 && render_emu_kind() == RENDERER_NATIVE;
 	int rate = want ? (int)(HIFPS_STEPS * emu_fps() + 0.5) : 0;
 	if (rate != hifps_rate())
 		hifps_set_rate(rate);
@@ -371,6 +374,8 @@ static void handle_key(SDL_Keycode k, bool repeat)
 			save_option("widescreen", ws_enabled() ? "auto" : "4:3");
 		} else if (k == SDLK_F4) {
 			S.hifps_user_off = !S.hifps_user_off;
+			S.hifps_slow = false;
+			S.slow_secs = 0;
 			hifps_apply();
 			if (S.hifps_user_off)
 				set_msg("HIGH FPS OFF", 90);
@@ -637,6 +642,18 @@ static void web_frame(void)
 		S.fps_logic = S.n_logic * 1000.0 / (now - S.t_fps);
 		S.fps_present = S.n_present * 1000.0 / (now - S.t_fps);
 		S.n_logic = S.n_present = 0;
+		/* in-between pictures are drawn by the CPU each refresh: if that costs the logic its
+		 * 59.92 Hz (or most refreshes go unpainted) for 2 s, stop them (F4 tries again) */
+		if (hifps_active() && !S.hifps_force && !S.paused && !S.ff && !hostmenu_active() &&
+		    (S.fps_logic < 55 || S.fps_present < 0.7 * S.display_hz)) {
+			if (++S.slow_secs >= 2) {
+				S.hifps_slow = true;
+				hifps_apply();
+				set_msg("HIGH FPS OFF: TOO SLOW HERE (F4 RETRIES)", 180);
+				fprintf(stderr, "high_fps: off, %.1f logic fps, %.1f pictures/s at %d Hz\n", S.fps_logic, S.fps_present, S.display_hz);
+			}
+		} else
+			S.slow_secs = 0;
 		S.t_fps = now;
 		char st[160];
 		snprintf(st, sizeof st, "%.1f logic fps, %.1f pictures/s, display %d Hz%s%s", S.fps_logic, S.fps_present,
@@ -645,10 +662,27 @@ static void web_frame(void)
 	}
 }
 
-/* argv[1]: the ROM's path in the page's file system */
+/* for tests: ms per in-between picture (hifps_frame) over n calls on the current frame pair, or
+ * -1 when there is nothing to interpolate (high fps off, or a held / still frame) */
+EMSCRIPTEN_KEEPALIVE double web_bench_hifps(int n)
+{
+	int w, h;
+	bool moved = false;
+	if (!hifps_active() || !hifps_frame(HIFPS_STEPS / 2, HIFPS_STEPS, &w, &h, &moved) || !moved)
+		return -1;
+	double t = emscripten_get_now();
+	for (int i = 0; i < n; i++)
+		hifps_frame(1 + i % (HIFPS_STEPS - 1), HIFPS_STEPS, &w, &h, &moved);
+	return (emscripten_get_now() - t) / n;
+}
+
+/* argv[1]: the ROM's path in the page's file system; --hifps-force (web/app.js, ?hifps=force) */
 int main(int argc, char **argv)
 {
 	const char *rom = argc > 1 ? argv[1] : WEB_DIR "/rom/baserom.md";
+	for (int i = 2; i < argc; i++)
+		if (!strcmp(argv[i], "--hifps-force"))
+			S.hifps_force = true;
 	char err[512];
 	mkdir(WEB_DIR, 0777);
 	mkdir(WEB_SAVES, 0777);

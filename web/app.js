@@ -94,7 +94,9 @@ function start(path, source) {
   console.log('scooby: starting with the ' + source + ' ROM');
   $('canvas').focus();
   try {
-    Module.callMain([path]);
+    const args = [path];
+    if (new URLSearchParams(location.search).get('hifps') === 'force') args.push('--hifps-force');
+    Module.callMain(args);
   } catch (e) {
     if (e !== 'unwind' && !(e && e.name === 'ExitStatus')) throw e;
   }

@@ -20,13 +20,16 @@ s2=$!
 trap 'kill $s1 $s2 2>/dev/null' EXIT
 sleep 1
 rc=0
-node tools/web_test.js http://localhost:8765/ picker runs/web/picker "$PWD/rom/baserom.md" > runs/web/picker.json 2>&1 || rc=1
-node tools/web_test.js http://localhost:8766/ server runs/web/server > runs/web/server.json 2>&1 || rc=1
-HIFPS=1 DPR=2 node tools/web_test.js http://localhost:8765/ picker runs/web/hifps "$PWD/rom/baserom.md" > runs/web/hifps.json 2>&1 || rc=1
+t() {   # name, env..., args...
+  local m=$1; shift
+  if env "$@" > runs/web/$m.json 2>&1; then echo "$m: PASS"; else rc=1; echo "$m: FAIL"; tail -5 runs/web/$m.json; fi
+}
+t picker node tools/web_test.js http://localhost:8765/ picker runs/web/picker "$PWD/rom/baserom.md"
+t server node tools/web_test.js http://localhost:8766/ server runs/web/server
+t dpr2 DPR=2 node tools/web_test.js http://localhost:8766/ server runs/web/dpr2
+# rAF not capped to 60 Hz: the page sees a fast display and turns the in-between pictures on
+t hifps HIFPS=1 node tools/web_test.js 'http://localhost:8766/?hifps=force' server runs/web/hifps
 rm -rf runs/site-server
-for m in picker server hifps; do
-  grep -q '"errors": \[\]' runs/web/$m.json && echo "$m: PASS" || { echo "$m: FAIL"; tail -5 runs/web/$m.json; }
-done
 echo "scooby.wasm $(stat -c %s build/web/scooby.wasm) bytes ($(gzip -9 -c build/web/scooby.wasm | wc -c) gzipped)," \
      "scooby.js $(stat -c %s build/web/scooby.js) bytes ($(gzip -9 -c build/web/scooby.js | wc -c) gzipped)"
 exit $rc

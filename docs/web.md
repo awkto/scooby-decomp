@@ -36,7 +36,10 @@ size and speed for nothing.
   (`hifps_frame(j, 16)` with j = phase x 16 + 1; j = 16 is the logic frame itself). As on the
   desktop, the span R(k-1) -> R(k) is shown during the frame after k, and frames that the
   interpolator cannot model are held. At 60 Hz it is off and every rAF shows the latest logic frame.
-  F4 turns it off / on (kept in the ini).
+  F4 turns it off / on (kept in the ini). The in-between pictures are drawn by the CPU (render.c), one
+  per refresh: if the logic falls under 55 frames/s or under 70 % of the refreshes get a picture for
+  2 s, the page turns them off by itself ("TOO SLOW HERE", F4 retries) so the game keeps its speed.
+  `?hifps=force` in the page's URL keeps them on regardless (testing).
 - **Audio**: SDL2's Web Audio device at the core's rate (SDL converts to the AudioContext's), queued
   per logic frame. The Web Audio clock is not the rAF clock: the queue is kept near 60 ms by moving
   the logic clock by 1/32 frame when it drifts (the same rule as the desktop hifps path). Browsers
@@ -115,4 +118,24 @@ not having any; the full byte scan runs wherever `tools/web_build.sh` runs with 
 chrome-headless-shell binary): picker mode starts from an empty profile, gives the ROM through the
 file input, waits for the title, presses Start along the harness route to the Lobby, walks, measures
 the logic frame rate, then reloads and expects the cached ROM; server mode expects the page to
-start by itself from `rom/baserom.md`. Screenshots go to OUTDIR; console errors fail the run.
+start by itself from `rom/baserom.md` (and shows the fatal-error panel for a simulated "no C block").
+Screenshots go to OUTDIR; console errors fail the run. `tools/web_test.sh` runs four cases: picker,
+server, server at devicePixelRatio 2, and server with rAF not tied to 60 Hz (`?hifps=force`).
+
+### Results (4-vCPU VM, chrome-headless-shell 156, SwiftShader GL, emsdk 6.0.13)
+
+- `scooby.wasm` 1,980,319 bytes (704,862 gzipped), `scooby.js` 157,992 bytes (40,773 gzipped);
+  romscan with the ROM: CLEAN.
+- Load: the page asks for the ROM 0.17-0.21 s after navigation (local server); with the server ROM
+  the game runs 0.35-0.43 s after navigation (wasm fetch + compile + ROM fetch + sha1 + boot).
+- picker, server, dpr2, hifps: no console errors; title, then the Lobby (mystery 0, room 16) after the
+  Start presses; arrow keys walk Shaggy; a left click on the floor walks him there (X 311 -> 253, also
+  at devicePixelRatio 2 with a 2560x1585 drawing buffer); a reload starts from the IndexedDB ROM.
+- 60 Hz rAF: 59.7-60.1 logic frames/s, one picture per refresh. DPR 2 on SwiftShader: rAF at 29 Hz,
+  the logic still 59.6/s (catch-up).
+- Uncapped rAF (115-124 Hz measured): interpolation on, an in-between picture costs 1.2-1.5 ms in
+  wasm; the logic reaches only ~45/s there because SwiftShader draws every present on the CPU of
+  the same 4-vCPU machine (without `?hifps=force` the page turns the in-betweens off after 2 s). A real
+  GPU should not have this limit, but it is not measured here.
+- Not covered headless: sound output itself (headless Chrome starts its AudioContext without a
+  gesture, so the gesture path is exercised but not proven), gamepads, real fullscreen.

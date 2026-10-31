@@ -62,7 +62,7 @@ if(EMSCRIPTEN)
     -sENVIRONMENT=web -sINVOKE_RUN=0 -sEXIT_RUNTIME=0
     -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sSTACK_SIZE=1MB
     -sFORCE_FILESYSTEM=1 -lidbfs.js
-    "-sEXPORTED_FUNCTIONS=_main,_web_rom_check,_web_frame_count,_web_ram16"
+    "-sEXPORTED_FUNCTIONS=_main,_web_rom_check,_web_frame_count,_web_ram16,_web_bench_hifps"
     "-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,callMain,ccall,UTF8ToString,addRunDependency,removeRunDependency")
   return()
 endif()
