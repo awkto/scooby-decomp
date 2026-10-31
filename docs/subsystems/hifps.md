@@ -149,6 +149,12 @@ the high_fps=off run at every frame.
 | render per in-between, 4:3 | p50 0.35 ms, p99 0.6 ms | p50 0.4 ms, p99 0.7 ms |
 | render per in-between, 16:9 | p50 0.65 ms, p99 1.2 ms | p50 0.7-1.0 ms, p99 1.2-1.4 ms |
 
+`STORYTEST_HIFPS=1 port/tools/storytest.sh` (144 Hz, 16:9, `--hle all`): PASS 6/6 short routes and
+both long walkthroughs: w0_full 92,378 frames / 132 checkpoints, 31,225 frames interpolated, 99.94 %
+of 1,167,000 actor pieces matched; w1_full 119,720 frames / 110 checkpoints, 33,249 interpolated,
+99.97 % of 1,902,888 matched; machine state, RAM sha1 and every whole frame equal to 60 Hz; 0
+frame-mode differences.
+
 Present clock (Lobby walk played in real time on a VM, no display, no vsync, no audio), spacing of
 consecutive presents against T / n:
 
