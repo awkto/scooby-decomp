@@ -13,9 +13,9 @@ D=build/port/difftest
 # Not comparable in the sandbox: blocks that pop saved data before their rts (difftest takes the long at
 # the entry SP for the return address) and the computed tail jumps (jsr (a0), the soft reset); the gates
 # check them (storytest none == native, nativetest).
-SKIP=" run_load_script_end run_arrival_script_end room_enter_end room_fade_in_end palette_fade_end
-mystery_intro_end script_op_if_else_then_done script_run_call_op script_run_frame_call_op script_op_sys_call
-script_op_if_else_then soft_reset_jump "
+SKIP=" run_load_script_end run_arrival_script_end room_enter_end room_fade_in_end palette_fade_end"
+SKIP="$SKIP mystery_intro_end script_op_if_else_then_done script_run_call_op script_run_frame_call_op"
+SKIP="$SKIP script_op_sys_call script_op_if_else_then soft_reset_jump "
 if [ $# = 0 ]; then
 	set -- $(build/port/scoobyport --list-hle | awk '{ split($5, f, "/"); print $1, $2, f[length(f)] }' |
 		awk '$3 ~ /^(glue|intro|roomflow|roomstream)\.c/ { print $2 }' |
