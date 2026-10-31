@@ -23,9 +23,16 @@ build/scooby.md: build/scooby.o
 
 # Z80 sound driver (blob at ROM $$1BB94A, $$1886 bytes): assemble src/z80/driver.s
 # with z80asm (apt install z80asm) and compare byte-for-byte with the ROM.
-build/z80/driver.bin: src/z80/driver.s
+Z80_TABS := $(addprefix build/z80/,$(shell grep -o 'tab_[0-9A-F]*_[0-9A-F]*\.bin' src/z80/driver.s))
+
+# data tables inside the driver blob: sliced from the base ROM (name = ROM offset hex _ length hex)
+build/z80/tab_%.bin: $(BASEROM)
 	@mkdir -p build/z80
-	$(Z80ASM) -o $@ $<
+	@n=$*; dd if=$(BASEROM) bs=1 skip=$$((0x$${n%_*})) count=$$((0x$${n#*_})) of=$@ 2>/dev/null
+
+build/z80/driver.bin: src/z80/driver.s $(Z80_TABS)
+	@mkdir -p build/z80
+	$(Z80ASM) -I build/z80 -o $@ $<
 
 z80check: build/z80/driver.bin
 	@dd if=$(BASEROM) bs=1 skip=$$(($(Z80_OFF))) count=$$(($(Z80_LEN))) 2>/dev/null | cmp - build/z80/driver.bin \

@@ -318,11 +318,8 @@ def main():
             end += 1
         tbl = next((t for t in WORD_TABLES if t[0] <= a < t[1]), None)
         if tbl and a % 2 == 0 and tbl[0] == a:
-            for k in range(tbl[0], tbl[1], 2):
-                if k != a and k in labels and False:
-                    pass
-                t = blob[k] | blob[k + 1] << 8
-                lines.append('\tdefw %s' % h16(t))
+            lines.append('\t; %d words' % ((tbl[1] - tbl[0]) // 2))
+            lines.append('\tincbin "tab_%X_%X.bin"' % (BLOB_ROM + tbl[0], tbl[1] - tbl[0]))
             a = tbl[1]
             continue
         end = min(end, tbl[0] if tbl and tbl[0] > a else end)
@@ -331,6 +328,10 @@ def main():
         if stops:
             end = min(end, stops[0])
         k = a
+        if end - a >= 24 and len(set(blob[a:end])) > 4:
+            # table / text data: sliced from the base ROM at build time (Makefile rule tab_<romoff>_<len>.bin) (no ROM bytes in the repo)
+            lines.append('\tincbin "tab_%X_%X.bin"' % (BLOB_ROM + a, end - a))
+            k = end
         while k < end:
             chunk = blob[k:min(k + 16, end)]
             lines.append('\tdefb ' + ','.join('0x%02x' % b for b in chunk))
