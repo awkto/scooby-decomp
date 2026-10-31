@@ -104,7 +104,9 @@ set(GPGX_DEFINES
   HOOK_CPU HOOK_HLE)
 # PRIVATE: only port/hle/gx.c includes GPGX internals (it gets the same defines)
 target_compile_definitions(gpgx_core PRIVATE ${GPGX_DEFINES})
-target_compile_options(gpgx_core PRIVATE -w -O2 -fno-strict-aliasing)
+# GPGX_OPT: the core's optimisation level (the web build uses -O3)
+set(GPGX_OPT -O2 CACHE STRING "optimisation flag for the GPGX core")
+target_compile_options(gpgx_core PRIVATE -w ${GPGX_OPT} -fno-strict-aliasing)
 target_link_libraries(gpgx_core PUBLIC m)
 
 # The same machine without a 68000 (GitLab #24, the native build `scooby`): the main CPU and the
@@ -116,5 +118,5 @@ add_library(gpgx_core_native STATIC ${GPGX_SOURCES_NATIVE})
 target_include_directories(gpgx_core_native SYSTEM PUBLIC ${_inc} "${GPGX_SRC}/libretro" "${_lrc}/include")
 target_include_directories(gpgx_core_native PRIVATE "${_zlib}")
 target_compile_definitions(gpgx_core_native PRIVATE ${GPGX_DEFINES})
-target_compile_options(gpgx_core_native PRIVATE -w -O2 -fno-strict-aliasing)
+target_compile_options(gpgx_core_native PRIVATE -w ${GPGX_OPT} -fno-strict-aliasing)
 target_link_libraries(gpgx_core_native PUBLIC m)

@@ -1,0 +1,57 @@
+# Build the browser version (docs/web.md) and publish it to GitHub Pages.
+# The site holds no game data: players provide their own ROM, which stays in their browser.
+# No ROM is available here, so the build cannot contain ROM bytes; romscan runs its secret-free
+# check (no file is the ROM or a Genesis ROM image), the full byte scan runs where the ROM is
+# (tools/web_build.sh on a machine with rom/baserom.md).
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  EMSDK_VERSION: 6.0.13
+  GPGX_URL: https://github.com/libretro/Genesis-Plus-GX
+  GPGX_COMMIT: 60bee4c724859710ce05672239e5b601ad01382e   # = port/cmake/gpgx.cmake
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          "$HOME/emsdk/emsdk" install "$EMSDK_VERSION"
+          "$HOME/emsdk/emsdk" activate "$EMSDK_VERSION"
+      - name: Genesis Plus GX at the pinned commit
+        run: |
+          git init -q ext/gpgx
+          git -C ext/gpgx fetch -q --depth 1 "$GPGX_URL" "$GPGX_COMMIT"
+          git -C ext/gpgx cat-file -e "$GPGX_COMMIT^{commit}"
+      - name: Build
+        run: EMSDK="$HOME/emsdk" tools/web_build.sh
+      - name: Check that the site carries no ROM
+        run: python3 -I tools/py/romscan.py --if-rom --rom rom/baserom.md build/web
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

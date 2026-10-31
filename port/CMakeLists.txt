@@ -50,6 +50,23 @@ foreach(lib scooby_common scooby_native_common)
 endforeach()
 set_source_files_properties(hle/gx.c hle/native.c hle/native_core.c PROPERTIES COMPILE_DEFINITIONS "${GPGX_DEFINES}")
 
+# ---- the browser build (#36, docs/web.md): emcmake cmake -S port -B build/web-cmake; only the
+# `scooby_web` target (scooby.js + scooby.wasm; tools/web_build.sh assembles the site) ----
+if(EMSCRIPTEN)
+  set(WEB_SDL -sUSE_SDL=2)
+  add_executable(scooby_web src/web/main_web.c src/overlay.c src/options.c src/romfind.c src/hostmenu.c)
+  target_link_libraries(scooby_web PRIVATE scooby_native_common)
+  target_compile_options(scooby_web PRIVATE ${WEB_SDL} -Wall -Wextra -Wno-unused-parameter)
+  set_target_properties(scooby_web PROPERTIES OUTPUT_NAME scooby SUFFIX ".js")
+  target_link_options(scooby_web PRIVATE ${WEB_SDL} -O3
+    -sENVIRONMENT=web -sINVOKE_RUN=0 -sEXIT_RUNTIME=0
+    -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sSTACK_SIZE=1MB
+    -sFORCE_FILESYSTEM=1 -lidbfs.js
+    "-sEXPORTED_FUNCTIONS=_main,_web_rom_check,_web_frame_count,_web_ram16"
+    "-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,callMain,ccall,UTF8ToString,addRunDependency,removeRunDependency")
+  return()
+endif()
+
 # ---- SDL2 host ----
 find_package(SDL2 QUIET)
 if(SDL2_FOUND)

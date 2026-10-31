@@ -126,6 +126,13 @@ in `/opt/scooby/rom` and a patched Genesis Plus GX build in `/opt/scooby/ext/gpg
     tools/vm/release $vm                  # ALWAYS release when done
     tools/vm/status                       # who holds what
 
+## Play it in a browser
+The same native build (no 68k emulation) compiled to WebAssembly: `EMSDK=<emsdk dir> tools/web_build.sh`
+builds the static site `build/web/` (serve it with `python3 -m http.server`). The page asks for your own ROM
+(file picker or drag and drop), checks its sha1 and keeps it in the browser's IndexedDB with the saves and
+settings; it is never uploaded. Pushes to `main` publish the site to GitHub Pages
+(`.github/workflows/pages.yml`). Details: `docs/web.md`.
+
 ## Screenshots
 None are committed (they would be ROM-derived). Generate your own with F12 in the port, or `tools/harness`
 (`shot NAME` command) / `tools/py/gfx.py`; they land under `build/` or `runs/`, which are gitignored.

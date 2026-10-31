@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scooby-Doo Mystery (native port, in the browser)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Scooby-Doo Mystery</h1>
+  <span id="status">Loading...</span>
+  <span class="spacer"></span>
+  <button id="btn-sound" hidden title="Browsers start sound only after a click or key press">Enable sound</button>
+  <button id="btn-fullscreen" title="Fullscreen (F11)">Fullscreen</button>
+  <button id="btn-forget" hidden title="Remove the ROM stored in this browser">Forget ROM</button>
+</header>
+
+<main id="stage">
+  <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+
+  <section id="rom-panel" class="panel" hidden>
+    <h2>You need your own ROM</h2>
+    <p>This page is the C port of <em>Scooby-Doo Mystery</em> (Sega Genesis, 1995) compiled to WebAssembly.
+      It contains <strong>no game data</strong>: it runs on the ROM of the original cartridge, which you have to
+      provide yourself (a dump of a cartridge you own, the USA release, sha1 <code id="rom-sha1"></code>).</p>
+    <p>The file stays in this browser: it is checked and kept in the page's IndexedDB so that later
+      visits start straight away. It is never uploaded anywhere.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="rom-file" accept=".md,.bin,.gen,.smd,application/octet-stream">
+      <span>Choose the ROM file, or drop it here</span>
+    </label>
+    <p id="rom-error" class="error" hidden></p>
+  </section>
+
+  <section id="error-panel" class="panel" hidden>
+    <h2 id="error-title">The game stopped</h2>
+    <p id="error-text"></p>
+    <pre id="error-log"></pre>
+    <p>Your saves are kept in this browser. <button id="btn-reload">Reload</button></p>
+  </section>
+</main>
+
+<details id="help">
+  <summary>Controls</summary>
+  <div class="cols">
+    <table>
+      <tr><th colspan="2">Keyboard</th></tr>
+      <tr><td>Arrows</td><td>D-pad (walk)</td></tr>
+      <tr><td>Z or A</td><td>A</td></tr>
+      <tr><td>X or S</td><td>B</td></tr>
+      <tr><td>C or D</td><td>C</td></tr>
+      <tr><td>Enter</td><td>Start</td></tr>
+      <tr><td>P / N</td><td>pause / one frame</td></tr>
+      <tr><td>Tab (hold)</td><td>fast forward</td></tr>
+    </table>
+    <table>
+      <tr><th colspan="2">Mouse</th></tr>
+      <tr><td>Left click</td><td>walk there / use the selected verb on an object / pick a verb or item</td></tr>
+      <tr><td>Right click</td><td>look at an object (or leave pointer mode)</td></tr>
+      <tr><td>Middle click</td><td>Start</td></tr>
+      <tr><td>Wheel</td><td>inventory page</td></tr>
+      <tr><th colspan="2">Gamepad</th></tr>
+      <tr><td colspan="2">D-pad / left stick; X, Y = A; A = B; B, RB = C; Start; Back = pause</td></tr>
+    </table>
+    <table>
+      <tr><th colspan="2">Function keys</th></tr>
+      <tr><td>F1</td><td>debug overlay</td></tr>
+      <tr><td>F3</td><td>filter: nearest / smooth / crt</td></tr>
+      <tr><td>F4</td><td>high frame rate on / off</td></tr>
+      <tr><td>F5 / F9</td><td>quick save / load state</td></tr>
+      <tr><td>F8</td><td>game saves (8 slots)</td></tr>
+      <tr><td>F10</td><td>widescreen on / off</td></tr>
+      <tr><td>F11</td><td>fullscreen</td></tr>
+    </table>
+  </div>
+  <p>Saves, quick states and settings stay in this browser (IndexedDB).</p>
+</details>
+
+<script src="app.js"></script>
+<script src="scooby.js" async></script>
+</body>
+</html>

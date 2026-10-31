@@ -150,6 +150,29 @@ def git_files():
         yield p, open(p, "rb").read()
 
 
+ROM_SHA1 = "ccc9542d964de5bdc1e9101620cae40dd98e7127"
+
+
+def romless_check(a):
+    """Without the ROM the byte comparison is impossible.  What can still be checked without it: no file (or archive
+    member) is the ROM (its sha1 is public) or any Genesis ROM image (the "SEGA" system name at $100 of a cartridge
+    header).  A build machine without the ROM cannot put ROM bytes into its output in the first place; this catches a
+    ROM copied in by mistake (e.g. a deployment's rom/ directory)."""
+    import hashlib
+    bad = nfiles = 0
+    for t in a.targets:
+        for name, data in iter_files(t):
+            nfiles += 1
+            if hashlib.sha1(data).hexdigest() == ROM_SHA1:
+                bad += 1
+                print(f"VIOLATION {name}: is the ROM (sha1 {ROM_SHA1})")
+            elif len(data) >= 0x200 and data[0x100:0x104] == b"SEGA":
+                bad += 1
+                print(f"VIOLATION {name}: looks like a Genesis ROM image (\"SEGA\" at $100)")
+    print(f"romscan: no ROM at {a.rom}: byte scan skipped; secret-free check of {nfiles} files -> {'FAIL' if bad else 'CLEAN'}")
+    return 1 if bad else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("targets", nargs="*")
@@ -157,8 +180,13 @@ def main():
     ap.add_argument("--min", type=int, default=256, help="shared run length that fails the scan")
     ap.add_argument("--warn", type=int, default=64, help="shared run length that is reported as a note")
     ap.add_argument("--tracked", action="store_true", help="scan every file the repository tracks (symlinks skipped)")
+    ap.add_argument("--if-rom", action="store_true",
+                    help="no ROM at --rom: do only the secret-free check (no file is a Genesis ROM image or has the ROM's sha1) "
+                         "and exit 0 if it passes (CI, which has no ROM)")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
+    if a.if_rom and not os.path.exists(a.rom):
+        return romless_check(a)
     rom = open(a.rom, "rb").read()
     idx = build_index(rom)
     srcs = []
