@@ -23,3 +23,6 @@ button:hover { background: #444; }
 #help td, #help th { padding: 1px 8px 1px 0; vertical-align: top; text-align: left; }
 #help th { color: #f0c040; padding-top: 6px; }
 code { color: #9cf; word-break: break-all; }
+
+#play-panel { text-align: center; }
+button.big { font-size: 1.4em; padding: .5em 1.4em; cursor: pointer; }

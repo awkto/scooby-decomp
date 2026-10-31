@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
 <title>Scooby-Doo Mystery (native port, in the browser)</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -31,6 +32,12 @@
       <span>Choose the ROM file, or drop it here</span>
     </label>
     <p id="rom-error" class="error" hidden></p>
+  </section>
+
+  <section id="play-panel" class="panel" hidden>
+    <h2>Scooby-Doo Mystery</h2>
+    <p>The ROM is ready. Browsers only allow sound after a click, so the game starts when you press play.</p>
+    <p><button id="btn-play" class="big">&#9654; Click to play</button></p>
   </section>
 
   <section id="error-panel" class="panel" hidden>

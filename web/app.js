@@ -87,7 +87,23 @@ function romOk(path) {
   return Module.ccall('web_rom_check', 'number', ['string'], [path]) === 1;
 }
 
+// Browsers only let a page make sound after a user gesture. If the game would start without one
+// (the server-ROM path), wait for a click first: SDL creates its AudioContext inside callMain, so
+// creating it in the click handler means it starts 'running' instead of silently 'suspended'.
 function start(path, source) {
+  const activated = navigator.userActivation ? navigator.userActivation.hasBeenActive : false;
+  if (!activated && !navigator.webdriver) {
+    $('rom-panel').hidden = true;
+    $('play-panel').hidden = false;
+    setStatus('ready');
+    const go = () => { $('play-panel').hidden = true; startNow(path, source); resumeAudio(); };
+    $('btn-play').addEventListener('click', go, { once: true });
+    return;
+  }
+  startNow(path, source);
+}
+
+function startNow(path, source) {
   $('rom-panel').hidden = true;
   $('btn-forget').hidden = source !== 'cached';
   setStatus('starting (' + source + ' ROM)');
