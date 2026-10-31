@@ -63,6 +63,16 @@ HLE_WAIT_FUNC(0x009754, wait_vblank_spin, 24)
 	}
 }
 
+/* $00975C bne $9754 / $009760 rts: the second half of the spin. No C block jumps here, but a savestate
+ * made by the 68k (--hle none) at the end of a frame usually stops in this loop; with these the native
+ * runner can resume such a state (mousetest's start states). */
+HLE_FUNC(0x00975C, wait_vblank_spin_branch, 10)
+{
+	if (!(ctx->sr & CC_Z))
+		hle_jump(ctx, 0x009754);
+}
+GLUE_RTS(0x009760)
+
 /* $009742 wait_vblanks: d0+1 frames.  bsr wait_vblank / dbra d0,$9742 / rts */
 GLUE_CALL(0x009742, 4, 0x00974C)
 HLE_FUNC(0x009746, wait_vblanks_next, 10)

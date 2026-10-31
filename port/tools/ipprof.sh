@@ -28,7 +28,7 @@ for g in $gates; do
 	case $g in
 	story) SCOOBY_IPPROF="$out/story.%d.txt" STORYTEST_HLE=all port/tools/storytest.sh ;;
 	story_full) SCOOBY_IPPROF="$out/story_full.%d.txt" STORYTEST_HLE=all port/tools/storytest.sh long ;;
-	mouse) SCOOBY_IPPROF="$out/mouse.%d.txt" port/tools/mousetest.sh | tail -3 ;;
+	mouse) SCOOBY_IPPROF="$out/mouse.%d.txt" MOUSETEST_STATE_HLE=all port/tools/mousetest.sh | tail -3 ;;
 	sound) SCOOBY_IPPROF="$out/sound.%d.txt" port/tools/soundtest.sh | tail -6 ;;
 	menus) SCOOBY_IPPROF="$out/menus.%d.txt" port/scripts/menus/tour.sh -h all 1 2 3 ;;
 	intro_w0) route intro_w0 port/scripts/script/intro_w0.txt ;;

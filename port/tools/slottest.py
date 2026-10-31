@@ -12,14 +12,16 @@ default routes: w0_full w1_full (tools/scripts/story/ROUTE.txt).  SLOTTEST_POINT
 import os, struct, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-BIN = os.environ.get("SCOOBY_BIN") or os.path.join(ROOT, "build/port/scoobyport")
+# SCOOBY_BIN may be a command with arguments: "port/tools/nativewrap.sh scoobyport" replays the route (--hle none)
+# on the emulated build and loads the slots on the native build (#24)
+BIN = (os.environ.get("SCOOBY_BIN") or os.path.join(ROOT, "build/port/scoobyport")).split()
 ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!+#%*?"
 OUT = os.path.join(ROOT, os.environ.get("SLOTTEST_OUT", "runs/slottest"))
 ENV = dict(os.environ, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
 
 
 def run(args, **kw):
-    return subprocess.run([BIN] + args, env=ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, **kw)
+    return subprocess.run(BIN + args, env=ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, **kw)
 
 
 def read_slot(d, n):

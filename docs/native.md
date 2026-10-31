@@ -122,8 +122,8 @@ port/tools/nativetest.sh                                       # scan + P2 == P3
 STORYTEST_NATIVE=1 port/tools/storytest.sh [long]              # none vs the native runner (P2: scoobyport)
 STORYTEST_NATIVE=1 SCOOBY_NATIVE_BIN=build/port/scooby port/tools/storytest.sh [long]     # P3
 SCOOBY_PORT="port/tools/nativewrap.sh scoobyport" SCOOBY_FRAMEPROF="port/tools/nativewrap.sh frameprof" \
-  MOUSETEST_STATE_HLE=all port/tools/{hosttest,irqtest,mousetest,wstest,hifpstest}.sh       # P3 (NATIVEWRAP=p2: P2)
-SCOOBY_BIN=build/port/scooby port/tools/slottest.sh
+  port/tools/{hosttest,irqtest,mousetest,wstest,hifpstest}.sh       # P3 (NATIVEWRAP=p2: P2)
+SCOOBY_BIN="port/tools/nativewrap.sh scoobyport" port/tools/slottest.sh   # route replay --hle none: emulated
 ```
 
 `nativewrap.sh` runs a gate's `--hle none` invocations (its reference side) on the emulated build and every

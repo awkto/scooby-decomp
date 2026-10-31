@@ -24,7 +24,14 @@ done
 # one capture pass per route; each block keeps up to 200 states from the routes that reach it
 for route in port/scripts/capture.txt port/scripts/script/intro_w0.txt port/scripts/script/intro_w1.txt; do
 	tag=$(basename "$route" .txt)
-	[ -d "$st/.done_$tag" ] || { $D capture-multi 200 "$tag" $addrs --script "$route" --out "$st" >/dev/null 2>&1; mkdir -p "$st/.done_$tag"; }
+	[ -d "$st/.done_$tag" ] && continue
+	# capture.c holds 128 addresses per pass
+	echo $addrs | tr ' ' '\n' | split -l 120 - "$st/.chunk_"
+	for c in "$st"/.chunk_*; do
+		$D capture-multi 200 "$tag" $(cat "$c") --script "$route" --out "$st" >/dev/null 2>&1
+	done
+	rm -f "$st"/.chunk_*
+	mkdir -p "$st/.done_$tag"
 done
 rc=0
 for f in "$@"; do

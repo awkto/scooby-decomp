@@ -17,7 +17,7 @@ out=runs/nativetest
 rm -rf "$out"; mkdir -p "$out"
 export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 fail=0
-CORE_SYMS='^(m68k_op_|m68ki_|s68k_op_)|instruction_jump_table|m68ki_cycles|m68ki_exception_cycle_table|m68k_insn_count'
+CORE_SYMS='^(m68k_op_|m68ki_|s68k_op_|m68k_insn_count$)|instruction_jump_table|m68ki_cycles|m68ki_exception_cycle_table'
 
 # 1. the scan
 for b in scooby frameprof_native; do
