@@ -115,3 +115,7 @@ The slot loader therefore makes the console "warm": just before pressing END it 
 if the pointer is still 0 (`warm_script_cb` in `port/src/saveslot.c`). Nothing else differs from a hand-typed password
 on a console that has been played. A password typed by hand into the port right after start-up still hangs, as on the
 cartridge.
+
+Result: slottest 149/149 saves load into a playable game on the emulated build and on `scooby` (16 numbered saves plus
+55 + 78 room-change saves of w0_full / w1_full). With `warm_script_cb` and the typed run's poke disabled, w1_full slots 4-8
+fail (the game sits in the intro's van, room 26, with a script never finishing), so the gate catches the hang.
