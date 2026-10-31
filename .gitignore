@@ -1,7 +1,7 @@
 build/
-.venv/
-rom/
-ext/
+/.venv
+/rom
+/ext
 runs/
 tools/harness/harness
 *.zip
