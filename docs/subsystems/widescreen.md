@@ -132,3 +132,30 @@ bars, centre differences: 0) and that the room is shown wide; reports wrapped sp
 and the 4:3 frames by rule. Then the margin-click test (`port/scripts/ws/margin.txt`).
 
 Results: see the end of this file.
+
+## Results (2026-10-31, after merging main with the options ini)
+
+| test | result |
+|---|---|
+| `port/tools/wstest.sh` (16:9) | PASS: 51/51 rooms wide, machine state hash equal to 4:3 at every frame, 0 lost sprites, 0 wrapped, 0 unneeded bars, 0 of all wide lines differ from the 4:3 line in their 4:3 part; margin clicks walk to (109,134) / x 358 |
+| `WSTEST_OPT=21:9 port/tools/wstest.sh` (523 px) | PASS, same counters (the whole 512-px Lobby is on screen) |
+| `STORYTEST_WS=1 STORYTEST_HLE=all port/tools/storytest.sh` | PASS 6/6 short routes: checkpoints incl. RAM sha1 and every frame's machine hash equal |
+| `STORYTEST_WS=1 STORYTEST_HLE=all port/tools/storytest.sh long` | PASS: w0_full 132 checkpoints / 92,378 frames, w1_full 110 / 119,720 frames equal |
+
+Long routes at 16:9, frames by rule: w0_full 70,185 of 92,378 wide (closeup 12,341 = the Maze,
+plane-split 5,450 = ending credits, planes-not-map 2,020 = room-change blackouts and the Hallway
+full-screen picture, camera-outside 100 = its h-scroll flips, not-room / no-map = boot and title);
+w1_full 106,197 of 119,720 wide (closeup 1,584 = the Bumper Cars ride, plane-split 7,136 = credits,
+planes-not-map 2,497 = room-change blackouts). 0 wrapped / lost sprites, 0 unneeded bars, 0 centre
+differences in either. The 4:3 windows of the planes differed from the map only in frames that went
+4:3 for it (cleared VRAM, pictures).
+
+## Known limits
+
+- Bars and the bands' sides are plain black (the game's UI background is black too).
+- With pointer mode open while the mouse is in a margin, the game's crosshair waits at the 4:3
+  edge (it cannot leave the 4:3 screen).
+- At 21:9 and wider, actors beyond the game's own cull window (screen x -80..336) are not drawn
+  in the outer margin; animations of actors there pause (game logic, unchanged).
+- Room transitions show ~69 frames of 4:3 framing; they are black, so nothing visibly jumps.
+- Gameplay mode (the game itself aware of the wider view) is not done.
