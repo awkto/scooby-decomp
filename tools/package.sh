@@ -1,6 +1,6 @@
 #!/bin/sh
 # Release tarball for Linux (GitLab #28):  tools/package.sh [OUTDIR]     (or: make dist)
-#   builds the SDL2 host in a clean Release tree (-DSCOOBY_DIST=ON), lays out scooby-VERSION-linux-x86_64/ with
+#   builds the SDL2 host (the native build `scooby`, no 68k core) in a clean Release tree (-DSCOOBY_DIST=ON), lays out scooby-VERSION-linux-x86_64/ with
 #   the binary (renamed `scooby`), README.txt, LICENSES/ and source/, tars it, and runs tools/py/romscan.py over
 #   the result.  The build needs cmake, a C compiler, libsdl2-dev and the ext/gpgx checkout (README Setup);
 #   the scan needs the ROM (rom/baserom.md) and refuses to pass without it.  Run it on a build machine.
@@ -19,8 +19,11 @@ rom=${ROM:-rom/baserom.md}
 rm -rf "$stage" "$out/$name.tar.gz"
 mkdir -p "$stage/LICENSES" "$stage/source" "$out"
 cmake -S port -B "$out/cmake" -DCMAKE_BUILD_TYPE=Release -DSCOOBY_DIST=ON >/dev/null
-cmake --build "$out/cmake" -j"$(nproc)" --target scoobyport
-install -m755 "$out/cmake/scoobyport" "$stage/scooby"
+# the native build (#24, docs/native.md): no 68k core is linked; refuse to ship one that has it
+cmake --build "$out/cmake" -j"$(nproc)" --target scooby
+if nm "$out/cmake/scooby" | awk '{print $NF}' | grep -Eq '^(m68k_op_|m68ki_)|instruction_jump_table'; then
+	echo "package.sh: $out/cmake/scooby links a 68k core" >&2; exit 1; fi
+install -m755 "$out/cmake/scooby" "$stage/scooby"
 strip "$stage/scooby"
 cp dist/README.txt "$stage/README.txt"
 cp ext/gpgx/LICENSE.txt "$stage/LICENSES/GPGX-LICENSE.txt"

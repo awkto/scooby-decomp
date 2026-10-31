@@ -10,17 +10,21 @@ cd "$root"
 out=runs/mousetest
 rm -rf "$out"; mkdir -p "$out"
 export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
-P=build/port/scoobyport
+P=${SCOOBY_PORT:-build/port/scoobyport}   # port/tools/nativewrap.sh: the native runner (#24)
 fail=0
 
 build/port/mousemap_test || fail=1
 
 { cat port/scripts/lobby.txt; echo "save $out/lobby.state"; } > "$out/route.txt"
-$P --hle none --script "$out/route.txt" --outdir "$out" --frames 0 >/dev/null 2>&1
+# the start states: made with --hle none (a savestate of the 68k mid-function is fine for both sides); with the
+# native runner (#24, SCOOBY_PORT=port/tools/nativewrap.sh) MOUSETEST_STATE_HLE=all makes them on it, so that
+# every state starts at a C block
+st=${MOUSETEST_STATE_HLE:-none}
+$P --hle $st --script "$out/route.txt" --outdir "$out" --frames 0 >/dev/null 2>&1
 [ -f "$out/lobby.state" ] || { echo "FAIL no Lobby state"; exit 1; }
 # the Cafe with 9 carried items (story route w0_cafe_items + 6 poked items, 3 inventory rows)
 { cat tools/scripts/story/w0_cafe_items.txt port/scripts/inv_items.txt; echo "save $out/inv.state"; } > "$out/route_inv.txt"
-$P --hle none --script "$out/route_inv.txt" --outdir "$out" --frames 0 >/dev/null 2>&1
+$P --hle $st --script "$out/route_inv.txt" --outdir "$out" --frames 0 >/dev/null 2>&1
 [ -f "$out/inv.state" ] || { echo "FAIL no inventory state"; exit 1; }
 
 for hle in all none; do

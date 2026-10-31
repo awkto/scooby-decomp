@@ -1,0 +1,50 @@
+#!/bin/sh
+# Difftest the C blocks of #24 (glue.c, intro.c, roomflow.c, roomstream.c; docs/native.md) that are not waits
+# (HLE_F_WAIT blocks wait for an interrupt and cannot run in the sandbox).
+#   port/tools/dt-native [FUNC...]     default: all of them
+# States: port/scripts/capture.txt (boot, Lobby, random play) plus both mystery intros for the intro card
+# (port/scripts/script/intro_w0.txt, intro_w1.txt), up to 200 per block (capture-multi, one pass per route).
+set -u
+root=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$root"
+[ -f build/port/CMakeCache.txt ] || cmake -S port -B build/port -DCMAKE_BUILD_TYPE=Release >/dev/null
+cmake --build build/port -j"$(nproc)" --target difftest scoobyport >/dev/null
+D=build/port/difftest
+if [ $# = 0 ]; then
+	set -- $(build/port/scoobyport --list-hle | awk '{ split($5, f, "/"); print $1, $2, f[length(f)] }' |
+		awk '$3 ~ /^(glue|intro|roomflow|roomstream)\.c/ { print $2 }')
+fi
+st=runs/states_native
+mkdir -p "$st"
+addrs=""
+for f in "$@"; do
+	a=$(build/port/scoobyport --list-hle | awk -v n="$f" '$2 == n { print substr($1, 2) }')
+	[ -n "$a" ] && addrs="$addrs 0x$a"
+done
+# one capture pass per route; each block keeps up to 200 states from the routes that reach it
+for route in port/scripts/capture.txt port/scripts/script/intro_w0.txt port/scripts/script/intro_w1.txt; do
+	tag=$(basename "$route" .txt)
+	[ -d "$st/.done_$tag" ] || { $D capture-multi 200 "$tag" $addrs --script "$route" --out "$st" >/dev/null 2>&1; mkdir -p "$st/.done_$tag"; }
+done
+rc=0
+for f in "$@"; do
+	a=$(build/port/scoobyport --list-hle | awk -v n="$f" '$2 == n { print toupper(substr($1, 2)) }')
+	best=""
+	for tag in capture intro_w0 intro_w1; do
+		d="$st/${a}_$tag"
+		[ -d "$d" ] && [ "$(ls "$d" | wc -l)" -gt 0 ] && { best="$best $d"; }
+	done
+	if [ -z "$best" ]; then
+		echo "NOSTATES $f (\$$a): no route reaches it"
+		continue
+	fi
+	for d in $best; do
+		if $D run "$f" --states "$d" --max 200 > "$st/last.txt" 2>&1; then
+			echo "PASS $(tail -1 "$st/last.txt") [$(basename "$d")]"
+		else
+			echo "FAIL $(grep -m1 "FAIL\|did not" "$st/last.txt") / $(tail -1 "$st/last.txt") [$(basename "$d")]"
+			rc=1
+		fi
+	done
+done
+exit $rc

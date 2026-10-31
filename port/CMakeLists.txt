@@ -85,6 +85,10 @@ target_compile_options(difftest PRIVATE -Wall -Wextra -Wno-unused-parameter)
 add_executable(frameprof tools/frameprof.c)
 target_link_libraries(frameprof PRIVATE scooby_common)
 target_compile_options(frameprof PRIVATE -Wall -Wextra -Wno-unused-parameter)
+# the same on the build without a 68k core (#24: irqtest on the native runner, port/tools/nativewrap.sh)
+add_executable(frameprof_native tools/frameprof.c)
+target_link_libraries(frameprof_native PRIVATE scooby_native_common)
+target_compile_options(frameprof_native PRIVATE -Wall -Wextra -Wno-unused-parameter)
 
 # ---- mouse mapping unit test ----
 add_executable(mousemap_test tools/mousemap_test.c)

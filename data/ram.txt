@@ -267,3 +267,15 @@ FF0AA1 1    ram_duel_tmr_gas1
 FF0AA2 1    ram_duel_tmr_rec0
 FF0AA3 1    ram_duel_tmr_rec1
 FF0AA4 1    ram_duel_tmr_steer
+
+# ---- #24 the mystery intro card (port/src/game/intro.c)
+FF08AA 2    ram_intro_bounce_idx  # byte index into the bounce table $00160C
+FF08AC 2    ram_intro_pause_idx   # index into the pause table $001622
+FF09F0 36   ram_intro_layer       # 9 longs, 16.16: the parallax layer positions
+FF0A14 2    ram_intro_bounce_x    # x offset of the bounce sprite group
+FF0A16 2    ram_intro_bounce      # the van's bounce height
+FF0A18 2    ram_intro_van_x       # the van's x; the card ends at $10E
+FF0A1A 2    ram_intro_van_y
+FF0A1C 2    ram_intro_wheel       # wheel animation frame offset (0 / $3C)
+FF0ACF 1    ram_intro_bounce_pause  # frames to hold the bounce
+FF0AD0 1    ram_intro_van_step    # frames until the van moves on

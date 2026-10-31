@@ -26,7 +26,7 @@ cd "$root"
 out=runs/hifpstest
 rm -rf "$out"; mkdir -p "$out/routes"
 export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SCOOBY_RENDERER=native
-P=build/port/scoobyport
+P=${SCOOBY_PORT:-build/port/scoobyport}   # port/tools/nativewrap.sh: the native runner (#24)
 rates=${HIFPSTEST_RATES:-"120 144 240"}
 views=${HIFPSTEST_VIEWS:-"4:3 16:9"}
 min_match=${HIFPSTEST_MIN_MATCH:-95}

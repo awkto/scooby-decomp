@@ -382,3 +382,14 @@
 003AF0 duel_bump               # the cars bump: damage, recoil, random spin
 003C70 duel_wall0              # Shaggy's car hit a wall
 003CFE duel_wall1              # the Clown's car hit a wall
+
+# ---- #24 the last 68k code as C: the mystery intro card (intro.c), map streaming (roomstream.c), helpers (roomflow.c)
+0016C4 intro_van_sprites       # the van: three 6-sprite groups (body, wheels, bounce) to the SAT at $B800
+00175C intro_sprite_group      # six SAT entries from the ROM tables $0FC89C..$0FC99C, d2/d3 = x/y, d5 link, d6 tile
+0017AE intro_parallax          # DMA the two line-scroll tables, move the layers, rebuild the tables
+001BDA verb_labels_refresh     # repaint the selected and the default verb label
+0047AC bar_save                # save the verb bar rows to $FF2C00 and blank them
+00FC3A stream_right            # copy the map column right of the view into planes A/B
+00FD5E stream_left             # the column left of the view
+00FE74 stream_top              # the row above the view
+00FF68 stream_bottom           # the row below the view

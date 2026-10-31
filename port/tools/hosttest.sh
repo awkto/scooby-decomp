@@ -9,7 +9,7 @@ cd "$root"
 out=runs/hosttest
 rm -rf "$out"; mkdir -p "$out"
 export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
-P=build/port/scoobyport
+P=${SCOOBY_PORT:-build/port/scoobyport}   # port/tools/nativewrap.sh: the native runner (#24)
 fail=0
 ok() { echo "PASS $*"; }
 bad() { echo "FAIL $*"; fail=1; }

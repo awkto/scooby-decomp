@@ -300,15 +300,18 @@ look for a wait it missed.
 
 ### The rule: stop in front of the blocking call
 
-1. Keep the wait primitives in 68k: `wait_vblank`, `wait_vblanks`, the spin loops,
-   `hblank_verb_bar`. In the native port each becomes "yield until the host has run the
-   next VBlank". The host loop then is: run VBlank hook, run game code until it yields.
+1. The wait primitives (`wait_vblank`, `wait_vblanks`, the spin loops) are C blocks of their own
+   since #24: `HLE_WAIT_FUNC` / `HLE_WAIT_RANGE` test the condition and call `hle_idle()` (charge the
+   rest of the CPU's time slice) and jump to themselves while it holds (docs/native.md "Waits",
+   `port/src/game/waits.c`). A new spin is written the same way; it must run at top level.
 2. Never call a blocking function with `hle_call68k`. Split the caller at the call
    instead:
    - Port the code **between** blocking calls as `HLE_RANGE(start, name, cycles, exits...)`.
    - A range ends with `hle_jump(ctx, exit)`, where the exit is the address of the
-     `jsr`/`bsr` instruction of the blocking call. The 68k executes that call and returns
-     to the next instruction.
+     `jsr`/`bsr` instruction of the blocking call, or it makes the call itself: push the
+     return address and exit at the callee with `HLE_EXIT_SP(callee, -4)` (`glue_call()` in
+     `glue.h`). Either way the call is a top-level one; the instruction left at the exit is a
+     C block too (`GLUE_CALL` in `glue.c`, #24).
    - Register that next instruction as the start of the next range. The main loop
      (`mainloop.c`) and Reset (`reset.c`) are built like this. Loops whose body contains
      a blocking call are a range that ends at the call, plus a range after the call that
@@ -538,7 +541,8 @@ the test screen). difftest follows such a jump: after the C function it keeps ru
 ### Interrupt handlers
 
 The VBlank and HBlank vectors are 5-instruction trampolines (`movem`, `jsr (hook)`,
-`movem`, `rte`) through the RAM hooks `$FF0000`/`$FF0004`. They stay in 68k. The hook
+`movem`, `rte`) through the RAM hooks `$FF0000`/`$FF0004`. Since #24 they are C blocks
+(`waits.c`: save d0-a6, call the hook at top level, the tail restores and does the `rte`). The hook
 targets (`vblank_main`, `vblank_light`, `vblank_title_fade`, `hblank_nop`) are ordinary
 functions and are ported as `HLE_FUNC`. Code called from VBlank must not wait for VBlank.
 It may call anything non-blocking through `hle_call68k`.

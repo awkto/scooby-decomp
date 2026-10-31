@@ -152,7 +152,10 @@ static void set_s_flag(unsigned s)      /* s = 4 (supervisor) or 0; swaps the st
 	m68k.dar[15] = m68k.sp[m68k.s_flag];
 }
 
-/* the interrupt is taken after the current block (the 68000 checks after the instruction) */
+static void check_irq(void);
+
+/* as the 68k core does: a pending interrupt the new mask allows is taken at once (at the end of a
+ * C block: the layer stores the registers and the continuation PC before SR); never nested */
 void native_set_sr(unsigned v)
 {
 	v &= 0xA71F;
@@ -162,7 +165,7 @@ void native_set_sr(unsigned v)
 	m68k.int_mask = v & 0x0700;
 	native_set_ccr(v);
 	set_s_flag((v >> 11) & 4);
-	g_check_irq = true;
+	check_irq();
 }
 
 /* ------------------------------------------------------------------ interrupts */

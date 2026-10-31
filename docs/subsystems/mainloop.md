@@ -23,7 +23,8 @@ C code: `port/src/game/mainloop.c`. Names: `data/symbols.txt` / `data/ram.txt` (
   | HBlank (level 4) | `$0008AA` | same with `$FF0004` | `ram_hblank_hook` `$FF0004` |
 
   The hook targets are ordinary `rts` functions and are the ones ported to C. The
-  trampolines stay in 68k. In a native port they become "call the hook".
+  trampolines are C blocks since #24 (`port/src/game/waits.c`, docs/native.md): save the
+  registers, call the hook at top level, restore, `rte`.
 - **Input is handled on the VBlank side.** `vblank_main` → `sub_005E4A` and its callees
   ($5E4A–$7080) move Shaggy with the D-pad (`ram_shaggy_x/y` are written there), move
   the pointer, enter pointer mode on A/B (`$006C70`: set `VBF_POINTER`), slide the verb

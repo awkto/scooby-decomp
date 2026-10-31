@@ -154,6 +154,8 @@
 	.equ ram_palcyc, 0xff087c
 	.equ ram_fx_sprite_tile, 0xff08a4
 	.equ ram_fx_sprite_ptr, 0xff08a6
+	.equ ram_intro_bounce_idx, 0xff08aa
+	.equ ram_intro_pause_idx, 0xff08ac
 	.equ ram_frame_countdown, 0xff08ae
 	.equ ram_follow_slot, 0xff08b0
 	.equ ram_hblank_hv, 0xff08b2
@@ -175,6 +177,12 @@
 	.equ ram_09eb, 0xff09eb
 	.equ ram_duel_hit, 0xff09ec
 	.equ ram_09ed, 0xff09ed
+	.equ ram_intro_layer, 0xff09f0
+	.equ ram_intro_bounce_x, 0xff0a14
+	.equ ram_intro_bounce, 0xff0a16
+	.equ ram_intro_van_x, 0xff0a18
+	.equ ram_intro_van_y, 0xff0a1a
+	.equ ram_intro_wheel, 0xff0a1c
 	.equ ram_inv_list, 0xff0a1e
 	.equ ram_duel_prev, 0xff0a84
 	.equ ram_duel_speed0, 0xff0a90
@@ -219,6 +227,8 @@
 	.equ ram_shaggy_turning, 0xff0acc
 	.equ ram_palcyc_on, 0xff0acd
 	.equ ram_fx_blink, 0xff0ace
+	.equ ram_intro_bounce_pause, 0xff0acf
+	.equ ram_intro_van_step, 0xff0ad0
 	.equ ram_verb_bar_window, 0xff0ad1
 	.equ ram_objects, 0xff1200
 	.equ ram_game_state, 0xff2a00
@@ -1282,7 +1292,7 @@ loc_001496:
 	jsr (vdp_copy_to_vram).l
 	addi.w #0x780,d0
 	dbra d3,loc_001496
-	bsr.w sub_0016C4
+	bsr.w intro_van_sprites
 	moveq #0x0,d0
 	move.w #0x3ff,d1
 	lea.l (ram_lzss_ring).l,a0
@@ -1291,17 +1301,17 @@ loc_0014C8:
 	dbra d1,loc_0014C8
 	move.l #0x40000010,(vdp_ctrl).l
 	move.l #0x0,(vdp_data).l
-	move.l d0,(0xff09f0).l
-	move.l d0,(0xff09f8).l
-	move.l d0,(0xff0a00).l
-	move.l d0,(0xff0a08).l
-	move.w d0,(0xff0a10).l
-	move.w #0x9f,(0xff0a1a).l
-	move.w #0xff62,(0xff0a18).l
-	move.b #0x1,(0xff0ad0).l
-	move.w #0x0,(0xff0a1c).l
-	move.l #0x0,(0xff0a14).l
-	bsr.w sub_0017AE
+	move.l d0,(ram_intro_layer).l
+	move.l d0,(ram_intro_layer+8).l
+	move.l d0,(ram_intro_layer+16).l
+	move.l d0,(ram_intro_layer+24).l
+	move.w d0,(ram_intro_layer+32).l
+	move.w #0x9f,(ram_intro_van_y).l
+	move.w #0xff62,(ram_intro_van_x).l
+	move.b #0x1,(ram_intro_van_step).l
+	move.w #0x0,(ram_intro_wheel).l
+	move.l #0x0,(ram_intro_bounce_x).l
+	bsr.w intro_parallax
 	lea.l (dat_018FEC).l,a4
 	move.w (ram_mystery_idx).l,d0
 	lsl.w #0x4,d0
@@ -1322,38 +1332,38 @@ loc_001560:
 	move.w #0x0,(ram_pal_target).l
 loc_001576:
 	move.w #0x2000,sr
-	bsr.w sub_0017AE
-	bsr.w sub_0016C4
+	bsr.w intro_parallax
+	bsr.w intro_van_sprites
 	dc.w 0x203c,0x0000,0x007c	| move.l #$7c, d0
 	jsr (sound_play).l
 	dc.w 0x203c,0x0000,0x001e	| move.l #$1e, d0
 	jsr (sound_play).l
 	lea.l (ram_pal_target).l,a0
 	jsr (palette_fade).l
-	move.w #0x0,(0xff08aa).l
-	move.w #0x0,(0xff08ac).l
-	move.b #0x0,(0xff0acf).l
+	move.w #0x0,(ram_intro_bounce_idx).l
+	move.w #0x0,(ram_intro_pause_idx).l
+	move.b #0x0,(ram_intro_bounce_pause).l
 loc_0015BE:
 	jsr (wait_vblank).l
-	tst.b (0xff0acf).l
+	tst.b (ram_intro_bounce_pause).l
 	bne.s loc_001624
-	move.w (0xff08aa).l,d0
-	move.w (dat_00160C,pc,d0.w),(0xff0a16).l
+	move.w (ram_intro_bounce_idx).l,d0
+	move.w (dat_00160C,pc,d0.w),(ram_intro_bounce).l
 	addq.w #0x2,d0
 	cmpi.w #0x16,d0
 	bne.s loc_0015E4
 	moveq #0x0,d0
 loc_0015E4:
-	move.w d0,(0xff08aa).l
+	move.w d0,(ram_intro_bounce_idx).l
 	bne.s loc_00162A
-	move.w (0xff08ac).l,d0
-	move.b (dat_001622,pc,d0.w),(0xff0acf).l
+	move.w (ram_intro_pause_idx).l,d0
+	move.b (dat_001622,pc,d0.w),(ram_intro_bounce_pause).l
 	addq.w #0x1,d0
 	cmpi.w #0x1,d0
 	bne.s loc_001604
 	moveq #0x0,d0
 loc_001604:
-	move.w d0,(0xff08ac).l
+	move.w d0,(ram_intro_pause_idx).l
 	bra.s loc_00162A
 | data 0x00160C-0x001624
 dat_00160C:
@@ -1361,15 +1371,15 @@ dat_00160C:
 dat_001622:
 	.incbin "baserom.md",0x1622,0x2
 loc_001624:
-	subq.b #0x1,(0xff0acf).l
+	subq.b #0x1,(ram_intro_bounce_pause).l
 loc_00162A:
-	bsr.w sub_0017AE
-	bsr.w sub_0016C4
-	subi.b #0x1,(0xff0ad0).l
+	bsr.w intro_parallax
+	bsr.w intro_van_sprites
+	subi.b #0x1,(ram_intro_van_step).l
 	bpl.s loc_001652
-	eori.w #0x3c,(0xff0a1c).l
-	move.b #0x1,(0xff0ad0).l
-	addq.w #0x1,(0xff0a18).l
+	eori.w #0x3c,(ram_intro_wheel).l
+	move.b #0x1,(ram_intro_van_step).l
+	addq.w #0x1,(ram_intro_van_x).l
 loc_001652:
 	move.b (ram_pad1).l,d0
 	andi.w #0xf0,d0
@@ -1380,7 +1390,7 @@ loc_001652:
 	cmp.w d1,d0
 	bne.s loc_00167C
 loc_001670:
-	cmpi.w #0x10e,(0xff0a18).l
+	cmpi.w #0x10e,(ram_intro_van_x).l
 	bne.w loc_0015BE
 loc_00167C:
 	jsr (palette_read_cram).l
@@ -1394,43 +1404,43 @@ loc_00167C:
 	movem.l (sp)+,d0-d7/a0-a6
 	move.w (sp)+,sr
 	rts
-sub_0016C4:
+intro_van_sprites:
 	move.w sr,-(sp)
 	move.w #0x2700,sr
 	move.l #0x78000002,(vdp_ctrl).l
-	move.w (0xff0a14).l,d2
-	move.w (0xff0a16).l,d3
+	move.w (ram_intro_bounce_x).l,d2
+	move.w (ram_intro_bounce).l,d3
 	addi.w #0x7c,d2
 	addi.w #0x6f,d3
-	add.w (0xff0a18).l,d2
-	add.w (0xff0a1a).l,d3
+	add.w (ram_intro_van_x).l,d2
+	add.w (ram_intro_van_y).l,d3
 	move.w #0x458,d6
 	moveq #0x1,d5
-	bsr.w sub_00175C
-	move.w (0xff0a18).l,d2
-	move.w (0xff0a1a).l,d3
+	bsr.w intro_sprite_group
+	move.w (ram_intro_van_x).l,d2
+	move.w (ram_intro_van_y).l,d3
 	addi.w #0x80,d2
 	addi.w #0x80,d3
 	move.w #0x494,d6
-	add.w (0xff0a1c).l,d6
-	bsr.w sub_00175C
+	add.w (ram_intro_wheel).l,d6
+	bsr.w intro_sprite_group
 	move.w #0xca,d2
 	move.w #0x79,d3
-	add.w (0xff0a18).l,d2
-	add.w (0xff0a1a).l,d3
+	add.w (ram_intro_van_x).l,d2
+	add.w (ram_intro_van_y).l,d3
 	move.w #0x50c,d6
-	move.w (0xff0a16).l,d0
+	move.w (ram_intro_bounce).l,d0
 	beq.s loc_00174A
 	subq.w #0x1,d0
 loc_001742:
 	addi.w #0x3c,d6
 	dbra d0,loc_001742
 loc_00174A:
-	bsr.w sub_00175C
+	bsr.w intro_sprite_group
 	move.l #0x0,(vdp_data).l
 	move.w (sp)+,sr
 	rts
-sub_00175C:
+intro_sprite_group:
 	lea.l (dat_0FC8B4).l,a3
 	lea.l (dat_0FC944).l,a4
 	lea.l (dat_0FC99C).l,a5
@@ -1455,7 +1465,7 @@ loc_0017A2:
 loc_0017A8:
 	dbra d1,loc_001776
 	rts
-sub_0017AE:
+intro_parallax:
 	move.w sr,-(sp)
 	move.w #0x2700,sr
 	move.w #0x8f04,(vdp_ctrl).l
@@ -1468,97 +1478,97 @@ sub_0017AE:
 	jsr (vdp_dma_vram).l
 	move.w #0x8f02,(vdp_ctrl).l
 	move.w (sp)+,sr
-	tst.w (0xff0a18).l
+	tst.w (ram_intro_van_x).l
 	bmi.s loc_0017FA
-	move.w #0xff00,(0xff09f0).l
+	move.w #0xff00,(ram_intro_layer).l
 loc_0017FA:
 	tst.w (ram_mystery_idx).l
 	beq.w loc_0018F2
-	subi.l #0x8000,(0xff0a10).l
-	subi.l #0xc000,(0xff09f4).l
-	subi.l #0x10000,(0xff09f8).l
-	subi.l #0x10000,(0xff09fc).l
-	subi.l #0x18000,(0xff0a00).l
-	subi.l #0x20000,(0xff0a04).l
-	subi.l #0x30000,(0xff0a08).l
-	subi.l #0x40000,(0xff0a0c).l
+	subi.l #0x8000,(ram_intro_layer+32).l
+	subi.l #0xc000,(ram_intro_layer+4).l
+	subi.l #0x10000,(ram_intro_layer+8).l
+	subi.l #0x10000,(ram_intro_layer+12).l
+	subi.l #0x18000,(ram_intro_layer+16).l
+	subi.l #0x20000,(ram_intro_layer+20).l
+	subi.l #0x30000,(ram_intro_layer+24).l
+	subi.l #0x40000,(ram_intro_layer+28).l
 	lea.l (ram_buf_3800).l,a0
 	move.w #0x67,d0
-	move.w (0xff09f0).l,d1
+	move.w (ram_intro_layer).l,d1
 loc_001864:
 	move.w d1,(a0)+
 	dbra d0,loc_001864
-	move.w (0xff0a10).l,d1
+	move.w (ram_intro_layer+32).l,d1
 	move.w #0x1f,d0
 loc_001874:
 	move.w d1,(a0)+
 	dbra d0,loc_001874
-	move.w (0xff09f8).l,d1
+	move.w (ram_intro_layer+8).l,d1
 	move.w #0x18,d0
 loc_001884:
 	move.w d1,(a0)+
 	dbra d0,loc_001884
-	move.w (0xff0a04).l,d1
+	move.w (ram_intro_layer+20).l,d1
 	move.w #0xe,d0
 loc_001894:
 	move.w d1,(a0)+
 	dbra d0,loc_001894
-	move.w (0xff0a08).l,d1
+	move.w (ram_intro_layer+24).l,d1
 	move.w #0x2f,d0
 loc_0018A4:
 	move.w d1,(a0)+
 	dbra d0,loc_0018A4
 	lea.l (ram_lzss_ring).l,a0
-	move.w (0xff09f4).l,d1
+	move.w (ram_intro_layer+4).l,d1
 	move.w #0x27,d0
 loc_0018BA:
 	move.w d1,(a0)+
 	dbra d0,loc_0018BA
-	move.w (0xff09fc).l,d1
+	move.w (ram_intro_layer+12).l,d1
 	move.w #0xf,d0
 loc_0018CA:
 	move.w d1,(a0)+
 	dbra d0,loc_0018CA
-	move.w (0xff0a00).l,d1
+	move.w (ram_intro_layer+16).l,d1
 	move.w #0xf,d0
 loc_0018DA:
 	move.w d1,(a0)+
 	dbra d0,loc_0018DA
-	move.w (0xff0a0c).l,d1
+	move.w (ram_intro_layer+28).l,d1
 	move.w #0x97,d0
 loc_0018EA:
 	move.w d1,(a0)+
 	dbra d0,loc_0018EA
 	rts
 loc_0018F2:
-	subi.l #0x8000,(0xff09f4).l
-	subi.l #0x10000,(0xff09f8).l
-	subi.l #0x20000,(0xff09fc).l
-	subi.l #0x40000,(0xff0a00).l
-	move.w (0xff09f0).l,d1
+	subi.l #0x8000,(ram_intro_layer+4).l
+	subi.l #0x10000,(ram_intro_layer+8).l
+	subi.l #0x20000,(ram_intro_layer+12).l
+	subi.l #0x40000,(ram_intro_layer+16).l
+	move.w (ram_intro_layer).l,d1
 	move.w #0x4f,d0
 	lea.l (ram_buf_3800).l,a0
 loc_00192A:
 	move.w d1,(a0)+
 	dbra d0,loc_00192A
-	move.w (0xff09fc).l,d1
+	move.w (ram_intro_layer+12).l,d1
 	move.w #0x8f,d0
 	lea.l (ram_buf_3800+160).l,a0
 loc_001940:
 	move.w d1,(a0)+
 	dbra d0,loc_001940
-	move.w (0xff09f4).l,d1
+	move.w (ram_intro_layer+4).l,d1
 	move.w #0x5f,d0
 	lea.l (ram_lzss_ring).l,a0
 loc_001956:
 	move.w d1,(a0)+
 	dbra d0,loc_001956
-	move.w (0xff09f8).l,d1
+	move.w (ram_intro_layer+8).l,d1
 	move.w #0x2f,d0
 loc_001966:
 	move.w d1,(a0)+
 	dbra d0,loc_001966
-	move.w (0xff0a00).l,d1
+	move.w (ram_intro_layer+16).l,d1
 	move.w #0x4f,d0
 loc_001976:
 	move.w d1,(a0)+
@@ -1611,7 +1621,7 @@ loc_0019F8:
 	bsr.w script_run_nested
 	tst.w (ram_talk_count).l
 	beq.s loc_001A22
-	bsr.w sub_001BDA
+	bsr.w verb_labels_refresh
 loc_001A22:
 	move.b #0x2,(ram_script_flags).l
 	move.l #script_run,(ram_script_cb).l
@@ -1627,7 +1637,7 @@ loc_001A22:
 	lea.l (0x8,a5),a5
 	move.l #script_run_frame,(ram_script_cb).l
 	bclr.b #0x0,(ram_script_flags).l
-	bsr.w sub_001BDA
+	bsr.w verb_labels_refresh
 	bsr.w script_run_frame
 loc_001A80:
 	movem.l (sp)+,a5-a6
@@ -1714,7 +1724,7 @@ loc_001BD6:
 	rts
 loc_001BD8:
 	rts
-sub_001BDA:
+verb_labels_refresh:
 	movem.l d0-d7/a0-a6,-(sp)
 	bclr.b #0x3,(ram_vblank_flags).l
 	move.w (ram_verb_cur).l,(ram_verb_redraw).l
@@ -4230,9 +4240,9 @@ loc_004258:
 	bsr.w palette_read_cram
 	bra.w soft_reset
 script_subop_1A_pal_flash_on:
-	move.w #0xffff,(0xff08aa).l
-	move.w #0x1,(0xff08ac).l
-	move.b (dat_03247C).l,(0xff0acf).l
+	move.w #0xffff,(ram_intro_bounce_idx).l
+	move.w #0x1,(ram_intro_pause_idx).l
+	move.b (dat_03247C).l,(ram_intro_bounce_pause).l
 	bset.b #0x7,(ram_09e8).l
 	rts
 script_subop_1B_pal_flash_off:
@@ -4550,7 +4560,7 @@ loc_004716:
 loc_0047A6:
 	bsr.w script_subop_1D_bar_hide
 	rts
-sub_0047AC:
+bar_save:
 	bclr.b #0x3,(ram_vblank_flags).l
 	moveq #0x0,d0
 	btst.b #0x4,(ram_vblank_flags).l
@@ -4596,7 +4606,7 @@ script_subop_1D_bar_hide:
 loc_004836:
 	tst.b (ram_bar_slide).l
 	bpl.w loc_004836
-	bsr.w sub_0047AC
+	bsr.w bar_save
 	move.b #0x10,(ram_bar_slide).l
 loc_00484C:
 	bsr.w actor_animate
@@ -7822,7 +7832,7 @@ loc_007784:
 	beq.s loc_0077E0
 loc_0077CC:
 	bchg.b #0x4,(ram_vblank_flags).l
-	bsr.w sub_0047AC
+	bsr.w bar_save
 	bchg.b #0x4,(ram_vblank_flags).l
 loc_0077E0:
 	movem.l (sp)+,d0-d7/a0-a6
@@ -7996,10 +8006,10 @@ loc_0079EE:
 	adda.l d5,a2
 	addi.w #0x80,d4
 	dbra d2,loc_0079E4
-	jsr (sub_00FC3A).l
-	jsr (sub_00FD5E).l
-	jsr (sub_00FE74).l
-	jsr (sub_00FF68).l
+	jsr (stream_right).l
+	jsr (stream_left).l
+	jsr (stream_top).l
+	jsr (stream_bottom).l
 	rts
 font_tiles_load:
 	move.w #0xc,d3
@@ -16257,27 +16267,27 @@ loc_00FB44:
 	move.w d0,(ram_vscroll).l
 	btst.b #0x7,(ram_09e8).l
 	beq.w loc_00FBCC
-	tst.w (0xff08aa).l
+	tst.w (ram_intro_bounce_idx).l
 	bpl.s loc_00FB94
-	subq.b #0x1,(0xff0acf).l
+	subq.b #0x1,(ram_intro_bounce_pause).l
 	bpl.s loc_00FBCC
-	move.b (0xff08ac).l,d0
+	move.b (ram_intro_pause_idx).l,d0
 	ext.w d0
 	lea.l (dat_03247C).l,a0
-	move.b (0x0,a0,d0.w),(0xff0acf).l
+	move.b (0x0,a0,d0.w),(ram_intro_bounce_pause).l
 	addq.w #0x1,d0
 	cmpi.w #0x4,d0
 	bne.s loc_00FB86
 	moveq #0x0,d0
 loc_00FB86:
-	move.b d0,(0xff08ac).l
-	move.w #0x0,(0xff08aa).l
+	move.b d0,(ram_intro_pause_idx).l
+	move.w #0x0,(ram_intro_bounce_idx).l
 loc_00FB94:
-	move.w (0xff08aa).l,d0
-	addq.w #0x2,(0xff08aa).l
-	cmpi.w #0x2c,(0xff08aa).l
+	move.w (ram_intro_bounce_idx).l,d0
+	addq.w #0x2,(ram_intro_bounce_idx).l
+	cmpi.w #0x2c,(ram_intro_bounce_idx).l
 	bne.s loc_00FBB2
-	move.w #0xffff,(0xff08aa).l
+	move.w #0xffff,(ram_intro_bounce_idx).l
 loc_00FBB2:
 	lea.l (dat_03244E).l,a0
 	move.w (0x0,a0,d0.w),d1
@@ -16287,19 +16297,19 @@ loc_00FBB2:
 loc_00FBCC:
 	btst.b #0x0,(ram_camera_scroll_req).l
 	beq.s loc_00FBDA
-	bsr.w sub_00FC3A
+	bsr.w stream_right
 loc_00FBDA:
 	btst.b #0x1,(ram_camera_scroll_req).l
 	beq.s loc_00FBE8
-	bsr.w sub_00FD5E
+	bsr.w stream_left
 loc_00FBE8:
 	btst.b #0x2,(ram_camera_scroll_req).l
 	beq.s loc_00FBF6
-	bsr.w sub_00FE74
+	bsr.w stream_top
 loc_00FBF6:
 	btst.b #0x3,(ram_camera_scroll_req).l
 	beq.s loc_00FC04
-	bsr.w sub_00FF68
+	bsr.w stream_bottom
 loc_00FC04:
 	clr.b (ram_camera_scroll_req).l
 loc_00FC0A:
@@ -16312,7 +16322,7 @@ loc_00FC0A:
 	move.l #0x40000010,(vdp_ctrl).l
 	move.l (ram_vscroll).l,(vdp_data).l
 	rts
-sub_00FC3A:
+stream_right:
 	move.w (ram_camera_x).l,d4
 	lsr.w #0x3,d4
 	move.w (ram_map_width).l,d5
@@ -16405,7 +16415,7 @@ loc_00FD3C:
 loc_00FD54:
 	move.w #0x8f02,(vdp_ctrl).l
 	rts
-sub_00FD5E:
+stream_left:
 	move.w (ram_camera_x).l,d4
 	lsr.w #0x3,d4
 	beq.w loc_00FE6A
@@ -16495,7 +16505,7 @@ loc_00FE52:
 loc_00FE6A:
 	move.w #0x8f02,(vdp_ctrl).l
 	rts
-sub_00FE74:
+stream_top:
 	move.w (ram_camera_y).l,d5
 	lsr.w #0x3,d5
 	beq.w loc_00FF66
@@ -16578,7 +16588,7 @@ loc_00FF52:
 	bsr.w vdp_dma_vram
 loc_00FF66:
 	rts
-sub_00FF68:
+stream_bottom:
 	move.w (ram_camera_y).l,d5
 	move.w (ram_map_height).l,d4
 	subi.w #0x13,d4

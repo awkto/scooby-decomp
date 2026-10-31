@@ -38,9 +38,9 @@ run 20
 shot e_back
 EOF
 	} > "$d/script.txt"
-	SCOOBY_STATE_LOG="$d/wide.state" nice build/port/scoobyport --options "widescreen=$opt,ws_stats=1" \
+	SCOOBY_STATE_LOG="$d/wide.state" nice ${SCOOBY_PORT:-build/port/scoobyport} --options "widescreen=$opt,ws_stats=1" \
 		--script "$d/script.txt" --outdir "$d/wide" --frames 0 >"$d/wide.log" 2>&1
-	SCOOBY_STATE_LOG="$d/43.state" nice build/port/scoobyport --options widescreen=4:3 \
+	SCOOBY_STATE_LOG="$d/43.state" nice ${SCOOBY_PORT:-build/port/scoobyport} --options widescreen=4:3 \
 		--script "$d/script.txt" --outdir "$d/43" --frames 0 >"$d/43.log" 2>&1
 	for f in "$d"/wide/*.ppm; do convert "$f" "$d/$(basename "${f%.ppm}").png"; done
 	rm -rf "$d/43" "$d/wide"
@@ -78,7 +78,7 @@ done
 # mouse clicks in the margins of the wide view walk to that world point (port/scripts/ws/margin.txt)
 d="$out/margin"; mkdir -p "$d"
 cat port/scripts/lobby.txt port/scripts/ws/margin.txt > "$d/script.txt"
-build/port/scoobyport --options "widescreen=$opt" --script "$d/script.txt" --outdir "$d" --frames 0 >"$d/log" 2>&1
+${SCOOBY_PORT:-build/port/scoobyport} --options "widescreen=$opt" --script "$d/script.txt" --outdir "$d" --frames 0 >"$d/log" 2>&1
 pk() { sed -n "s/^[0-9]* $1 \([0-9a-f]*\)/\1/p" "$d/peek.log" | head -1; }
 sx1=$((0x$(pk sx1))); sy1=$((0x$(pk sy1))); sx2=$((0x$(pk sx2)))
 if [ "$opt" = 16:9 ]; then

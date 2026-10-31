@@ -1,7 +1,7 @@
 #!/bin/sh
 # Interpreted-instruction profile over every gameplay route with --hle all (GitLab #24).
 #   port/tools/ipprof.sh [GATE...]      run on a VM after building build/port; output runs/ipprof/GATE.PID.txt
-# story_full = the long closed-loop walkthrough w0_full (Blake's Hotel, power-on to the credits; none + all, ~25 min)
+# story_full = the long closed-loop walkthroughs w0_full and w1_full (power-on to the credits; none + all, ~50 min)
 # Gates (default: all of them): story story_full mouse sound menus intro_w0 intro_w1 extra baseline
 # (baseline = --hle none runs of intro_w0, intro_w1 and the menu tours, the denominators of the percentages)
 # Each program writes its profile at exit (SCOOBY_IPPROF, src/ipprof.c).  The gate scripts also run
@@ -27,7 +27,7 @@ for g in $gates; do
 	echo "== $g"
 	case $g in
 	story) SCOOBY_IPPROF="$out/story.%d.txt" STORYTEST_HLE=all port/tools/storytest.sh ;;
-	story_full) SCOOBY_IPPROF="$out/story_full.%d.txt" STORYTEST_HLE=all port/tools/storytest.sh w0_full ;;
+	story_full) SCOOBY_IPPROF="$out/story_full.%d.txt" STORYTEST_HLE=all port/tools/storytest.sh long ;;
 	mouse) SCOOBY_IPPROF="$out/mouse.%d.txt" port/tools/mousetest.sh | tail -3 ;;
 	sound) SCOOBY_IPPROF="$out/sound.%d.txt" port/tools/soundtest.sh | tail -6 ;;
 	menus) SCOOBY_IPPROF="$out/menus.%d.txt" port/scripts/menus/tour.sh -h all 1 2 3 ;;

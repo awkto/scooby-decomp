@@ -10,7 +10,7 @@ cd "$root"
 fail=0
 for r in pointer_play.txt inventory_play.txt mouse/look.txt mouse/bar.txt mouse/walk.txt; do
 	for h in all none; do
-		line=$(build/port/frameprof --hle "$h" --script port/scripts/lobby.txt --script "port/scripts/$r" 2>/dev/null | grep 'lost in')
+		line=$(${SCOOBY_FRAMEPROF:-build/port/frameprof} --hle "$h" --script port/scripts/lobby.txt --script "port/scripts/$r" 2>/dev/null | grep 'lost in')
 		n=$(echo "$line" | sed -n 's/.*lost in \([0-9]*\) of \([0-9]*\).*/\1/p')
 		tot=$(echo "$line" | sed -n 's/.*lost in \([0-9]*\) of \([0-9]*\).*/\2/p')
 		if [ -n "$n" ] && [ "$n" = 0 ] && [ "${tot:-0}" -gt 100 ]; then

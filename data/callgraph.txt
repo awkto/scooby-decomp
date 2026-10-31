@@ -8,13 +8,13 @@
 0008aa HBlank -> hblank_nop* hblank_verb_bar*
 0008bc VBlank -> vblank_title_fade* vblank_light* vblank_main*
 000bc8 logo5_frame -> vdp_dma_vram
-0013ba mystery_intro -> sub_0016C4 sub_0017AE wait_vblank sound_play lzss_decompress vdp_copy_to_vram rle_decompress palette_read_cram palette_fade
-0016c4 sub_0016C4 -> sub_00175C
-00175c sub_00175C -> -
-0017ae sub_0017AE -> vdp_dma_vram
+0013ba mystery_intro -> intro_van_sprites intro_parallax wait_vblank sound_play lzss_decompress vdp_copy_to_vram rle_decompress palette_read_cram palette_fade
+0016c4 intro_van_sprites -> intro_sprite_group
+00175c intro_sprite_group -> -
+0017ae intro_parallax -> vdp_dma_vram
 00197e sprite_frame_hotspot -> -
-0019b0 action_execute -> sub_001BDA sub_001C0C script_run_nested script_run script_run_frame strcpy text_show
-001bda sub_001BDA -> verb_label_redraw
+0019b0 action_execute -> verb_labels_refresh sub_001C0C script_run_nested script_run script_run_frame strcpy text_show
+001bda verb_labels_refresh -> verb_label_redraw
 001c0c sub_001C0C -> talk_gesture talk_bar_blank script_run_nested script_run_frame inventory_arrows_update inventory_refresh font_tiles_load wait_vblank vram_read_word vdp_dma_vram draw_text_wrapped draw_status_line text_show text_wait actor_animate
 0020d2 sub_0020D2 -> -
 0020da talk_gesture -> rng_next
@@ -120,9 +120,9 @@
 00454e script_subop_03_fade_out -> palette_read_cram
 004568 script_subop_04_wait_button -> run_object_events actor_animate
 0045a4 script_subop_05_fullscreen_picture -> script_subop_1D_bar_hide room_draw_view plane_a_clear plane_b_clear wait_vblanks wait_vblank vdp_copy_to_vram vdp_dma_cram vdp_clear_cram status_line_update actor_animate
-0047ac sub_0047AC -> vdp_write_word vram_read_word
+0047ac bar_save -> vdp_write_word vram_read_word
 00481a script_subop_06_bar_show_if_hidden -> script_subop_1C_bar_show
-00482e script_subop_1D_bar_hide -> sub_0047AC actor_animate
+00482e script_subop_1D_bar_hide -> bar_save actor_animate
 004862 script_subop_1C_bar_show -> font_tiles_load vdp_dma_vram actor_animate
 0048b6 script_op_0D_sound -> sound_play sound_stop
 0048d8 script_op_15_wait -> actor_animate
@@ -184,8 +184,8 @@
 0073d6 walk_blocked_probe -> -
 007476 walk_blocked_line_probe -> -
 00750a pad_dir8 -> -
-00758a sub_00758A -> sub_0047AC inventory_upload inventory_build_page room_draw_view font_tiles_load room_setup_actors lzss_decompress vdp_copy_to_vram vdp_write_word vdp_fill_vram vdp_clear_vram
-007950 room_draw_view -> vdp_write_word sub_00FC3A sub_00FD5E sub_00FE74 sub_00FF68
+00758a sub_00758A -> bar_save inventory_upload inventory_build_page room_draw_view font_tiles_load room_setup_actors lzss_decompress vdp_copy_to_vram vdp_write_word vdp_fill_vram vdp_clear_vram
+007950 room_draw_view -> vdp_write_word stream_right stream_left stream_top stream_bottom
 007a2a font_tiles_load -> vdp_write_word
 007a8c room_setup_actors -> -
 007c04 object_timers -> overlay_apply
@@ -284,11 +284,11 @@
 00da6a frame_scale_80x48 -> -
 00e40c sub_00E40C -> -
 00f272 sub_00F272 -> -
-00fa78 camera_update -> vdp_write_word sub_00FC3A sub_00FD5E sub_00FE74 sub_00FF68
-00fc3a sub_00FC3A -> vdp_dma_vram
-00fd5e sub_00FD5E -> vdp_dma_vram
-00fe74 sub_00FE74 -> vdp_dma_vram
-00ff68 sub_00FF68 -> vdp_dma_vram
+00fa78 camera_update -> vdp_write_word stream_right stream_left stream_top stream_bottom
+00fc3a stream_right -> vdp_dma_vram
+00fd5e stream_left -> vdp_dma_vram
+00fe74 stream_top -> vdp_dma_vram
+00ff68 stream_bottom -> vdp_dma_vram
 01006a hblank_nop -> -
 01006c hblank_verb_bar -> -
 1f6d7a z80_bus_request -> -

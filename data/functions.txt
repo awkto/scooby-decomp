@@ -10,12 +10,12 @@
 0008bc    18 VBlank  # 5 insns
 000bc8    44 logo5_frame  # 11 insns
 0013ba   594 mystery_intro  # 150 insns +001624:160
-0016c4   152 sub_0016C4  # 33 insns
-00175c    82 sub_00175C  # 21 insns
-0017ae   464 sub_0017AE  # 92 insns
+0016c4   152 intro_van_sprites  # 33 insns
+00175c    82 intro_sprite_group  # 21 insns
+0017ae   464 intro_parallax  # 92 insns
 00197e    50 sprite_frame_hotspot  # 15 insns
 0019b0   554 action_execute  # 113 insns
-001bda    50 sub_001BDA  # 10 insns
+001bda    50 verb_labels_refresh  # 10 insns
 001c0c  1222 sub_001C0C  # 275 insns
 0020d2     8 sub_0020D2  # 2 insns
 0020da    94 talk_gesture  # 22 insns
@@ -121,7 +121,7 @@
 00454e    26 script_subop_03_fade_out  # 5 insns
 004568    60 script_subop_04_wait_button  # 12 insns
 0045a4   520 script_subop_05_fullscreen_picture  # 109 insns
-0047ac   110 sub_0047AC  # 28 insns
+0047ac   110 bar_save  # 28 insns
 00481a    20 script_subop_06_bar_show_if_hidden  # 5 insns
 00482e    52 script_subop_1D_bar_hide  # 10 insns
 004862    84 script_subop_1C_bar_show  # 19 insns
@@ -286,10 +286,10 @@
 00e40c  3686 sub_00E40C  # 1416 insns
 00f272  2054 sub_00F272  # 780 insns
 00fa78   450 camera_update  # 90 insns
-00fc3a   292 sub_00FC3A  # 85 insns
-00fd5e   278 sub_00FD5E  # 82 insns
-00fe74   244 sub_00FE74  # 75 insns
-00ff68   258 sub_00FF68  # 78 insns
+00fc3a   292 stream_right  # 85 insns
+00fd5e   278 stream_left  # 82 insns
+00fe74   244 stream_top  # 75 insns
+00ff68   258 stream_bottom  # 78 insns
 01006a     2 hblank_nop  # 1 insns
 01006c   172 hblank_verb_bar  # 32 insns
 1f6d7a    20 z80_bus_request  # 4 insns
