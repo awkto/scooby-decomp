@@ -23,7 +23,9 @@ out=runs/rendertest
 rm -rf "$out"; mkdir -p "$out/logs" "$out/dumps" "$out/work"
 export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 export SCOOBY_RENDERCMP="${RENDERTEST_N:-30},$root/$out/dumps/%d"
-unset SCOOBY_RENDERER
+# compare against GPGX's own picture: scoobyport now defaults to native, whose "native" HLE group
+# replaces the 68k verb-bar split that GPGX's picture needs
+export SCOOBY_RENDERER=gpgx
 if [ "${RENDERTEST_SPLIT:-raster}" = model ]; then export SCOOBY_RENDER_SPLIT=model; else unset SCOOBY_RENDER_SPLIT; fi
 groups=${*:-"mouse menus intros extra story"}   # story last: it regenerates tools/scripts/story/*.txt, which mousetest reads
 P=build/port/scoobyport
